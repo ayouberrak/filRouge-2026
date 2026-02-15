@@ -9,35 +9,26 @@ use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
-        'name',
+        'first_name',
+        'last_name',
         'email',
         'password',
+        'role',
+        'status',
+        'speciality',
+        'points',
+        'classroom_id',
+        'squad_id',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
@@ -45,4 +36,45 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function classroom()
+    {
+        return $this->belongsTo(Classroom::class);
+    }
+
+    public function managedClassrooms()
+    {
+        return $this->hasMany(Classroom::class, 'formateur_id');
+    }
+
+    public function squad()
+    {
+        return $this->belongsTo(Squad::class);
+    }
+
+    public function brief()
+    {
+        return $this->hasMany(Brief::class, 'formateur_id');
+    }
+
+    public function deliverables()
+    {
+        return $this->hasMany(Deliverable::class, 'student_id');
+    }
+
+    public function absences()
+    {
+        return $this->hasMany(Absence::class, 'student_id');
+    }
+
+    public function activities()
+    {
+        return $this->belongsToMany(Activity::class, 'activity_user');
+    }
+
+    public function dailyReports()
+    {
+        return $this->hasMany(DailyReport::class);
+    }
+
 }
