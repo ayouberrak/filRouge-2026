@@ -2,10 +2,10 @@
 
 namespace App\Modules\Squad\Application\DTO;
 
-class SquadDTO
+class AssignMemberDTO
 {
     public function __construct(
-        public string $name,
-        public ?int $classroom_id = null
+        public int $squad_id,
+        public int $user_id
     ) {}
 }
