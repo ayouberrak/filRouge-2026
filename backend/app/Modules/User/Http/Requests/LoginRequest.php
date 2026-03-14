@@ -2,6 +2,7 @@
 
 namespace App\Modules\User\Http\Requests;
 
+use App\Modules\User\Application\DTO\LoginDTO;
 use Illuminate\Foundation\Http\FormRequest;
 
 class LoginRequest extends FormRequest
@@ -17,5 +18,13 @@ class LoginRequest extends FormRequest
             'email' => 'required|email',
             'password' => 'required',
         ];
+    }
+
+    public function toDTO()
+    {
+        return new LoginDTO(
+            email: $this->input('email'),
+            password: $this->input('password')
+        );
     }
 }

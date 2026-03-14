@@ -21,10 +21,7 @@ class AuthController
 
     public function login(LoginRequest $request)
     {
-        $loginDTO = new LoginDTO(
-            $request->email,
-            $request->password
-        );
+        $loginDTO = $request->toDTO();
         $result = $this->loginUser->execute($loginDTO);
 
         return response()->json([
