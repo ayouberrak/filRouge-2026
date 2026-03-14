@@ -2,31 +2,76 @@
 
 namespace App\Modules\Absence\Domain\Entities;
 
+use App\Modules\Absence\Domain\ValueObjects\AbsenceStatus;
+use InvalidArgumentException;
+
 class AbsenceEntity
 {
-    private ?int $id;
-    private string $date;
-    private int $duree;
-    private string $status;
-    private ?string $justificationFile;
-
     public function __construct(
-        ?int $id,
-        string $date,
-        int $duree,
-        string $status,
-        ?string $justificationFile = null
-    ) {
-        $this->id = $id;
-        $this->date = $date;
-        $this->duree = $duree;
-        $this->status = $status;
-        $this->justificationFile = $justificationFile;
+        private ?int $id,
+        private int $studentId, // New required property based on DB structure
+        private string $date,
+        private int $duration, // renamed duree to duration for consistency
+        private AbsenceStatus $status,
+        private ?string $justificationFile = null
+    ) {}
+
+    public function getId(): ?int
+    {
+        return $this->id;
     }
 
-    public function getId(): ?int { return $this->id; }
-    public function getDate(): string { return $this->date; }
-    public function getDuree(): int { return $this->duree; }
-    public function getStatus(): string { return $this->status; }
-    public function getJustificationFile(): ?string { return $this->justificationFile; }
+    public function getStudentId(): int
+    {
+        return $this->studentId;
+    }
+
+    public function getDate(): string
+    {
+        return $this->date;
+    }
+
+    public function getDuration(): int
+    {
+        return $this->duration;
+    }
+
+    public function getStatus(): AbsenceStatus
+    {
+        return $this->status;
+    }
+
+    public function getJustificationFile(): ?string
+    {
+        return $this->justificationFile;
+    }
+
+    // Behavioral Methods
+
+    public function submitJustification(string $fileName): void
+    {
+        if ($this->status->getValue() !== AbsenceStatus::PENDING) {
+            throw new InvalidArgumentException("Can only submit justification for pending absences.");
+        }
+        
+        $this->justificationFile = $fileName;
+    }
+
+    public function approve(): void
+    {
+        if ($this->justificationFile === null) {
+            throw new InvalidArgumentException("Cannot approve an absence without a justification file.");
+        }
+
+        $this->status = new AbsenceStatus(AbsenceStatus::JUSTIFIED);
+    }
+
+    public function reject(): void
+    {
+        if ($this->justificationFile === null) {
+            throw new InvalidArgumentException("Cannot reject an absence without a justification file.");
+        }
+
+        $this->status = new AbsenceStatus(AbsenceStatus::REJECTED);
+    }
 }
