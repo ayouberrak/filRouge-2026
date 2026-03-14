@@ -6,7 +6,9 @@ interface ClassroomRepositoryInterface
 {
     public function findById(int $id);
     public function findAll();
-    public function create(array $data);
-    public function update(int $id, array $data);
-    public function delete(int $id): bool;
+    public function create($data);
+    public function update(int $id, $data);
+    public function delete(int $id);
+
+    public function assignFormateur(int $classroomId, int $formateurId);
 }
