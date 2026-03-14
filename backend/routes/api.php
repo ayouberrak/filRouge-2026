@@ -3,6 +3,7 @@
 use App\Modules\Classroom\Http\Controllers\ClassroomController;
 use App\Modules\User\Http\Controllers\UserController;
 use App\Modules\Squad\Http\Controllers\SquadController;
+use App\Modules\Absence\Http\Controllers\AbsenceController;
 use Illuminate\Support\Facades\Route;
 use App\Modules\User\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
@@ -32,6 +33,13 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/{id}/members', [SquadController::class, 'assignMember']);
             Route::delete('/{id}/members/{userId}', [SquadController::class, 'removeMember']);
         });
+
+        // Absence Routes for Formateur
+        Route::prefix('absences')->group(function () {
+            Route::get('/student/{studentId}', [AbsenceController::class, 'getByStudent']);
+            Route::get('/classroom/{classroomId}', [AbsenceController::class, 'getByClassroom']);
+            Route::post('/create', [AbsenceController::class, 'create']);
+        });
     });
 
 
@@ -58,12 +66,25 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::patch('/ban/{id}', [UserController::class, 'ban']);
         });
 
+        // Absence Routes for Admin
+        Route::prefix('absences')->group(function () {
+            Route::get('/', [AbsenceController::class, 'index']);
+            Route::patch('/{id}/approve', [AbsenceController::class, 'approve']);
+            Route::patch('/{id}/reject', [AbsenceController::class, 'reject']);
+        });
+
     });
 
 
     Route::middleware(['status.active', 'role.student'])->group(function () {
         Route::get('/student/dashboard', function () {
             return response()->json(['message' => 'Welcome Student!']);
+        });
+
+        // Absence Routes for Student
+        Route::prefix('absences')->group(function () {
+            Route::get('/my', [AbsenceController::class, 'myAbsences']);
+            Route::post('/{id}/justify', [AbsenceController::class, 'justify']);
         });
     });
 
