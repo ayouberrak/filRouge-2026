@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Model;
 class ClassroomModel extends Model
 {
     use HasFactory;
+    
+    protected $table = 'classrooms';
 
     protected $fillable = [
         'name',

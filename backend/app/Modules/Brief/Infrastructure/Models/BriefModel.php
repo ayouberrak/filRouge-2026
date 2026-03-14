@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 class BriefModel extends Model
 {
     use HasFactory;
+    protected $table = 'briefs';
 
     protected $fillable = [
         'title',
