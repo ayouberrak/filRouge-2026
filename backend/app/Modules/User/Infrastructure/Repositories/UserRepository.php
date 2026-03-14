@@ -15,7 +15,6 @@ class UserRepository implements UserRepositoryInterface
     {
         if (!$model) return null;
 
-        // Based on the role, instantiate the correct Domain Entity
         switch ($model->role) {
             case 'admin':
                 return new AdminEntity(
