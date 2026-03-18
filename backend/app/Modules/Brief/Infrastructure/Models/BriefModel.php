@@ -17,10 +17,23 @@ class BriefModel extends Model
     protected $fillable = [
         'title',
         'description',
+        'objectives',
         'date_start',
         'date_end',
+        'difficulty',
+        'modality',
+        'status',
+        'tags',
+        'resources',
         'file',
         'formateur_id'
+    ];
+
+    protected $casts = [
+        'tags' => 'array',
+        'resources' => 'array',
+        'date_start' => 'datetime',
+        'date_end' => 'datetime',
     ];
 
     public function formateur()
@@ -30,7 +43,7 @@ class BriefModel extends Model
 
     public function classrooms()
     {
-        return $this->belongsToMany(ClassroomModel::class, 'brief_classroom');
+        return $this->belongsToMany(ClassroomModel::class, 'brief_classroom', 'brief_id', 'classroom_id');
     }
 
     public function deliverables()
