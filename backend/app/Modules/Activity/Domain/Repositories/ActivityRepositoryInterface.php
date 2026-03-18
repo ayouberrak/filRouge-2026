@@ -2,11 +2,13 @@
 
 namespace App\Modules\Activity\Domain\Repositories;
 
+use App\Modules\Activity\Domain\Entities\ActivityEntity;
+
 interface ActivityRepositoryInterface
 {
-    public function findById(int $id);
-    public function findAll();
-    public function create(array $data);
-    public function update(int $id, array $data);
-    public function delete(int $id): bool;
+    public function save(ActivityEntity $activity): ActivityEntity;
+    public function findById(int $id): ?ActivityEntity;
+    public function getByClassroom(int $classroomId): array;
+    public function getByStudent(int $studentId): array;
+    public function assignToStudents(int $activityId, array $studentIds): void;
 }
