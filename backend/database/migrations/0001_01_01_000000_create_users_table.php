@@ -21,8 +21,9 @@ return new class extends Migration
             $table->string('status')->default('active'); // active, inactive, banned
             
             $table->string('speciality')->nullable();
-            
-            $table->integer('points')->default(0)->nullable();
+
+            // total points of student
+            $table->integer('total_points')->default(0)->nullable();
             
             $table->unsignedBigInteger('classroom_id')->nullable();
             $table->unsignedBigInteger('squad_id')->nullable();
