@@ -15,9 +15,11 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->text('description');
-            $table->string('type'); 
-            $table->dateTime('date_start');
-            $table->dateTime('date_end');
+            $table->enum('activity_type', ['live_coding', 'veille', 'workshop', 'quiz']);
+            $table->integer('duration')->default(0);
+            $table->integer('points')->default(0);
+            $table->foreignId('formateur_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('classroom_id')->constrained('classrooms')->cascadeOnDelete();
             $table->timestamps();
         });
     }
