@@ -7,6 +7,9 @@ use App\Modules\Absence\Http\Controllers\AbsenceController;
 use Illuminate\Support\Facades\Route;
 use App\Modules\User\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
+use App\Modules\Brief\Http\Controllers\BriefController; 
+use App\Modules\Livrable\Http\Controllers\LivrableController;
+use App\Modules\Activity\Http\Controllers\ActivityController;
 
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -16,7 +19,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', function (Request $request) {
         return $request->user();
     });
-
 
 
     Route::middleware(['status.active', 'role.formateur'])->group(function () {
@@ -39,6 +41,26 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/student/{studentId}', [AbsenceController::class, 'getByStudent']);
             Route::get('/classroom/{classroomId}', [AbsenceController::class, 'getByClassroom']);
             Route::post('/create', [AbsenceController::class, 'create']);
+        });
+
+        // Brief Routes
+        Route::prefix('briefs')->group(function () {
+            Route::get('/', [BriefController::class, 'index']);
+            Route::get('/{id}', [BriefController::class, 'show']);
+            Route::post('/', [BriefController::class, 'store']);
+            Route::put('/{id}', [BriefController::class, 'update']);
+            Route::post('/{id}/assign-classrooms', [BriefController::class, 'assignClassrooms']);
+        });
+        // Livrable Routes for Formateur
+        Route::prefix('livrables')->group(function () {
+            Route::post('/{id}/reponse', [LivrableController::class, 'addReponse']);
+            Route::get('/{id}', [LivrableController::class, 'show']);
+        });
+
+        // Activity Routes for Formateur
+        Route::prefix('activities')->group(function () {
+            Route::post('/', [ActivityController::class, 'store']);
+            Route::post('/{id}/assign', [ActivityController::class, 'assign']);
         });
     });
 
@@ -85,6 +107,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::prefix('absences')->group(function () {
             Route::get('/my', [AbsenceController::class, 'myAbsences']);
             Route::post('/{id}/justify', [AbsenceController::class, 'justify']);
+        });
+
+        // Activity Routes for Student
+        Route::prefix('activities')->group(function () {
+            Route::get('/me', [ActivityController::class, 'getMyActivities']);
+            Route::get('/classroom/{classroomId}', [ActivityController::class, 'getByClassroom']);
+        });
+        // Livrable Routes for Student
+        Route::prefix('livrables')->group(function () {
+            Route::post('/', [LivrableController::class, 'store']);
         });
     });
 
