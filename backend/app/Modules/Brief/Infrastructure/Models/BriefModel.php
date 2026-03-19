@@ -4,7 +4,7 @@ namespace App\Modules\Brief\Infrastructure\Models;
 
 use App\Modules\User\Infrastructure\Models\UserModel;
 use App\Modules\Classroom\Infrastructure\Models\ClassroomModel;
-use App\Modules\Deliverable\Infrastructure\Models\DeliverableModel;
+use App\Modules\Livrable\Infrastructure\Models\LivrableModel;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -23,6 +23,7 @@ class BriefModel extends Model
         'difficulty',
         'modality',
         'status',
+        'points',
         'tags',
         'resources',
         'file',
@@ -46,8 +47,8 @@ class BriefModel extends Model
         return $this->belongsToMany(ClassroomModel::class, 'brief_classroom', 'brief_id', 'classroom_id');
     }
 
-    public function deliverables()
+    public function livrables()
     {
-        return $this->hasMany(DeliverableModel::class);
+        return $this->hasMany(LivrableModel::class, 'brief_id');
     }
 }

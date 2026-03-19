@@ -11,15 +11,24 @@ class DailyReportModel extends Model
 {
     use HasFactory;
 
+    protected $table = 'daily_reports';
+
     protected $fillable = [
-        'user_id',
+        'formateur_id',
+        'classroom_id',
         'date',
         'absences_count',
-        'brief_status'
+        'brief_status',
+        'note',
     ];
 
-    public function user()
+    public function formateur()
     {
-        return $this->belongsTo(UserModel::class);
+        return $this->belongsTo(UserModel::class, 'formateur_id');
+    }
+
+    public function classroom()
+    {
+        return $this->belongsTo(\App\Modules\Classroom\Infrastructure\Models\ClassroomModel::class, 'classroom_id');
     }
 }
