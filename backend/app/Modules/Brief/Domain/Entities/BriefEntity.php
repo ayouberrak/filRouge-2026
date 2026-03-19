@@ -18,6 +18,7 @@ class BriefEntity
     private DifficultyLevel $difficulty;
     private BriefModality $modality;
     private BriefStatus $status;
+    private int $points;
     private array $tags;
     private array $resources;
     private int $formateurId;
@@ -31,6 +32,7 @@ class BriefEntity
         DifficultyLevel $difficulty,
         BriefModality $modality,
         BriefStatus $status,
+        int $points = 0,
         array $tags,
         array $resources,
         int $formateurId
@@ -43,6 +45,7 @@ class BriefEntity
         $this->difficulty = $difficulty;
         $this->modality = $modality;
         $this->status = $status;
+        $this->points = $points;
         $this->tags = $tags;
         $this->resources = $resources;
         $this->formateurId = $formateurId;
@@ -56,6 +59,7 @@ class BriefEntity
     public function getDifficulty(): DifficultyLevel { return $this->difficulty; }
     public function getModality(): BriefModality { return $this->modality; }
     public function getStatus(): BriefStatus { return $this->status; }
+    public function getPoints(): int { return $this->points; }
     public function getTags(): array { return $this->tags; }
     public function getResources(): array { return $this->resources; }
     public function getFormateurId(): int { return $this->formateurId; }
@@ -72,6 +76,7 @@ class BriefEntity
             'difficulty' => $this->difficulty->getValue(),
             'modality' => $this->modality->getValue(),
             'status' => $this->status->getValue(),
+            'points' => $this->points,
             'tags' => json_encode($this->tags),
             'resources' => json_encode($this->resources),
             'formateur_id' => $this->formateurId

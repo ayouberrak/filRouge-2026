@@ -100,6 +100,7 @@ class BriefRepository implements BriefRepositoryInterface
             new DifficultyLevel($model->difficulty),
             new BriefModality($model->modality),
             new BriefStatus($model->status),
+            $model->points ?? 0,
             $model->tags ?? [],
             $model->resources ?? [],
             $model->formateur_id

@@ -25,6 +25,11 @@ class ActivityController
 
     public function getByClassroom(int $classroomId): JsonResponse
     {
+        $user = auth()->user();
+        if ($user && $user->role === 'student' && $user->classroom_id != $classroomId) {
+            return response()->json(['error' => 'Accès non autorisé à cette classe'], 403);
+        }
+
         $activities = $this->repository->getByClassroom($classroomId);
         return response()->json($activities);
     }

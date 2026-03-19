@@ -5,9 +5,11 @@ namespace App\Modules\Livrable\Http\Controllers;
 use App\Modules\Livrable\Application\UseCases\SubmitLivrableUseCase;
 use App\Modules\Livrable\Application\UseCases\ViewLivrableUseCase;
 use App\Modules\Livrable\Application\UseCases\AddLivrableReponseUseCase;
+use App\Modules\Livrable\Application\UseCases\ValidateLivrableUseCase;
 use App\Modules\Livrable\Http\Requests\SubmitLivrableRequest;
 use App\Modules\Livrable\Http\Requests\AddLivrableReponseRequest;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class LivrableController
 {

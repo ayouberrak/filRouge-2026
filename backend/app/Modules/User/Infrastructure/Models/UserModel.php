@@ -5,7 +5,7 @@ namespace App\Modules\User\Infrastructure\Models;
 use App\Modules\Classroom\Infrastructure\Models\ClassroomModel;
 use App\Modules\Squad\Infrastructure\Models\SquadModel;
 use App\Modules\Brief\Infrastructure\Models\BriefModel;
-use App\Modules\Deliverable\Infrastructure\Models\DeliverableModel;
+use App\Modules\Livrable\Infrastructure\Models\LivrableModel;
 use App\Modules\Absence\Infrastructure\Models\AbsenceModel;
 use App\Modules\Activity\Infrastructure\Models\ActivityModel;
 use App\Modules\Report\Infrastructure\Models\DailyReportModel;
@@ -30,6 +30,7 @@ class UserModel extends Authenticatable
         'status',
         'speciality',
         'points',
+        'total_points',
         'classroom_id',
         'squad_id',
     ];
@@ -67,9 +68,9 @@ class UserModel extends Authenticatable
         return $this->hasMany(BriefModel::class, 'formateur_id');
     }
 
-    public function deliverables()
+    public function livrables()
     {
-        return $this->hasMany(DeliverableModel::class, 'student_id');
+        return $this->hasMany(LivrableModel::class, 'student_id');
     }
 
     public function absences()

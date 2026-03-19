@@ -4,10 +4,26 @@ namespace App\Modules\Report\Application\DTO;
 
 class DailyReportDTO
 {
+    public readonly int $classroomId;
+    public readonly string $date;
+    public readonly int $absencesCount;
+    public readonly string $briefStatus;
+    public readonly int $formateurId;
+    public readonly ?string $note;
+
     public function __construct(
-        public readonly int $user_id,
-        public readonly string $date,
-        public readonly int $absences_count,
-        public readonly string $brief_status
-    ) {}
+        int $classroomId,
+        string $date,
+        int $absencesCount,
+        string $briefStatus,
+        int $formateurId,
+        ?string $note = null
+    ) {
+        $this->classroomId = $classroomId;
+        $this->date = $date;
+        $this->absencesCount = $absencesCount;
+        $this->briefStatus = $briefStatus;
+        $this->formateurId = $formateurId;
+        $this->note = $note;
+    }
 }

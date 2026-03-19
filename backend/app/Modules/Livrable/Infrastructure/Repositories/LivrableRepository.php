@@ -57,6 +57,12 @@ class LivrableRepository implements LivrableRepositoryInterface
         return $this->toResponseEntity($reponseModel);
     }
 
+    public function findResponseById(int $id): ?ReponseLivrableEntity
+    {
+        $model = ReponseLivrableModel::find($id);
+        return $model ? $this->toResponseEntity($model) : null;
+    }
+
     private function toEntity(LivrableModel $model): LivrableEntity
     {
         $responses = $model->relationLoaded('responses')

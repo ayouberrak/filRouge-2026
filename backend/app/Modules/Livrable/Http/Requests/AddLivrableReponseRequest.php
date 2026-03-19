@@ -15,7 +15,7 @@ class AddLivrableReponseRequest extends FormRequest
     {
         return [
             'formateur_id' => 'required|exists:users,id',
-            'status' => 'required|in:validé,invalidé',
+            'status' => 'required|in:VALIDATED,REJECTED',
             'message' => 'required|string',
         ];
     }
