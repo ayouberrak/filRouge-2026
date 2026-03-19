@@ -28,6 +28,9 @@ use App\Modules\Absence\Infrastructure\Repositories\AbsenceRepository;
 use App\Modules\Report\Domain\Repositories\DailyReportRepositoryInterface;
 use App\Modules\Report\Infrastructure\Repositories\DailyReportRepository;
 
+use App\Modules\Marketplace\Domain\Repositories\MarketplaceRepositoryInterface;
+use App\Modules\Marketplace\Infrastructure\Repositories\MarketplaceRepository;
+
 
 class RepositoryServiceProvider extends ServiceProvider
 {
@@ -44,6 +47,7 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(AbsenceRepositoryInterface::class, AbsenceRepository::class);
         $this->app->bind(DailyReportRepositoryInterface::class, DailyReportRepository::class);
         $this->app->bind(ActivityRepositoryInterface::class, ActivityRepository::class);
+        $this->app->bind(MarketplaceRepositoryInterface::class, MarketplaceRepository::class);
     }
 
     /**
