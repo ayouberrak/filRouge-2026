@@ -4,6 +4,9 @@ use App\Modules\Classroom\Http\Controllers\ClassroomController;
 use App\Modules\User\Http\Controllers\UserController;
 use App\Modules\Squad\Http\Controllers\SquadController;
 use App\Modules\Absence\Http\Controllers\AbsenceController;
+use App\Modules\Report\Http\Controllers\DailyReportController;
+use App\Modules\Marketplace\Http\Controllers\MarketplaceController;
+use App\Modules\User\Http\Controllers\AnalyticsController;
 use Illuminate\Support\Facades\Route;
 use App\Modules\User\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
@@ -18,6 +21,12 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/user', function (Request $request) {
         return $request->user();
+    });
+
+    // Shared Brief Routes (Read-only for Students, Full for Formateurs/Admins)
+    Route::prefix('briefs')->group(function () {
+        Route::get('/', [BriefController::class, 'index']);
+        Route::get('/{id}', [BriefController::class, 'show']);
     });
 
 
@@ -45,8 +54,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Brief Routes
         Route::prefix('briefs')->group(function () {
-            Route::get('/', [BriefController::class, 'index']);
-            Route::get('/{id}', [BriefController::class, 'show']);
             Route::post('/', [BriefController::class, 'store']);
             Route::put('/{id}', [BriefController::class, 'update']);
             Route::post('/{id}/assign-classrooms', [BriefController::class, 'assignClassrooms']);
@@ -62,6 +69,11 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/', [ActivityController::class, 'store']);
             Route::post('/{id}/assign', [ActivityController::class, 'assign']);
         });
+
+        // Report Routes for Formateur
+        Route::prefix('reports')->group(function () {
+            Route::post('/', [DailyReportController::class, 'store']);
+        });
     });
 
 
@@ -69,6 +81,20 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/admin/dashboard', function () {
             return response()->json(['message' => 'Welcome Admin!']);
         });
+
+        // Admin Group Tasks (Validation Livrable, View Reports)
+        Route::get('/reports', [DailyReportController::class, 'index']);
+        Route::get('/reports/classroom/{classroomId}', [DailyReportController::class, 'getByClassroom']);
+
+        // Dashboard Stats
+        Route::get('/dashboard/stats', [AnalyticsController::class, 'getStats']);
+
+        // Marketplace Routes for Admin
+        Route::prefix('admin/marketplace')->group(function () {
+            Route::get('/orders', [MarketplaceController::class, 'indexOrders']);
+            Route::post('/products', [MarketplaceController::class, 'storeProduct']);
+        });
+
 
         // classRoom subRoute
         Route::prefix('classrooms')->group(function () { 
@@ -118,6 +144,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::prefix('livrables')->group(function () {
             Route::post('/', [LivrableController::class, 'store']);
         });
+
+        // Marketplace Routes for Student
+        Route::prefix('marketplace')->group(function () {
+            Route::get('/products', [MarketplaceController::class, 'indexProducts']);
+            Route::post('/purchase/{id}', [MarketplaceController::class, 'purchase']);
+        });
+
+        // Leaderboard
+        Route::get('/leaderboard', [AnalyticsController::class, 'getLeaderboard']);
     });
 
 

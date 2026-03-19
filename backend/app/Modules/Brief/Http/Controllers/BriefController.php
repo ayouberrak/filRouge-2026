@@ -8,6 +8,12 @@ use App\Modules\Brief\Application\UseCases\UpdateBrief;
 use App\Modules\Brief\Application\UseCases\GetBrief;
 use App\Modules\Brief\Application\UseCases\GetAllBriefs;
 use App\Modules\Brief\Application\UseCases\AssignBriefToClassrooms;
+use App\Modules\Brief\Domain\Repositories\BriefRepositoryInterface;
+use App\Modules\Brief\Domain\ValueObjects\BriefTitle;
+use App\Modules\Brief\Domain\ValueObjects\BriefDatePeriod;
+use App\Modules\Brief\Domain\ValueObjects\DifficultyLevel;
+use App\Modules\Brief\Domain\ValueObjects\BriefModality;
+use App\Modules\Brief\Domain\ValueObjects\BriefStatus;
 use App\Modules\Brief\Http\Requests\CreateBriefRequest;
 use App\Modules\Brief\Http\Requests\AssignClassroomsRequest;
 use Illuminate\Http\Request;
@@ -20,12 +26,20 @@ class BriefController
         private UpdateBrief $updateBrief,
         private GetBrief $getBrief,
         private GetAllBriefs $getAllBriefs,
-        private AssignBriefToClassrooms $assignBriefToClassrooms
+        private AssignBriefToClassrooms $assignBriefToClassrooms,
+        private BriefRepositoryInterface $repository
     ) {}
 
     public function index(): JsonResponse
     {
-        $briefs = $this->getAllBriefs->execute();
+        $user = auth()->user();
+        
+        if ($user && $user->role === 'student') {
+            $briefs = $this->repository->findByClassroomId($user->classroom_id);
+        } else {
+            $briefs = $this->getAllBriefs->execute();
+        }
+
         return response()->json(['data' => array_map(fn($b) => $b->toArray(), $briefs)]);
     }
 
@@ -33,6 +47,15 @@ class BriefController
     {
         $brief = $this->getBrief->execute($id);
         if (!$brief) return response()->json(['message' => 'Brief not found'], 404);
+
+        $user = auth()->user();
+        if ($user && $user->role === 'student') {
+            $classrooms = \App\Modules\Brief\Infrastructure\Models\BriefModel::find($id)->classrooms->pluck('id')->toArray();
+            if (!in_array($user->classroom_id, $classrooms)) {
+                return response()->json(['message' => 'Unauthorized access to this brief'], 403);
+            }
+        }
+
         return response()->json(['data' => $brief->toArray()]);
     }
 
