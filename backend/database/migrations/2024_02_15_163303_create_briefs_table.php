@@ -21,6 +21,7 @@ return new class extends Migration
             $table->enum('difficulty', ['EASY', 'MEDIUM', 'HARD'])->default('EASY');
             $table->enum('modality', ['INDIVIDUAL', 'GROUP'])->default('INDIVIDUAL');
             $table->enum('status', ['DRAFT', 'PUBLISHED', 'IN_PROGRESS', 'COMPLETED', 'ARCHIVED'])->default('DRAFT');
+            $table->integer('points')->default(0);
             $table->json('tags')->nullable();
             $table->json('resources')->nullable();
             $table->string('file')->nullable();
