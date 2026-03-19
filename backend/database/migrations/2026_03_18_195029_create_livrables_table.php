@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('student_id')->nullable()->constrained('users')->cascadeOnDelete();
             $table->foreignId('squad_id')->nullable()->constrained('squads')->cascadeOnDelete();
             $table->string('link');
-            $table->enum('status', ['soumis', 'validé', 'invalidé'])->default('soumis');
+            $table->enum('status', ['SUBMITTED', 'VALIDATED', 'REJECTED'])->default('SUBMITTED');
             $table->timestamps();
         });
     }
