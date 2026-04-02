@@ -10,9 +10,10 @@ use App\Modules\User\Http\Controllers\AnalyticsController;
 use Illuminate\Support\Facades\Route;
 use App\Modules\User\Http\Controllers\AuthController;
 use Illuminate\Http\Request;
-use App\Modules\Brief\Http\Controllers\BriefController; 
+use App\Modules\Brief\Http\Controllers\BriefController;
 use App\Modules\Livrable\Http\Controllers\LivrableController;
 use App\Modules\Activity\Http\Controllers\ActivityController;
+use App\Modules\Quiz\Http\Controllers\QuizController;
 
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -74,6 +75,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::prefix('reports')->group(function () {
             Route::post('/', [DailyReportController::class, 'store']);
         });
+
+        // Quiz Routes for Formateur
+        Route::prefix('quizzes')->group(function () {
+            Route::post('/sessions', [QuizController::class, 'createSession']);
+            Route::post('/sessions/{id}/start', [QuizController::class, 'startSession']);
+            Route::get('/briefs/{briefId}/validate', [QuizController::class, 'validateBriefCompletion']);
+        });
     });
 
 
@@ -97,7 +105,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 
         // classRoom subRoute
-        Route::prefix('classrooms')->group(function () { 
+        Route::prefix('classrooms')->group(function () {
             Route::get('/', [ClassroomController::class, 'index']);
             Route::post('/create', [ClassroomController::class, 'create']);
             Route::get('/{id}', [ClassroomController::class, 'show']);
@@ -149,6 +157,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::prefix('marketplace')->group(function () {
             Route::get('/products', [MarketplaceController::class, 'indexProducts']);
             Route::post('/purchase/{id}', [MarketplaceController::class, 'purchase']);
+        });
+
+        // Quiz Routes for Student
+        Route::prefix('quizzes')->group(function () {
+            Route::post('/responses', [QuizController::class, 'submitResponse']);
+            Route::get('/briefs/{briefId}/validate', [QuizController::class, 'validateBriefCompletion']);
         });
 
         // Leaderboard
