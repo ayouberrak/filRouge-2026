@@ -31,6 +31,9 @@ use App\Modules\Report\Infrastructure\Repositories\DailyReportRepository;
 use App\Modules\Marketplace\Domain\Repositories\MarketplaceRepositoryInterface;
 use App\Modules\Marketplace\Infrastructure\Repositories\MarketplaceRepository;
 
+use App\Modules\Quiz\Domain\Repositories\QuizRepositoryInterface;
+use App\Modules\Quiz\Infrastructure\Repositories\QuizRepository;
+
 
 class RepositoryServiceProvider extends ServiceProvider
 {
@@ -48,6 +51,7 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(DailyReportRepositoryInterface::class, DailyReportRepository::class);
         $this->app->bind(ActivityRepositoryInterface::class, ActivityRepository::class);
         $this->app->bind(MarketplaceRepositoryInterface::class, MarketplaceRepository::class);
+        $this->app->bind(QuizRepositoryInterface::class, QuizRepository::class);
     }
 
     /**
