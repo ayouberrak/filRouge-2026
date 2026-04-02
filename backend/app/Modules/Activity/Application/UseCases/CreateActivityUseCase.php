@@ -6,6 +6,7 @@ use App\Modules\Activity\Domain\Entities\ActivityEntity;
 use App\Modules\Activity\Domain\Repositories\ActivityRepositoryInterface;
 use App\Modules\Activity\Domain\ValueObjects\ActivityType;
 use App\Modules\Activity\Application\DTO\CreateActivityDTO;
+use App\Modules\Activity\Domain\Events\ActivityAssignedToStudents;
 
 class CreateActivityUseCase
 {
@@ -33,6 +34,9 @@ class CreateActivityUseCase
 
         if (!empty($dto->studentIds)) {
             $this->repository->assignToStudents($savedActivity->getId(), $dto->studentIds);
+            
+            // Dispatch notification event
+            ActivityAssignedToStudents::dispatch($savedActivity->getId(), $dto->studentIds);
         }
 
         return $savedActivity;
