@@ -50,7 +50,7 @@ class UserModel extends Authenticatable
 
     public function classroom()
     {
-        return $this->belongsTo(ClassroomModel::class);
+        return $this->belongsTo(ClassroomModel::class, 'classroom_id');
     }
 
     public function managedClassrooms()
