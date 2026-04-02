@@ -24,6 +24,11 @@ class CreateDailyReportUseCase
             $dto->note
         );
 
-        return $this->repository->save($report);
+        $savedReport = $this->repository->save($report);
+
+        // Dispatch notification event
+        \App\Modules\Report\Domain\Events\DailyReportSubmitted::dispatch($savedReport->getId());
+
+        return $savedReport;
     }
 }
