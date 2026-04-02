@@ -21,5 +21,8 @@ class AssignBriefToClassrooms
         }
 
         $this->briefRepository->assignClassrooms($briefId, $classroomIds);
+
+        // Dispatch notification event
+        \App\Modules\Brief\Domain\Events\BriefAssignedToClassrooms::dispatch($briefId, $classroomIds);
     }
 }
