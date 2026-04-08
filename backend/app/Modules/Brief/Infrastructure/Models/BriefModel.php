@@ -16,23 +16,34 @@ class BriefModel extends Model
 
     protected $fillable = [
         'title',
+        'image_url',
         'description',
+        'context',
         'objectives',
         'date_start',
         'date_end',
         'difficulty',
         'modality',
+        'pedagogical_modalities',
+        'evaluation_modalities',
         'status',
         'points',
         'tags',
         'resources',
+        'deliverables',
+        'performance_criteria',
+        'target_competencies',
         'file',
         'formateur_id'
     ];
 
     protected $casts = [
+        'objectives' => 'array',
         'tags' => 'array',
         'resources' => 'array',
+        'deliverables' => 'array',
+        'performance_criteria' => 'array',
+        'target_competencies' => 'array',
         'date_start' => 'datetime',
         'date_end' => 'datetime',
     ];
@@ -50,5 +61,10 @@ class BriefModel extends Model
     public function livrables()
     {
         return $this->hasMany(LivrableModel::class, 'brief_id');
+    }
+
+    public function quizSessions()
+    {
+        return $this->hasMany(\App\Modules\Quiz\Infrastructure\Models\QuizSessionModel::class, 'brief_id');
     }
 }
