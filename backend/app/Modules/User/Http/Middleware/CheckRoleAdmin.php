@@ -15,7 +15,14 @@ class CheckRoleAdmin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->user() || $request->user()->role !== 'admin') {
+        $user = $request->user();
+        $role = $user ? strtolower($user->role) : null;
+
+        if (!$user || $role !== 'admin') {
+            \Illuminate\Support\Facades\Log::warning("Unauthorized admin access attempt", [
+                'user_id' => $user?->id,
+                'role' => $user?->role
+            ]);
             return response()->json(['message' => 'Unauthorized. Admin access required.'], 403);
         }
 
