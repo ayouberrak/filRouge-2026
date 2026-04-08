@@ -16,6 +16,7 @@ class LivrableModel extends Model
         'student_id',
         'squad_id',
         'link',
+        'message',
         'status',
     ];
 
