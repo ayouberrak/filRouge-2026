@@ -71,6 +71,7 @@ class QuizRepository implements QuizRepositoryInterface
         $model = QuizSessionModel::with('questions')
             ->where('brief_id', $briefId)
             ->where('status', 'ACTIVE')
+            ->latest()
             ->first();
         
         return $model ? $this->toSessionEntity($model) : null;
