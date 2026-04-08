@@ -27,10 +27,10 @@ class CreateQuizSessionRequest extends FormRequest
             'timer_minutes' => 'required|integer|min:1',
             'passing_score' => 'required|integer|min:0|max:100',
             'questions' => 'required|array|min:1',
-            'questions.*.type' => 'required|string|in:multiple_choice,code',
+            'questions.*.type' => 'required|string|in:multiple_choice,code,open_ended',
             'questions.*.content' => 'required|string',
             'questions.*.correct_answer' => 'nullable|string',
-            'questions.*.context_data' => 'nullable|string',
+            'questions.*.context_data' => 'nullable',
             'questions.*.points' => 'nullable|integer|min:1',
         ];
     }
