@@ -34,6 +34,9 @@ use App\Modules\Marketplace\Infrastructure\Repositories\MarketplaceRepository;
 use App\Modules\Quiz\Domain\Repositories\QuizRepositoryInterface;
 use App\Modules\Quiz\Infrastructure\Repositories\QuizRepository;
 
+use App\Modules\Chat\Domain\Repositories\ChatRepositoryInterface;
+use App\Modules\Chat\Infrastructure\Repositories\ChatRepository;
+
 
 class RepositoryServiceProvider extends ServiceProvider
 {
@@ -52,6 +55,7 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(ActivityRepositoryInterface::class, ActivityRepository::class);
         $this->app->bind(MarketplaceRepositoryInterface::class, MarketplaceRepository::class);
         $this->app->bind(QuizRepositoryInterface::class, QuizRepository::class);
+        $this->app->bind(ChatRepositoryInterface::class, ChatRepository::class);
     }
 
     /**
