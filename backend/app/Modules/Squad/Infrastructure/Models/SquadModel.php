@@ -25,6 +25,6 @@ class SquadModel extends Model
 
     public function members()
     {
-        return $this->hasMany(UserModel::class);
+        return $this->hasMany(UserModel::class, 'squad_id');
     }
 }
