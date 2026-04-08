@@ -19,7 +19,9 @@ class AbsenceRepository implements AbsenceRepositoryInterface
             $model->date,
             $model->duration,
             new AbsenceStatus($model->status),
-            $model->justification_file
+            $model->justification_file,
+            $model->student ? ($model->student->first_name . ' ' . $model->student->last_name) : null,
+            $model->student?->classroom?->name
         );
     }
 
@@ -30,7 +32,7 @@ class AbsenceRepository implements AbsenceRepositoryInterface
 
     public function findAll(): array
     { 
-        $models = AbsenceModel::all();
+        $models = AbsenceModel::with('student.classroom')->get();
         $entities = [];
         foreach ($models as $model) {
             if ($model instanceof AbsenceModel) {
@@ -42,8 +44,8 @@ class AbsenceRepository implements AbsenceRepositoryInterface
 
     public function create(array $data): ?AbsenceEntity
     { 
-        $model = AbsenceModel::create($data);
-        return $this->mapToDomain($model); 
+            $model = AbsenceModel::create($data);
+            return $this->mapToDomain($model); 
     }
 
     public function update(int $id, array $data): ?AbsenceEntity
@@ -64,7 +66,7 @@ class AbsenceRepository implements AbsenceRepositoryInterface
 
     public function findByStudentId(int $studentId): array
     {
-        $models = AbsenceModel::where('student_id', $studentId)->get();
+        $models = AbsenceModel::with('student.classroom')->where('student_id', $studentId)->get();
         $entities = [];
         foreach ($models as $model) {
             if ($model instanceof AbsenceModel) {
@@ -74,11 +76,17 @@ class AbsenceRepository implements AbsenceRepositoryInterface
         return $entities;
     }
 
-    public function findByClassroomId(int $classroomId): array
+    public function findByClassroomId(int $classroomId, ?string $month = null): array
     {
-        $models = AbsenceModel::whereHas('student', function ($query) use ($classroomId) {
+        $query = AbsenceModel::whereHas('student', function ($query) use ($classroomId) {
             $query->where('classroom_id', $classroomId);
-        })->get();
+        });
+
+        if ($month) {
+            $query->where('date', 'like', $month . '%');
+        }
+
+        $models = $query->get();
 
         $entities = [];
         foreach ($models as $model) {
