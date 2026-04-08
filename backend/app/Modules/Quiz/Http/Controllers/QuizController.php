@@ -10,10 +10,13 @@ use App\Modules\Quiz\Application\UseCases\CreateQuizSessionUseCase;
 use App\Modules\Quiz\Application\UseCases\StartQuizSessionUseCase;
 use App\Modules\Quiz\Application\UseCases\SubmitQuizResponseUseCase;
 use App\Modules\Quiz\Application\UseCases\ValidateBriefCompletionUseCase;
+use App\Modules\Quiz\Application\UseCases\GetEvaluatedResponsesUseCase;
+use App\Modules\Quiz\Application\UseCases\ManualGradeQuizResponseUseCase;
 use App\Modules\Quiz\Application\DTO\CreateQuizSessionDTO;
 use App\Modules\Quiz\Application\DTO\SubmitQuizResponseDTO;
 use App\Modules\Quiz\Http\Requests\CreateQuizSessionRequest;
 use App\Modules\Quiz\Http\Requests\SubmitQuizResponseRequest;
+use App\Modules\Quiz\Http\Requests\GradeQuizResponseRequest;
 use Exception;
 
 class QuizController
@@ -22,7 +25,9 @@ class QuizController
         private CreateQuizSessionUseCase $createQuizSessionUseCase,
         private StartQuizSessionUseCase $startQuizSessionUseCase,
         private SubmitQuizResponseUseCase $submitQuizResponseUseCase,
-        private ValidateBriefCompletionUseCase $validateBriefCompletionUseCase
+        private ValidateBriefCompletionUseCase $validateBriefCompletionUseCase,
+        private GetEvaluatedResponsesUseCase $getEvaluatedResponsesUseCase,
+        private ManualGradeQuizResponseUseCase $manualGradeQuizResponseUseCase
     ) {}
 
     /**
@@ -32,7 +37,53 @@ class QuizController
     {
         try {
             $validated = $request->validated();
-            
+
+            // ── Upsert: si une session existe déjà pour ce brief, la remplacer ──
+            $existingSession = \App\Modules\Quiz\Infrastructure\Models\QuizSessionModel
+                ::where('brief_id', $validated['brief_id'])
+                ->latest()
+                ->first();
+
+            if ($existingSession) {
+                // Récupérer les IDs des questions existantes
+                $questionIds = \App\Modules\Quiz\Infrastructure\Models\QuestionModel
+                    ::where('quiz_session_id', $existingSession->id)
+                    ->pluck('id');
+
+                // Supprimer les réponses d'étudiants liées
+                \App\Modules\Quiz\Infrastructure\Models\StudentResponseModel
+                    ::whereIn('question_id', $questionIds)->delete();
+
+                // Supprimer les anciennes questions
+                \App\Modules\Quiz\Infrastructure\Models\QuestionModel
+                    ::whereIn('id', $questionIds)->delete();
+
+                // Recréer les questions
+                foreach ($validated['questions'] as $qData) {
+                    $contextData = $qData['context_data'] ?? null;
+                    if (is_string($contextData)) {
+                        $contextData = json_decode($contextData, true);
+                    }
+                    \App\Modules\Quiz\Infrastructure\Models\QuestionModel::create([
+                        'quiz_session_id' => $existingSession->id,
+                        'type'            => $qData['type'],
+                        'content'         => $qData['content'],
+                        'correct_answer'  => $qData['correct_answer'] ?? null,
+                        'context_data'    => $contextData,
+                        'points'          => $qData['points'] ?? 10,
+                    ]);
+                }
+
+                return response()->json([
+                    'message' => 'Quiz session updated successfully',
+                    'data'    => [
+                        'id'       => $existingSession->id,
+                        'brief_id' => $existingSession->brief_id,
+                        'status'   => $existingSession->status,
+                    ]
+                ], 200);
+            }
+
             $dto = new CreateQuizSessionDTO(
                 $validated['brief_id'],
                 Auth::id(),
@@ -46,12 +97,12 @@ class QuizController
             return response()->json([
                 'message' => 'Quiz session created successfully',
                 'data' => [
-                    'id' => $session->getId(),
+                    'id'       => $session->getId(),
                     'brief_id' => $session->getBriefId(),
-                    'status' => $session->getStatus()->getValue()
+                    'status'   => $session->getStatus()->getValue()
                 ]
             ], 201);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
@@ -59,10 +110,10 @@ class QuizController
     /**
      * Start a quiz session (Formateur or System)
      */
-    public function startSession(Request $request, int $id): JsonResponse
+    public function startSession(Request $request, int $sessionId): JsonResponse
     {
         try {
-            $session = $this->startQuizSessionUseCase->execute($id);
+            $session = $this->startQuizSessionUseCase->execute($sessionId);
 
             return response()->json([
                 'message' => 'Quiz session started successfully',
@@ -72,7 +123,7 @@ class QuizController
                     'start_at' => $session->getStartedAt()?->format('Y-m-d H:i:s')
                 ]
             ], 200);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
@@ -102,7 +153,7 @@ class QuizController
                     'feedback' => $response->getAiFeedback()
                 ]
             ], 200);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
@@ -113,16 +164,118 @@ class QuizController
     public function validateBriefCompletion(Request $request, int $briefId): JsonResponse
     {
         try {
-            // S'il s'agit d'une vérification formateur sur un étudiant précis ou par défaut l'étudiant lui-même
-            $studentId = $request->input('student_id', Auth::id());
+            $studentId = $request->input('student_id') ?? Auth::id();
             
-            $status = $this->validateBriefCompletionUseCase->execute($briefId, $studentId);
+            if (!$briefId || !$studentId) {
+                return response()->json(['error' => 'Brief ID or Student ID is missing'], 400);
+            }
+            
+            $status = $this->validateBriefCompletionUseCase->execute($briefId, (int)$studentId);
 
             return response()->json([
                 'message' => 'Brief completion evaluation retrieved',
                 'status' => $status
             ], 200);
-        } catch (Exception $e) {
+        } catch (\Throwable $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Get the active quiz session for a specific brief
+     */
+    public function getSessionByBrief(int $briefId): JsonResponse
+    {
+        try {
+            $session = \App\Modules\Quiz\Infrastructure\Models\QuizSessionModel::where('brief_id', $briefId)
+                ->orderByRaw("FIELD(status, 'ACTIVE') DESC")
+                ->latest()
+                ->first();
+
+            if (!$session) {
+                return response()->json(['error' => 'Aucune session de quiz active pour ce brief'], 404);
+            }
+
+            return response()->json([
+                'data' => [
+                    'id' => $session->id,
+                    'status' => $session->status,
+                    'timer_minutes' => $session->timer_minutes
+                ]
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Get all questions for a specific quiz session
+     */
+    public function getQuestions(int $sessionId): JsonResponse
+    {
+        try {
+            $questions = \App\Modules\Quiz\Infrastructure\Models\QuestionModel::where('quiz_session_id', $sessionId)
+                ->get()
+                ->map(function($q) {
+                    $contextData = is_string($q->context_data)
+                        ? json_decode($q->context_data, true)
+                        : ($q->context_data ?? []);
+
+                    return [
+                        'id'           => $q->id,
+                        'content'      => $q->content,
+                        'type'         => $q->type,
+                        'points'       => $q->points,
+                        'options'      => $contextData['options'] ?? [],
+                        'context_data' => $contextData,
+                    ];
+                });
+
+            return response()->json([
+                'data' => $questions
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Get evaluated responses for a student (Formateur only)
+     */
+    public function getStudentResponses(int $sessionId, int $studentId): JsonResponse
+    {
+        try {
+            $responses = $this->getEvaluatedResponsesUseCase->execute($sessionId, $studentId);
+            return response()->json(['data' => $responses]);
+        } catch (\Throwable $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * Manually grade a quiz response (Formateur only)
+     */
+    public function gradeResponse(GradeQuizResponseRequest $request, int $responseId): JsonResponse
+    {
+        try {
+            $validated = $request->validated();
+            
+            $response = $this->manualGradeQuizResponseUseCase->execute(
+                $responseId,
+                $validated['score'],
+                $validated['ai_feedback']
+            );
+
+            return response()->json([
+                'message' => 'Response graded manually successfully',
+                'data' => [
+                    'id' => $response->id,
+                    'score' => $response->score,
+                    'is_correct' => $response->is_correct,
+                    'ai_feedback' => $response->ai_feedback
+                ]
+            ]);
+        } catch (\Throwable $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
     }
