@@ -11,4 +11,5 @@ interface LivrableRepositoryInterface
     public function findById(int $id): ?LivrableEntity;
     public function saveResponse(ReponseLivrableEntity $reponse): ReponseLivrableEntity;
     public function findResponseById(int $id): ?ReponseLivrableEntity;
+    public function findByBriefId(int $briefId): array;
 }
