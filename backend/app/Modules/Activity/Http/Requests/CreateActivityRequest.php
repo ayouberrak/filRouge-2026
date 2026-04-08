@@ -18,11 +18,18 @@ class CreateActivityRequest extends FormRequest
             'title' => 'required|string',
             'description' => 'required|string',
             'type' => 'required|string|in:live_coding,veille,workshop,quiz',
-            'duration' => 'required|integer|min:1',
+            'duration' => 'required|string',
+            'duration_minutes' => 'required|integer|min:1',
+            'scheduled_at' => 'nullable|date',
             'points' => 'required|integer|min:1',
             'classroom_id' => 'required|exists:classrooms,id',
             'student_ids' => 'nullable|array',
             'student_ids.*' => 'exists:users,id',
+            'objectives' => 'nullable|string',
+            'context' => 'nullable|string',
+            'exploration_points' => 'nullable',
+            'work_rule' => 'nullable|string',
+            'resources' => 'nullable|string',
         ];
     }
 
@@ -33,10 +40,17 @@ class CreateActivityRequest extends FormRequest
             $this->validated('description'),
             $this->validated('type'),
             $this->validated('duration'),
+            (int)$this->validated('duration_minutes'),
             $this->validated('points'),
             $this->user()->id,
             $this->validated('classroom_id'),
-            $this->validated('student_ids') ?? []
+            $this->validated('student_ids') ?? [],
+            $this->validated('scheduled_at'),
+            $this->validated('objectives'),
+            $this->validated('context'),
+            $this->validated('exploration_points'),
+            $this->validated('work_rule'),
+            $this->validated('resources')
         );
     }
 }
