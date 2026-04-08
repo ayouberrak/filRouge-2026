@@ -29,7 +29,10 @@ class SubmitLivrableUseCase
             $dto->studentId,
             $dto->squadId,
             $dto->link,
-            new LivrableStatus('soumis')
+            new LivrableStatus(LivrableStatus::SUBMITTED),
+            [],
+            null,
+            $dto->message
         );
 
         return $this->repository->save($livrable);
