@@ -30,6 +30,12 @@ class DailyReportController
     public function getByClassroom(int $classroomId): JsonResponse
     {
         $reports = $this->repository->getByClassroom($classroomId);
-        return response()->json($reports);
+        return response()->json(['data' => $reports]);
+    }
+
+    public function getStats(int $classroomId): JsonResponse
+    {
+        $stats = $this->repository->getStats($classroomId);
+        return response()->json(['data' => $stats]);
     }
 }
