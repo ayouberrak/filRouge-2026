@@ -18,8 +18,18 @@ class DailyReportModel extends Model
         'classroom_id',
         'date',
         'absences_count',
+        'tardies_count',
         'brief_status',
+        'technical_topics',
+        'workshops_done',
+        'class_mood',
+        'objectives_met',
         'note',
+    ];
+
+    protected $casts = [
+        'objectives_met' => 'boolean',
+        'date' => 'date',
     ];
 
     public function formateur()
