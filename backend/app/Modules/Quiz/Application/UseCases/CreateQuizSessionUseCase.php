@@ -12,13 +12,18 @@ class CreateQuizSessionUseCase
     {
         $questions = [];
         foreach ($dto->getQuestions() as $qData) {
+            $contextData = $qData['context_data'] ?? null;
+            if (is_string($contextData)) {
+                $contextData = json_decode($contextData, true);
+            }
+
             $questions[] = new \App\Modules\Quiz\Domain\Entities\QuestionEntity(
                 null,
                 null, // L'ID de session sera défini lors du save()
                 new \App\Modules\Quiz\Domain\ValueObjects\QuestionType($qData['type']),
                 $qData['content'],
                 $qData['correct_answer'] ?? null,
-                $qData['context_data'] ?? null,
+                $contextData,
                 $qData['points'] ?? 10
             );
         }
