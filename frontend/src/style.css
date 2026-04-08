@@ -3,9 +3,77 @@
 @tailwind utilities;
 
 :root {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  /* Nadi Pro Palette - GitHub Modern Fusion */
+  --bg-main: #0d1117; 
+  --bg-card: #161b22;
+  --bg-card-hover: #21262d;
+  --border-subtle: #30363d;
+  
+  --nadi-indigo: #8b5cf6;
+  --nadi-blue: #388bfd;
+  --nadi-green: #3fb950;
+  --nadi-amber: #d29922;
+  --nadi-red: #f85149;
+  
+  --text-main: #c9d1d9;
+  --text-bright: #f0f6fc;
+  --text-dim: #8b949e;
+  
+  --font-inter: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Nadi Glow Effects */
+  --glow-indigo: 0 0 20px rgba(139, 92, 246, 0.15);
+  --glow-blue: 0 0 20px rgba(56, 139, 253, 0.15);
+  --glow-green: 0 0 20px rgba(63, 185, 80, 0.15);
 }
 
-body {
-  @apply bg-slate-950 text-slate-200 min-h-screen;
+@layer base {
+  body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    font-family: var(--font-inter);
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.01em;
+  }
+
+  /* Custom Scrollbar Elite */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 10px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+}
+
+@layer components {
+  /* Nadi Glass Cards */
+  .nadi-card {
+    @apply bg-[#161b22] border border-[#30363d] rounded-xl transition-all duration-300;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  }
+  
+  .nadi-card:hover {
+    @apply border-[#484f58] translate-y-[-2px];
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Glow Classes */
+  .glow-indigo { box-shadow: var(--glow-indigo); }
+  .glow-blue { box-shadow: var(--glow-blue); }
+  .glow-green { box-shadow: var(--glow-green); }
+
+  /* Data Typography */
+  .data-val {
+    font-family: var(--font-mono);
+    @apply tracking-tight;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-nadi-in {
+  animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
