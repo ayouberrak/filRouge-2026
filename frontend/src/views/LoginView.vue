@@ -63,8 +63,8 @@ import { useRouter } from 'vue-router';
 import api from '../services/api';
 
 const router = useRouter();
-const email = ref('admin@admin.com');
-const password = ref('password123');
+const email = ref('admin@yc.com');
+const password = ref('password');
 const error = ref('');
 const loading = ref(false);
 
@@ -80,9 +80,17 @@ const handleLogin = async () => {
         localStorage.setItem('auth_token', response.data.access_token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
         
-        router.push('/dashboard');
+        // Redirection intelligente selon le rôle
+        const role = response.data.user.role;
+        if (role === 'formateur') {
+            router.push('/teacher/dashboard');
+        } else if (role === 'admin') {
+            router.push('/admin/dashboard');
+        } else {
+            router.push('/student/dashboard');
+        }
     } catch (err) {
-        error.value = err.response?.data?.message || 'Une erreur est survenue lors de la connexion.';
+        error.value = err.response?.data?.message || 'Une erreur est survenue lors de la connexion. Vérifiez que le serveur backend est démarré.';
     } finally {
         loading.value = false;
     }
