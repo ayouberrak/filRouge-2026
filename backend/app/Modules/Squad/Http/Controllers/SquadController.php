@@ -6,6 +6,7 @@ use App\Modules\Squad\Application\UseCases\CreateSquad;
 use App\Modules\Squad\Application\UseCases\AssignMemberToSquad;
 use App\Modules\Squad\Application\UseCases\RemoveMemberFromSquad;
 use App\Modules\Squad\Application\UseCases\GetSquad;
+use App\Modules\Squad\Application\UseCases\DeleteSquad;
 use App\Modules\Squad\Application\UseCases\GetAllSquads;
 use App\Modules\Squad\Http\Requests\CreateSquadRequest;
 use App\Modules\Squad\Http\Requests\AssignMemberRequest;
@@ -18,12 +19,14 @@ class SquadController
         private AssignMemberToSquad $assignMemberToSquadUseCase,
         private RemoveMemberFromSquad $removeMemberFromSquadUseCase,
         private GetSquad $getSquadUseCase,
-        private GetAllSquads $getAllSquadsUseCase
+        private GetAllSquads $getAllSquadsUseCase,
+        private DeleteSquad $deleteSquadUseCase
     ) {}
 
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
-        $squads = $this->getAllSquadsUseCase->execute();
+        $classroomId = $request->query('classroom_id');
+        $squads = $this->getAllSquadsUseCase->execute($classroomId ? (int)$classroomId : null);
         return response()->json([
             'squads' => SquadResource::collection($squads)
         ]);
@@ -61,5 +64,23 @@ class SquadController
         return response()->json([
             'message' => 'Member removed successfully'
         ]);
+    }
+
+    public function delete(int $id)
+    {
+        $this->deleteSquadUseCase->execute($id);
+        return response()->json([
+            'message' => 'Squad dissolved successfully'
+        ]);
+    }
+
+    public function mySquad(\Illuminate\Http\Request $request)
+    {
+        $user = $request->user();
+        if (!$user->squad_id) {
+            return response()->json(['data' => []]);
+        }
+        $squad = $this->getSquadUseCase->execute($user->squad_id);
+        return new SquadResource($squad);
     }
 }
