@@ -11,16 +11,20 @@ class SubmitQuizResponseUseCase
 {
     public function __construct(
         private QuizRepositoryInterface $quizRepository,
-        private MCPClient $aiClient
+        private MCPClient $aiClient,
+        private \App\Modules\Brief\Application\UseCases\AwardPointsForBriefCompletionUseCase $awardPointsUseCase
     ) {}
 
     public function execute(SubmitQuizResponseDTO $dto): ResponseEntity
     {
         // 1. Trouver le brief concerné et vérifier l'existence d'une session active
         $briefId = $this->findBriefIdByQuestionId($dto->getQuestionId());
+        \Illuminate\Support\Facades\Log::info("QuizSubmission: Processing student {$dto->getStudentId()} for brief {$briefId}");
+        
         $session = $this->quizRepository->findActiveSessionByBriefId($briefId);
 
         if (!$session) {
+            \Illuminate\Support\Facades\Log::warning("QuizSubmission: No active session found for brief {$briefId}");
             throw new \Exception("Aucune session active ou en cours de validation n'a été trouvée pour répondre à cette question.");
         }
 
@@ -42,18 +46,40 @@ class SubmitQuizResponseUseCase
         $isCorrect = false;
         $feedback = "";
 
-        // Cas A : QCM simple (Validation stricte)
+        // Cas A : QCM simple (Validation stricte mais robuste)
         if ($question->getType()->getValue() === 'multiple_choice') {
-            $isCorrect = (trim(strtolower($dto->getResponseText())) === trim(strtolower((string)$question->getCorrectAnswer())));
+            $studentAnswer = trim(strtolower($dto->getResponseText()));
+            $targetAnswer = trim(strtolower((string)$question->getCorrectAnswer()));
+            
+            // 1. Direct match (Normalized)
+            $isCorrect = ($studentAnswer === $targetAnswer);
+
+            // 2. Fallback: If target is numeric (index), check against options
+            if (!$isCorrect && is_numeric($targetAnswer)) {
+                $options = $question->getContextData()['options'] ?? [];
+                $index = (int)$targetAnswer;
+                if (isset($options[$index])) {
+                    $isCorrect = ($studentAnswer === trim(strtolower((string)$options[$index])));
+                }
+            }
+
             $score = $isCorrect ? 100 : 0;
             $feedback = $isCorrect ? "Bonne réponse !" : "Mauvaise réponse. La réponse attendue était : " . $question->getCorrectAnswer();
         } 
-        // Cas B : Simulation de Code (Évaluation IA Gemini)
+        // Cas B : Question ouverte / Mise en situation — Évaluation IA immédiate
         else {
-            $aiResult = $this->aiClient->evaluateCode($question->getContent(), $dto->getResponseText());
-            $score = $aiResult['score'] ?? 0;
-            $isCorrect = $aiResult['is_correct'] ?? false;
-            $feedback = $aiResult['feedback'] ?? "Aucun retour généré par l'IA.";
+            try {
+                $scenario = $question->getContextData()['scenario'] ?? $question->getContent();
+                $aiResult = $this->aiClient->evaluateCode($scenario, $dto->getResponseText());
+                $isCorrect = ($aiResult['score'] ?? 0) >= 70;
+                $score = $aiResult['score'] ?? 0;
+                $feedback = $aiResult['feedback'] ?? "Évaluation IA en cours.";
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("AI evaluation failed for open_ended question: " . $e->getMessage());
+                $score = 0;
+                $isCorrect = false;
+                $feedback = "⚠️ [Échec IA] L'évaluation automatique a rencontré un problème (Erreur API). Votre réponse a été sauvegardée et sera validée manuellement par votre formateur.";
+            }
         }
 
         // 4. Créer et enregistrer la réponse évaluée
@@ -67,7 +93,16 @@ class SubmitQuizResponseUseCase
             $feedback
         );
 
-        return $this->quizRepository->saveResponse($response);
+        $savedResponse = $this->quizRepository->saveResponse($response);
+
+        // Try to award points (only if both project and quiz are done)
+        try {
+            $this->awardPointsUseCase->execute($briefId, $dto->getStudentId());
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("Failed to award points automatically: " . $e->getMessage());
+        }
+
+        return $savedResponse;
     }
 
     private function findBriefIdByQuestionId(int $questionId): int
