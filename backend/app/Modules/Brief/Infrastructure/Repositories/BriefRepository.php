@@ -17,20 +17,28 @@ class BriefRepository implements BriefRepositoryInterface
     {
         $data = [
             'title' => $brief->getTitle()->getValue(),
+            'image_url' => $brief->getImageUrl(),
             'description' => $brief->getDescription(),
+            'context' => $brief->getContext(),
             'objectives' => $brief->getObjectives(),
             'date_start' => $brief->getPeriod()->getStartDateString(),
             'date_end' => $brief->getPeriod()->getEndDateString(),
             'difficulty' => $brief->getDifficulty()->getValue(),
             'modality' => $brief->getModality()->getValue(),
+            'pedagogical_modalities' => $brief->getPedagogicalModalities(),
+            'evaluation_modalities' => $brief->getEvaluationModalities(),
             'status' => $brief->getStatus()->getValue(),
+            'points' => $brief->getPoints(),
             'tags' => $brief->getTags(),
             'resources' => $brief->getResources(),
+            'deliverables' => $brief->getDeliverables(),
+            'performance_criteria' => $brief->getPerformanceCriteria(),
+            'target_competencies' => $brief->getTargetCompetencies(),
             'formateur_id' => $brief->getFormateurId(),
         ];
 
         if ($brief->getId()) {
-            /** @var BriefModel $model */
+            /** @var BriefModel|null $model */
             $model = BriefModel::find($brief->getId());
             if ($model) {
                 $model->update($data);
@@ -49,27 +57,29 @@ class BriefRepository implements BriefRepositoryInterface
     public function findById(int $id): ?BriefEntity
     {
         /** @var BriefModel|null $model */
-        $model = BriefModel::find($id);
+        $model = BriefModel::withCount('quizSessions')->find($id);
         return $model ? $this->toEntity($model) : null;
     }
 
     public function findByClassroomId(int $classroomId): array
     {
-        $models = BriefModel::whereHas('classrooms', function($query) use ($classroomId) {
-            $query->where('classroom_id', $classroomId);
-        })->get();
+        $models = BriefModel::withCount('quizSessions')
+            ->whereHas('classrooms', function($query) use ($classroomId) {
+                $query->where('classroom_id', $classroomId);
+            })->get();
         return $models->map(fn(BriefModel $model) => $this->toEntity($model))->toArray();
     }
     
     public function findByFormateurId(int $formateurId): array
     {
-        $models = BriefModel::where('formateur_id', $formateurId)->get();
+        $models = BriefModel::withCount('quizSessions')
+            ->where('formateur_id', $formateurId)->get();
         return $models->map(fn(BriefModel $model) => $this->toEntity($model))->toArray();
     }
 
     public function findAll(): array
     {
-        $models = BriefModel::all();
+        $models = BriefModel::withCount('quizSessions')->get();
         return $models->map(fn(BriefModel $model) => $this->toEntity($model))->toArray();
     }
 
@@ -85,25 +95,37 @@ class BriefRepository implements BriefRepositoryInterface
         /** @var BriefModel|null $model */
         $model = BriefModel::find($briefId);
         if ($model) {
+            // Attach classrooms
             $model->classrooms()->syncWithoutDetaching($classroomIds);
+            // Auto-publish the brief upon assignment
+            $model->update(['status' => 'PUBLISHED']);
         }
     }
+
 
     private function toEntity(BriefModel $model): BriefEntity
     {
         return new BriefEntity(
             $model->id,
             new BriefTitle($model->title),
+            $model->image_url,
             $model->description,
+            $model->context,
             $model->objectives,
             new BriefDatePeriod($model->date_start->format('Y-m-d H:i:s'), $model->date_end->format('Y-m-d H:i:s')),
             new DifficultyLevel($model->difficulty),
             new BriefModality($model->modality),
+            $model->pedagogical_modalities,
+            $model->evaluation_modalities,
             new BriefStatus($model->status),
             $model->points ?? 0,
             $model->tags ?? [],
             $model->resources ?? [],
-            $model->formateur_id
+            $model->deliverables ?? [],
+            $model->performance_criteria ?? [],
+            $model->target_competencies ?? [],
+            $model->formateur_id,
+            $model->quiz_sessions_count > 0
         );
     }
 }
