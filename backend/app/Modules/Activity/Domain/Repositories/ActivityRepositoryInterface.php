@@ -11,4 +11,5 @@ interface ActivityRepositoryInterface
     public function getByClassroom(int $classroomId): array;
     public function getByStudent(int $studentId): array;
     public function assignToStudents(int $activityId, array $studentIds): void;
+    public function assignToClassroom(int $activityId, int $classroomId): void;
 }
