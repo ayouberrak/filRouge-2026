@@ -7,6 +7,10 @@ use App\Modules\Marketplace\Application\UseCases\CreateProductUseCase;
 use App\Modules\Marketplace\Application\UseCases\GetAllProductsUseCase;
 use App\Modules\Marketplace\Application\UseCases\PurchaseProductUseCase;
 use App\Modules\Marketplace\Application\UseCases\GetAllOrdersUseCase;
+use App\Modules\Marketplace\Application\UseCases\GetMyOrdersUseCase;
+use App\Modules\Marketplace\Application\UseCases\CompleteOrderUseCase;
+use App\Modules\Marketplace\Application\UseCases\CancelOrderUseCase;
+use App\Modules\Marketplace\Application\UseCases\DeleteProductUseCase;
 use App\Modules\Marketplace\Http\Requests\CreateProductRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,7 +21,11 @@ class MarketplaceController
         private CreateProductUseCase $createProductUseCase,
         private GetAllProductsUseCase $getAllProductsUseCase,
         private PurchaseProductUseCase $purchaseProductUseCase,
-        private GetAllOrdersUseCase $getAllOrdersUseCase
+        private GetAllOrdersUseCase $getAllOrdersUseCase,
+        private GetMyOrdersUseCase $getMyOrdersUseCase,
+        private CompleteOrderUseCase $completeOrderUseCase,
+        private CancelOrderUseCase $cancelOrderUseCase,
+        private DeleteProductUseCase $deleteProductUseCase
     ) {}
 
     // Admin: List all orders
@@ -30,16 +38,47 @@ class MarketplaceController
     // Admin: Create Product
     public function storeProduct(CreateProductRequest $request): JsonResponse
     {
+        $validated = $request->validated();
+
         $dto = new CreateProductDTO(
-            $request->validated('name'),
-            $request->validated('description'),
-            $request->validated('price'),
-            $request->validated('quantity'),
-            $request->validated('image')
+            (string) $validated['name'],
+            (string) $validated['description'],
+            (int) $validated['price'],
+            (int) $validated['quantity'],
+            isset($validated['image']) ? (string) $validated['image'] : null
         );
 
         $product = $this->createProductUseCase->execute($dto);
         return response()->json(['message' => 'Produit créé', 'data' => $product->toArray()], 201);
+    }
+
+    // Admin: Complete Order
+    public function completeOrder(int $id): JsonResponse
+    {
+        try {
+            $order = $this->completeOrderUseCase->execute($id);
+            return response()->json(['message' => 'Commande complétée', 'data' => $order->toArray()]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    // Admin: Cancel Order
+    public function cancelOrder(int $id): JsonResponse
+    {
+        try {
+            $order = $this->cancelOrderUseCase->execute($id);
+            return response()->json(['message' => 'Commande annulée et points remboursés', 'data' => $order->toArray()]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    // Admin: Delete Product
+    public function deleteProduct(int $id): JsonResponse
+    {
+        $this->deleteProductUseCase->execute($id);
+        return response()->json(['message' => 'Produit supprimé']);
     }
 
     // Common: List Products
@@ -63,5 +102,12 @@ class MarketplaceController
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 400);
         }
+    }
+
+    // Student: My Orders
+    public function myOrders(Request $request): JsonResponse
+    {
+        $orders = $this->getMyOrdersUseCase->execute($request->user()->id);
+        return response()->json(['data' => $orders]);
     }
 }
