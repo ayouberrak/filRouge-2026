@@ -23,7 +23,7 @@ class SubmitQuizResponseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'question_id' => 'required|integer|exists:quiz_questions,id',
+            'question_id' => 'required|integer|exists:questions,id',
             'response_text' => 'required|string',
         ];
     }
