@@ -15,7 +15,8 @@ class AddLivrableReponseUseCase
 {
     public function __construct(
         private LivrableRepositoryInterface $repository,
-        private BriefRepositoryInterface $briefRepository
+        private BriefRepositoryInterface $briefRepository,
+        private \App\Modules\Brief\Application\UseCases\AwardPointsForBriefCompletionUseCase $awardPointsUseCase
     ) {}
 
     public function execute(AddLivrableReponseDTO $dto): ReponseLivrableEntity
@@ -42,14 +43,12 @@ class AddLivrableReponseUseCase
 
             $savedReponse = $this->repository->saveResponse($reponse);
 
-            // Reward Points if Validated
+            // Try to award points (only if both project and quiz are done)
             if (strtoupper($dto->status) === 'VALIDATED') {
-                $brief = $this->briefRepository->findById($livrable->getBriefId());
-                if ($brief) {
-                    $points = $brief->getPoints();
-                    $user = UserModel::findOrFail($livrable->getStudentId());
-                    $user->total_points += $points;
-                    $user->save();
+                try {
+                    $this->awardPointsUseCase->execute($livrable->getBriefId(), $livrable->getStudentId());
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::error("Failed to award points during project validation: " . $e->getMessage());
                 }
             }
 
