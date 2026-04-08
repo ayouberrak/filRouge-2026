@@ -30,50 +30,82 @@ class BriefController
         private BriefRepositoryInterface $repository
     ) {}
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $user = auth()->user();
-        
-        if ($user && $user->role === 'student') {
+        $explorer = $request->query('all') === 'true' || $request->query('all') === '1';
+
+        if ($user && $user->role === 'student' && !$explorer) {
             $briefs = $this->repository->findByClassroomId($user->classroom_id);
         } else {
             $briefs = $this->getAllBriefs->execute();
         }
 
-        return response()->json(['data' => array_map(fn($b) => $b->toArray(), $briefs)]);
+        // Eager-load classrooms from Eloquent to enrich response
+        $briefIds = array_map(fn($b) => $b->getId(), $briefs);
+        $classroomsMap = \App\Modules\Brief\Infrastructure\Models\BriefModel::whereIn('id', $briefIds)
+            ->with('classrooms:id,name')
+            ->get()
+            ->keyBy('id');
+
+        $data = array_map(function ($b) use ($classroomsMap) {
+            $arr = $b->toArray();
+            $model = $classroomsMap->get($b->getId());
+            $arr['classrooms'] = $model
+                ? $model->classrooms->map(fn($c) => ['id' => $c->id, 'name' => $c->name])->toArray()
+                : [];
+            return $arr;
+        }, $briefs);
+
+        return response()->json(['data' => $data]);
     }
+
 
     public function show(int $id): JsonResponse
     {
-        $brief = $this->getBrief->execute($id);
-        if (!$brief) return response()->json(['message' => 'Brief not found'], 404);
+        $briefModel = \App\Modules\Brief\Infrastructure\Models\BriefModel::with('formateur')->find($id);
+        if (!$briefModel) return response()->json(['message' => 'Brief not found'], 404);
 
         $user = auth()->user();
         if ($user && $user->role === 'student') {
-            $classrooms = \App\Modules\Brief\Infrastructure\Models\BriefModel::find($id)->classrooms->pluck('id')->toArray();
+            $classrooms = $briefModel->classrooms->pluck('id')->toArray();
             if (!in_array($user->classroom_id, $classrooms)) {
                 return response()->json(['message' => 'Unauthorized access to this brief'], 403);
             }
         }
 
-        return response()->json(['data' => $brief->toArray()]);
+        $briefData = $briefModel->toArray();
+        if ($briefModel->formateur) {
+            $briefData['formateur_name'] = $briefModel->formateur->first_name . ' ' . $briefModel->formateur->last_name;
+            $briefData['formateur_avatar'] = $briefModel->formateur->avatar_url;
+        }
+
+        return response()->json(['data' => $briefData]);
     }
 
     public function store(CreateBriefRequest $request): JsonResponse
     {
         $dto = new BriefDTO(
             title: $request->input('title'),
+            image_url: $request->input('image_url'),
             description: $request->input('description'),
+            context: $request->input('context'),
             objectives: $request->input('objectives'),
             date_start: $request->input('date_start'),
             date_end: $request->input('date_end'),
             difficulty: $request->input('difficulty', 'EASY'),
             modality: $request->input('modality', 'INDIVIDUAL'),
+            pedagogical_modalities: $request->input('pedagogical_modalities'),
+            evaluation_modalities: $request->input('evaluation_modalities'),
             status: $request->input('status', 'DRAFT'),
+            points: $request->input('points', 0),
             tags: $request->input('tags', []),
             resources: $request->input('resources', []),
-            file: null, // Custom handling for file upload if necessary
-            formateur_id: auth()->id() // Taken securely from the token
+            deliverables: $request->input('deliverables', []),
+            performance_criteria: $request->input('performance_criteria', []),
+            target_competencies: $request->input('target_competencies', []),
+            file: null,
+            formateur_id: auth()->id()
         );
 
         $brief = $this->createBrief->execute($dto);
@@ -85,17 +117,25 @@ class BriefController
         try {
             $dto = new BriefDTO(
                 title: $request->input('title'),
+                image_url: $request->input('image_url'),
                 description: $request->input('description'),
+                context: $request->input('context'),
                 objectives: $request->input('objectives'),
                 date_start: $request->input('date_start'),
                 date_end: $request->input('date_end'),
                 difficulty: $request->input('difficulty', 'EASY'),
                 modality: $request->input('modality', 'INDIVIDUAL'),
+                pedagogical_modalities: $request->input('pedagogical_modalities'),
+                evaluation_modalities: $request->input('evaluation_modalities'),
                 status: $request->input('status', 'DRAFT'),
+                points: $request->input('points', 0),
                 tags: $request->input('tags', []),
                 resources: $request->input('resources', []),
+                deliverables: $request->input('deliverables', []),
+                performance_criteria: $request->input('performance_criteria', []),
+                target_competencies: $request->input('target_competencies', []),
                 file: null,
-                formateur_id: auth()->id() // Optional updates based on context
+                formateur_id: auth()->id()
             );
 
             $brief = $this->updateBrief->execute($id, $dto);
