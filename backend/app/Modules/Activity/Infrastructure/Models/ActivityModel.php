@@ -14,11 +14,42 @@ class ActivityModel extends Model
         'title',
         'description',
         'activity_type',
+        'scheduled_at',
         'duration',
+        'duration_minutes',
         'points',
         'formateur_id',
         'classroom_id',
+        'objectives',
+        'context',
+        'exploration_points',
+        'work_rule',
+        'resources',
+        'is_points_distributed',
     ];
+
+    protected $casts = [
+        'scheduled_at' => 'datetime',
+        'is_points_distributed' => 'boolean',
+    ];
+
+    public function getStatusAttribute()
+    {
+        if (!$this->scheduled_at) return 'scheduled';
+        
+        $now = now();
+        $end = $this->scheduled_at->copy()->addMinutes($this->duration_minutes);
+        
+        if ($now->gt($end)) {
+            return 'completed';
+        }
+        
+        if ($now->lt($this->scheduled_at)) {
+            return 'scheduled';
+        }
+
+        return 'active';
+    }
 
     public function formateur()
     {
