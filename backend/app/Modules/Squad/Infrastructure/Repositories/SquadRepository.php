@@ -13,7 +13,15 @@ class SquadRepository implements SquadRepositoryInterface
     {
         if (!$model) return null;
 
-        $members = $model->members()->pluck('id')->toArray();
+        // On récupère les membres sous forme d'objets (noms, avatars) pour le dashboard
+        $members = $model->members->map(function($user) {
+            return [
+                'id' => $user->id,
+                'first_name' => $user->first_name,
+                'last_name' => $user->last_name,
+                'avatar_url' => $user->avatar_url,
+            ];
+        })->toArray();
 
         return new SquadEntity(
             $model->id,
@@ -31,6 +39,18 @@ class SquadRepository implements SquadRepositoryInterface
     public function findAll(): array 
     { 
         $models = SquadModel::with('members')->get();
+        $entities = [];
+        foreach ($models as $model) {
+            if ($model instanceof SquadModel) {
+                $entities[] = $this->mapToDomain($model);
+            }
+        }
+        return $entities;
+    }
+
+    public function findByClassroom(int $classroomId): array 
+    { 
+        $models = SquadModel::where('classroom_id', $classroomId)->with('members')->get();
         $entities = [];
         foreach ($models as $model) {
             if ($model instanceof SquadModel) {
