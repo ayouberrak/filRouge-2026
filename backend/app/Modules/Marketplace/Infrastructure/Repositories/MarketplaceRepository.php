@@ -22,7 +22,14 @@ class MarketplaceRepository implements MarketplaceRepositoryInterface
             'image' => $product->getImage(),
         ];
 
-        $model = ProductModel::updateOrCreate(['id' => $id], $data);
+        if ($id) {
+            $model = ProductModel::find($id);
+            if ($model) {
+                $model->update($data);
+            }
+        } else {
+            $model = ProductModel::create($data);
+        }
 
         return $this->mapToProductEntity($model);
     }
@@ -57,22 +64,55 @@ class MarketplaceRepository implements MarketplaceRepositoryInterface
             'status' => $order->getStatus(),
         ];
 
-        $model = OrderModel::updateOrCreate(['id' => $id], $data);
+        if ($id) {
+            $model = OrderModel::find($id);
+            if ($model) {
+                $model->update($data);
+            }
+        } else {
+            $model = OrderModel::create($data);
+        }
+
         return $this->mapToOrderEntity($model);
     }
 
     public function findAllOrders(): array
     {
-        return OrderModel::all()
-            ->map(fn(OrderModel $model) => $this->mapToOrderEntity($model))
+        return OrderModel::with(['user', 'product'])->orderByDesc('created_at')->get()
+            ->map(function (OrderModel $model) {
+                $entity = $this->mapToOrderEntity($model);
+                return array_merge($entity->toArray(), [
+                    'user' => $model->user ? [
+                        'first_name' => $model->user->first_name,
+                        'last_name' => $model->user->last_name,
+                    ] : null,
+                    'product' => $model->product ? [
+                        'name' => $model->product->name,
+                    ] : null,
+                ]);
+            })
             ->toArray();
+    }
+
+    public function findOrderById(int $id): ?OrderEntity
+    {
+        $model = OrderModel::find($id);
+        return $model ? $this->mapToOrderEntity($model) : null;
     }
 
     public function findOrdersByUserId(int $userId): array
     {
-        return OrderModel::where('user_id', $userId)
+        return OrderModel::with('product')
+            ->where('user_id', $userId)
+            ->orderByDesc('created_at')
             ->get()
-            ->map(fn(OrderModel $model) => $this->mapToOrderEntity($model))
+            ->map(function (OrderModel $model) {
+                $entity = $this->mapToOrderEntity($model);
+                return array_merge($entity->toArray(), [
+                    'product_name'  => $model->product?->name,
+                    'product_image' => $model->product?->image,
+                ]);
+            })
             ->toArray();
     }
 
