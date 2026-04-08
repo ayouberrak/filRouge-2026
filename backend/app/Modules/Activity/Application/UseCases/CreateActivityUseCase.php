@@ -25,9 +25,16 @@ class CreateActivityUseCase
             $dto->description,
             new ActivityType($dto->type),
             $dto->duration,
+            $dto->durationMinutes,
             $dto->points,
             $dto->formateurId,
-            $dto->classroomId
+            $dto->classroomId,
+            $dto->scheduledAt,
+            $dto->objectives,
+            $dto->context,
+            $dto->exploration_points,
+            $dto->work_rule,
+            $dto->resources
         );
 
         $savedActivity = $this->repository->save($activity);
