@@ -13,7 +13,9 @@ class AbsenceEntity
         private string $date,
         private int $duration, // renamed duree to duration for consistency
         private AbsenceStatus $status,
-        private ?string $justificationFile = null
+        private ?string $justificationFile = null,
+        private ?string $studentName = null,
+        private ?string $classroomName = null
     ) {}
 
     public function getId(): ?int
@@ -44,6 +46,16 @@ class AbsenceEntity
     public function getJustificationFile(): ?string
     {
         return $this->justificationFile;
+    }
+
+    public function getStudentName(): ?string
+    {
+        return $this->studentName;
+    }
+
+    public function getClassroomName(): ?string
+    {
+        return $this->classroomName;
     }
 
     // Behavioral Methods
