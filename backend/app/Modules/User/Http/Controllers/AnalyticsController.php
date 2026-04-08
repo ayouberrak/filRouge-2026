@@ -14,6 +14,7 @@ class AnalyticsController
     {
         $stats = [
             'total_students' => UserModel::where('role', 'student')->count(),
+            'total_staff' => UserModel::where('role', 'formateur')->count(),
             'active_classrooms' => ClassroomModel::count(),
             'pending_deliverables' => LivrableModel::where('status', 'PENDING')->count(),
             'absences_today' => AbsenceModel::whereDate('date', now()->toDateString())->count(),
@@ -22,13 +23,111 @@ class AnalyticsController
         return response()->json(['data' => $stats]);
     }
 
+    public function getAdminStats(): JsonResponse
+    {
+        $stats = [
+            'total_users' => UserModel::count(),
+            'total_students' => UserModel::where('role', 'student')->count(),
+            'total_staff' => UserModel::where('role', 'formateur')->count(),
+            'active_classrooms' => ClassroomModel::count(),
+            'absences_today' => AbsenceModel::whereDate('date', now()->toDateString())->count(),
+            'pending_justifications' => AbsenceModel::where('status', 'PENDING')->whereNotNull('justification_file')->count(),
+            'marketplace_orders' => \App\Modules\Marketplace\Infrastructure\Models\OrderModel::count(),
+            'total_points_distributed' => UserModel::where('role', 'student')->sum('total_points') ?? 0,
+            'recent_activity' => $this->getGlobalRecentActivity()
+        ];
+
+        return response()->json(['data' => $stats]);
+    }
+
+    private function getGlobalRecentActivity()
+    {
+        $absences = AbsenceModel::with('student')->latest()->take(3)->get()->map(fn($a) => [
+            'type' => 'absence',
+            'user' => ($a->student->first_name ?? 'N/A') . ' ' . ($a->student->last_name ?? ''),
+            'time' => $a->created_at->diffForHumans(),
+            'label' => 'Signalement d\'absence'
+        ]);
+
+        $submissions = LivrableModel::with(['student', 'brief'])->latest()->take(3)->get()->map(fn($l) => [
+            'type' => 'submission',
+            'user' => ($l->student->first_name ?? 'N/A') . ' ' . ($l->student->last_name ?? ''),
+            'time' => $l->created_at->diffForHumans(),
+            'label' => 'Rendu du brief: ' . ($l->brief->title ?? 'N/A')
+        ]);
+
+        return $absences->concat($submissions)->sortByDesc('time')->take(5)->values();
+    }
+
     public function getLeaderboard(): JsonResponse
     {
         $leaderboard = UserModel::where('role', 'student')
             ->orderBy('total_points', 'desc')
-            ->take(10)
-            ->get(['id', 'first_name', 'last_name', 'total_points']);
+            ->take(5)
+            ->get(['id', 'first_name', 'last_name', 'total_points', 'avatar_url', 'location']);
 
         return response()->json(['data' => $leaderboard]);
+    }
+
+    public function getStudents(\Illuminate\Http\Request $request): JsonResponse
+    {
+        $role = $request->get('role', 'student');
+        $query = UserModel::where('role', $role);
+
+        if ($request->has('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                  ->orWhere('last_name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->has('speciality') && $request->speciality !== 'ALL') {
+            $query->where('speciality', $request->speciality);
+        }
+
+        if ($request->has('classroom_id')) {
+            $query->where('classroom_id', $request->classroom_id);
+        }
+
+        $students = $query->orderBy('total_points', 'desc')
+            ->get([
+                'id', 'first_name', 'last_name', 'email', 'total_points', 
+                'avatar_url', 'location', 'status', 'squad_id', 'speciality',
+                'bio', 'skills', 'github_url', 'linkedin_url'
+            ]);
+
+        return response()->json(['data' => $students]);
+    }
+
+    public function getStudentProfile($id): JsonResponse
+    {
+        $user = UserModel::with(['squad.members'])->findOrFail($id);
+        
+        $stats = [
+            'total_points' => $user->total_points,
+            'absences_count' => AbsenceModel::where('student_id', $user->id)->count(),
+            'validated_briefs' => LivrableModel::where('student_id', $user->id)->where('status', 'VALIDATED')->count(),
+            'rank' => UserModel::where('role', 'student')->where('total_points', '>', $user->total_points)->count() + 1,
+        ];
+
+        return response()->json([
+            'user' => $user,
+            'stats' => $stats
+        ]);
+    }
+
+    public function getStudentStats(\Illuminate\Http\Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $stats = [
+            'total_points' => $user->total_points,
+            'absences_count' => AbsenceModel::where('student_id', $user->id)->count(),
+            'validated_briefs' => LivrableModel::where('student_id', $user->id)->where('status', 'VALIDATED')->count(),
+            'rank' => UserModel::where('role', 'student')->where('total_points', '>', $user->total_points)->count() + 1,
+        ];
+
+        return response()->json(['stats' => $stats]);
     }
 }
