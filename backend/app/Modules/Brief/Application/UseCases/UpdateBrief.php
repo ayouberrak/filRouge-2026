@@ -29,15 +29,24 @@ class UpdateBrief
         $entity = new BriefEntity(
             $id,
             new BriefTitle($dto->title),
+            $dto->image_url,
             $dto->description,
+            $dto->context,
             $dto->objectives,
             new BriefDatePeriod($dto->date_start, $dto->date_end),
             new DifficultyLevel($dto->difficulty),
             new BriefModality($dto->modality),
+            $dto->pedagogical_modalities,
+            $dto->evaluation_modalities,
             new BriefStatus($dto->status),
+            $dto->points ?? 0,
             $dto->tags ?? [],
             $dto->resources ?? [],
-            $existing->getFormateurId() // Retain original owner
+            $dto->deliverables ?? [],
+            $dto->performance_criteria ?? [],
+            $dto->target_competencies ?? [],
+            $existing->getFormateurId(), // Retain original owner
+            $existing->hasQuiz() // Retain quiz status
         );
 
         return $this->briefRepository->save($entity);
