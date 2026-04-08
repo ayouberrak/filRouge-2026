@@ -9,6 +9,7 @@ use App\Modules\Absence\Application\UseCases\RejectAbsence;
 use App\Modules\Absence\Application\UseCases\GetAllAbsences;
 use App\Modules\Absence\Application\UseCases\GetAbsencesByStudent;
 use App\Modules\Absence\Application\UseCases\GetAbsencesByClassroom;
+use App\Modules\Absence\Application\UseCases\DeleteAbsence;
 use App\Modules\Absence\Http\Requests\CreateAbsenceRequest;
 use App\Modules\Absence\Http\Requests\JustifyAbsenceRequest;
 use App\Modules\Absence\Http\Resources\AbsenceResource;
@@ -23,7 +24,8 @@ class AbsenceController
         private RejectAbsence $rejectAbsenceUseCase,
         private GetAllAbsences $getAllAbsencesUseCase,
         private GetAbsencesByStudent $getAbsencesByStudentUseCase,
-        private GetAbsencesByClassroom $getAbsencesByClassroomUseCase
+        private GetAbsencesByClassroom $getAbsencesByClassroomUseCase,
+        private DeleteAbsence $deleteAbsenceUseCase
     ) {}
 
     public function index()
@@ -50,9 +52,10 @@ class AbsenceController
         ]);
     }
 
-    public function getByClassroom(int $classroomId)
+    public function getByClassroom(int $classroomId, Request $request)
     {
-        $absences = $this->getAbsencesByClassroomUseCase->execute($classroomId);
+        $month = $request->query('month');
+        $absences = $this->getAbsencesByClassroomUseCase->execute($classroomId, $month);
         return response()->json([
             'absences' => AbsenceResource::collection($absences)
         ]);
@@ -92,6 +95,14 @@ class AbsenceController
         $this->rejectAbsenceUseCase->execute($id);
         return response()->json([
             'message' => 'Absence rejected successfully'
+        ]);
+    }
+
+    public function delete(int $id)
+    {
+        $this->deleteAbsenceUseCase->execute($id);
+        return response()->json([
+            'message' => 'Absence deleted successfully'
         ]);
     }
 }
