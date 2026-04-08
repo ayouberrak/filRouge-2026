@@ -14,19 +14,28 @@ class AddLivrableReponseRequest extends FormRequest
     public function rules()
     {
         return [
-            'formateur_id' => 'required|exists:users,id',
-            'status' => 'required|in:VALIDATED,REJECTED',
+            'formateur_id' => 'nullable|exists:users,id',
+            'status' => 'required|in:VALIDATED,REJECTED,VALIDE,INVALID',
             'message' => 'required|string',
         ];
     }
 
     public function toDTO(int $livrableId): \App\Modules\Livrable\Application\DTO\AddLivrableReponseDTO
     {
+        $statusMap = [
+            'VALIDE' => 'VALIDATED',
+            'VALIDATED' => 'VALIDATED',
+            'INVALID' => 'REJECTED',
+            'REJECTED' => 'REJECTED'
+        ];
+
+        $status = $statusMap[strtoupper($this->status)] ?? 'REJECTED';
+
         return new \App\Modules\Livrable\Application\DTO\AddLivrableReponseDTO(
             $livrableId,
-            $this->validated('formateur_id'),
-            $this->validated('status'),
-            $this->validated('message')
+            $this->formateur_id ?? \Illuminate\Support\Facades\Auth::id(),
+            $status,
+            $this->message
         );
     }
 }
