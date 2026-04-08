@@ -12,6 +12,9 @@ return Application::configure(basePath: dirname(__DIR__))
         channels: __DIR__.'/../routes/channels.php',
         health: '/up',
     )
+    ->withCommands([
+        \App\Modules\Activity\Infrastructure\Commands\ProcessActivityPoints::class,
+    ])
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role.admin' => \App\Modules\User\Http\Middleware\CheckRoleAdmin::class,
