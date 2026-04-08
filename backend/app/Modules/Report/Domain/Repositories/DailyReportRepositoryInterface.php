@@ -10,4 +10,5 @@ interface DailyReportRepositoryInterface
     public function findAll(): array;
     public function getByClassroom(int $classroomId): array;
     public function findById(int $id): ?DailyReportEntity;
+    public function getStats(int $classroomId): array;
 }
