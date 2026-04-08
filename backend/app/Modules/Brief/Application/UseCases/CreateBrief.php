@@ -22,15 +22,24 @@ class CreateBrief
         $entity = new BriefEntity(
             null, // ID is null on creation
             new BriefTitle($dto->title),
+            $dto->image_url,
             $dto->description,
+            $dto->context,
             $dto->objectives,
             new BriefDatePeriod($dto->date_start, $dto->date_end),
             new DifficultyLevel($dto->difficulty),
             new BriefModality($dto->modality),
+            $dto->pedagogical_modalities,
+            $dto->evaluation_modalities,
             new BriefStatus($dto->status),
+            $dto->points ?? 0,
             $dto->tags ?? [],
             $dto->resources ?? [],
-            $dto->formateur_id ?? auth()->id()
+            $dto->deliverables ?? [],
+            $dto->performance_criteria ?? [],
+            $dto->target_competencies ?? [],
+            $dto->formateur_id ?? auth()->id(),
+            false // hasQuiz handled separately or updated later
         );
 
         return $this->briefRepository->save($entity);
