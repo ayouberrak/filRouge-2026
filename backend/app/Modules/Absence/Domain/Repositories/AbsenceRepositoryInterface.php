@@ -11,5 +11,5 @@ interface AbsenceRepositoryInterface
     public function delete(int $id): bool;
 
     public function findByStudentId(int $studentId): array;
-    public function findByClassroomId(int $classroomId): array;
+    public function findByClassroomId(int $classroomId, ?string $month = null): array;
 }
