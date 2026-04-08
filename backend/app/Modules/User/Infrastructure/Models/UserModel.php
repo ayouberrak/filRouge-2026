@@ -29,10 +29,15 @@ class UserModel extends Authenticatable
         'role',
         'status',
         'speciality',
-        'points',
         'total_points',
         'classroom_id',
         'squad_id',
+        'avatar_url',
+        'location',
+        'bio',
+        'skills',
+        'github_url',
+        'linkedin_url',
     ];
 
     protected $hidden = [
@@ -45,6 +50,7 @@ class UserModel extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'skills' => 'array',
         ];
     }
 
