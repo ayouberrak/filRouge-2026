@@ -11,8 +11,10 @@ class LivrableEntity
     private ?int $studentId;
     private ?int $squadId;
     private string $link;
+    private ?string $message;
     private LivrableStatus $status;
     private array $responses; // Array of ReponseLivrableEntity
+    private ?\DateTimeInterface $updatedAt;
 
     public function __construct(
         ?int $id,
@@ -21,15 +23,19 @@ class LivrableEntity
         ?int $squadId,
         string $link,
         LivrableStatus $status,
-        array $responses = []
+        array $responses = [],
+        ?\DateTimeInterface $updatedAt = null,
+        ?string $message = null
     ) {
         $this->id = $id;
         $this->briefId = $briefId;
         $this->studentId = $studentId;
         $this->squadId = $squadId;
         $this->link = $link;
+        $this->message = $message;
         $this->status = $status;
         $this->responses = $responses;
+        $this->updatedAt = $updatedAt;
     }
 
     public function getId(): ?int { return $this->id; }
@@ -37,8 +43,10 @@ class LivrableEntity
     public function getStudentId(): ?int { return $this->studentId; }
     public function getSquadId(): ?int { return $this->squadId; }
     public function getLink(): string { return $this->link; }
+    public function getMessage(): ?string { return $this->message; }
     public function getStatus(): LivrableStatus { return $this->status; }
     public function getResponses(): array { return $this->responses; }
+    public function getUpdatedAt(): ?\DateTimeInterface { return $this->updatedAt; }
 
     public function toArray(): array
     {
@@ -48,6 +56,7 @@ class LivrableEntity
             'student_id' => $this->studentId,
             'squad_id' => $this->squadId,
             'link' => $this->link,
+            'message' => $this->message,
             'status' => $this->status->getValue(),
             'responses' => array_map(fn($resp) => $resp->toArray(), $this->responses),
         ];
