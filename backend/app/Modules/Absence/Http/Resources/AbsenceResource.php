@@ -20,6 +20,13 @@ class AbsenceResource extends JsonResource
         return [
             'id' => $entity->getId(),
             'student_id' => $entity->getStudentId(),
+            'student' => [
+                'first_name' => $entity->getStudentName(),
+                'last_name' => '',
+                'classroom' => [
+                    'name' => $entity->getClassroomName()
+                ]
+            ],
             'date' => $entity->getDate(),
             'duration' => $entity->getDuration(),
             'status' => $entity->getStatus()->getValue(),
