@@ -16,5 +16,6 @@ interface MarketplaceRepositoryInterface
     // Orders
     public function saveOrder(OrderEntity $order): OrderEntity;
     public function findAllOrders(): array;
+    public function findOrderById(int $id): ?OrderEntity;
     public function findOrdersByUserId(int $userId): array;
 }
