@@ -9,7 +9,7 @@ class QuestionType
     private string $value;
 
     private const ALLOWED_TYPES = [
-        'multiple_choice', 'code_simulation'
+        'multiple_choice', 'code_simulation', 'open_ended', 'code'
     ];
 
     public function __construct(string $value)
@@ -29,4 +29,5 @@ class QuestionType
 
     public static function multipleChoice(): self { return new self('multiple_choice'); }
     public static function codeSimulation(): self { return new self('code_simulation'); }
+    public static function openEnded(): self { return new self('open_ended'); }
 }
