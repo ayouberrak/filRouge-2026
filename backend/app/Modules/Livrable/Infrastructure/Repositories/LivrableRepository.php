@@ -20,6 +20,7 @@ class LivrableRepository implements LivrableRepositoryInterface
                 'student_id' => $livrable->getStudentId(),
                 'squad_id' => $livrable->getSquadId(),
                 'link' => $livrable->getLink(),
+                'message' => $livrable->getMessage(),
                 'status' => $livrable->getStatus()->getValue(),
             ]
         );
@@ -63,6 +64,14 @@ class LivrableRepository implements LivrableRepositoryInterface
         return $model ? $this->toResponseEntity($model) : null;
     }
 
+    public function findByBriefId(int $briefId): array
+    {
+        $models = LivrableModel::with('responses')->where('brief_id', $briefId)->get();
+        return $models->map(function(LivrableModel $model) {
+            return $this->toEntity($model);
+        })->toArray();
+    }
+
     private function toEntity(LivrableModel $model): LivrableEntity
     {
         $responses = $model->relationLoaded('responses')
@@ -76,7 +85,9 @@ class LivrableRepository implements LivrableRepositoryInterface
             $model->squad_id,
             $model->link,
             new LivrableStatus($model->status),
-            $responses
+            $responses,
+            $model->updated_at,
+            $model->message
         );
     }
 
@@ -87,7 +98,8 @@ class LivrableRepository implements LivrableRepositoryInterface
             $model->livrable_id,
             $model->formateur_id,
             new LivrableStatus($model->status),
-            $model->message
+            $model->message,
+            $model->created_at
         );
     }
 }
