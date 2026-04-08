@@ -18,7 +18,12 @@ class CreateDailyReportRequest extends FormRequest
             'classroom_id' => 'required|exists:classrooms,id',
             'date' => 'required|date',
             'absences_count' => 'required|integer|min:0',
+            'tardies_count' => 'required|integer|min:0',
             'brief_status' => 'required|string|max:255',
+            'technical_topics' => 'nullable|string',
+            'workshops_done' => 'nullable|string',
+            'class_mood' => 'required|integer|min:1|max:5',
+            'objectives_met' => 'required|boolean',
             'note' => 'nullable|string',
         ];
     }
@@ -29,8 +34,13 @@ class CreateDailyReportRequest extends FormRequest
             $this->validated('classroom_id'),
             $this->validated('date'),
             $this->validated('absences_count'),
+            $this->validated('tardies_count'),
             $this->validated('brief_status'),
             $this->user()->id,
+            $this->validated('technical_topics'),
+            $this->validated('workshops_done'),
+            $this->validated('class_mood'),
+            $this->validated('objectives_met'),
             $this->validated('note')
         );
     }
