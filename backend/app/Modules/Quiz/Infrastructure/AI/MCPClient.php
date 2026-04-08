@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 class MCPClient
 {
     private string $apiKey;
-    private string $modelUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
+    private string $modelUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
     public function __construct()
     {
@@ -43,13 +43,12 @@ class MCPClient
         ];
 
         try {
-            $response = Http::timeout(30)->withHeaders([
+            $response = Http::timeout(10)->withHeaders([
                 'Content-Type' => 'application/json',
             ])->post("{$this->modelUrl}?key={$this->apiKey}", $payload);
 
             if ($response->failed()) {
                 // Gestion des erreurs Google (ex: 429 Quota Exceeded)
-                Log::warning("Gemini API Error: " . $response->status() . " - " . $response->body());
                 return $this->smartSimulation($consigne, $codeEtudiant, "Erreur API (" . $response->status() . "). Évaluation hors-ligne activée.");
             }
 
@@ -70,14 +69,10 @@ class MCPClient
             throw new \Exception("Le format JSON de l'IA n'était pas valide.");
 
         } catch (\Exception $e) {
-            Log::error("Gemini Parsing/Timeout Error: " . $e->getMessage());
             return $this->smartSimulation($consigne, $codeEtudiant, "Erreur d'analyse IA ou délai dépassé. Évaluation de secours activée.");
         }
     }
 
-    /**
-     * Fallback Robuste ("Nadi") si l'IA plante ou si quota dépassé
-     */
     private function smartSimulation(string $consigne, string $codeEtudiant, string $reason): array
     {
         // 1. Vérification stricte de la syntaxe PHP s'il s'agit de code PHP
@@ -93,7 +88,7 @@ class MCPClient
                 return [
                     'score' => 0,
                     'is_correct' => false,
-                    'feedback' => "❌ **Erreur Fatale de Syntaxe**\nVotre code ne compile pas : `" . trim($output[0] ?? 'Erreur inconnue') . "`\n\n*(Évaluation automatique de secours déclenchée car " . strtolower($reason) . ")*"
+                    'feedback' => "**Erreur Fatale de Syntaxe**\nVotre code ne compile pas : `" . trim($output[0] ?? 'Erreur inconnue') . "`\n\n*(Évaluation automatique de secours déclenchée car " . strtolower($reason) . ")*"
                 ];
             }
         }
