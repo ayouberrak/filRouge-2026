@@ -3,6 +3,7 @@
 namespace App\Modules\Quiz\Application\UseCases;
 
 use Illuminate\Support\Facades\DB;
+use App\Modules\Quiz\Infrastructure\Models\QuizSessionModel;
 
 class ValidateBriefCompletionUseCase
 {
@@ -10,86 +11,102 @@ class ValidateBriefCompletionUseCase
         private \App\Modules\Quiz\Domain\Repositories\QuizRepositoryInterface $quizRepository
     ) {}
 
-    public function execute(int $briefId, int $studentId): string
+    public function execute(int $briefId, int $studentId): array
     {
-        // ----------------------------------------------------
-        // LOGIQUE MATRICE DE VALIDATION DDD
-        // ----------------------------------------------------
-        
-        // 1. Vérification du Livrable (Pratique)
         $livrable = DB::table('livrables')
             ->where('brief_id', $briefId)
             ->where('student_id', $studentId)
             ->first();
 
-        // 2. Vérification de la Session de Quiz (Théorie Globale)
-        // On récupère la dernière session complétée ou active pour ce brief (tri descendant)
-        $sessionModel = \App\Modules\Quiz\Infrastructure\Models\QuizSessionModel::with('questions')
+        $sessionModel = QuizSessionModel::with('questions')
             ->where('brief_id', $briefId)
             ->orderBy('id', 'desc')
             ->first();
 
-        // 3. Analyse des conditions d'échec immédiat
-        if (!$livrable || $livrable->status === 'SUBMITTED') {
-            return "PENDING"; // En attente de correction du formateur sur le livrable
-        }
-
         if (!$sessionModel) {
-            return "PENDING_QUIZ"; // Pas encore de passage de quiz
+            return [
+                'is_completed' => false, 
+                'status' => 'PENDING_QUIZ',
+                'quiz_score' => 0,
+                'quiz_status' => 'AUCUN QUIZ CRÉÉ',
+                'livrable_status' => $livrable ? ($livrable->status === 'VALIDATED' || $livrable->status === 'VALIDE' ? 'Validé' : 'À refaire') : 'En attente'
+            ];
         }
 
-        // Calcul exact du score de l'étudiant
-        $totalQuestions = $sessionModel->questions->count();
-        if ($totalQuestions === 0) return "VALIDATED"; // Pas de questions = succès d'office
+        if (!$livrable) {
+            return [
+                'is_completed' => false, 
+                'status' => 'PENDING_LIVRABLE',
+                'quiz_score' => 0,
+                'quiz_status' => 'LIVRABLE MANQUANT',
+                'livrable_status' => 'Non soumis'
+            ];
+        }
 
-        // On récupère toutes les réponses apportées dans le cadre de cette session
+        $totalQuestions = $sessionModel->questions->count();
+        if ($totalQuestions === 0) {
+            return [
+                'is_completed' => true, 
+                'status' => 'VALIDATED',
+                'quiz_score' => 100,
+                'quiz_status' => 'AUTO-VALIDÉ',
+                'livrable_status' => $livrable->status === 'VALIDATED' || $livrable->status === 'VALIDE' ? 'Validé' : 'À refaire'
+            ];
+        }
+
         $responses = $this->quizRepository->findResponsesBySessionId($sessionModel->id);
+        $studentResponses = array_filter($responses, fn($r) => $r->getStudentId() === $studentId);
         
-        // Trouver la réponse de CET étudiant sur chaque question
         $totalAchievedScore = 0;
         foreach ($sessionModel->questions as $question) {
-            $matchingResponse = array_filter($responses, fn($r) => 
-                $r->getQuestionId() === $question->id && $r->getStudentId() === $studentId
-            );
-            $response = reset($matchingResponse); // Première correspondance s'il y en a une
-
-            if ($response) {
-                // Modération du score en fonction des points alloués à la question (si c'était sur 100 on normalise)
-                $normalizedScore = ($response->getScore() / 100) * $question->points;
-                $totalAchievedScore += $normalizedScore;
+            foreach ($studentResponses as $response) {
+                if ($response->getQuestionId() === $question->id) {
+                    $normalizedScore = ($response->getScore() / 100) * $question->points;
+                    $totalAchievedScore += $normalizedScore;
+                    break;
+                }
             }
         }
 
-        // Quel était le max de points atteignables (pour faire le ratio %)
         $maxPossiblePoints = $sessionModel->questions->sum('points');
         $finalPercentage = $maxPossiblePoints > 0 ? ($totalAchievedScore / $maxPossiblePoints) * 100 : 0;
 
-        // 4. Test Final Conditionnel
-        $livrableIsValidated = ($livrable->status === 'VALIDATED');
+        $livrableIsValidated = ($livrable->status === 'VALIDATED' || $livrable->status === 'VALIDE');
+        
+        // If student hasn't answered anything yet but the session is still active/available
+        if (empty($studentResponses)) {
+            return [
+                'is_completed' => false,
+                'status' => 'PENDING_QUIZ',
+                'quiz_score' => 0,
+                'quiz_status' => 'EN ATTENTE',
+                'livrable_status' => $livrable->status === 'VALIDATED' || $livrable->status === 'VALIDE' ? 'Validé' : 'À refaire',
+                'achieved_points' => 0,
+                'max_points' => $maxPossiblePoints
+            ];
+        }
+
         $quizPassed = ($finalPercentage >= $sessionModel->passing_score);
+        $isCompleted = false;
+        $label = "REJECTED";
 
-        // TABLE DE VÉRITÉ DDD
         if ($livrableIsValidated && $quizPassed) {
-            // Optionnel : Clôturer la session si c'est bon
-            if ($sessionModel->status !== 'completed') {
-                $sessionModel->update(['status' => 'completed', 'end_at' => now()]);
-            }
-            return "VALIDATED"; 
+            $isCompleted = true;
+            $label = "VALIDATED"; 
+        } elseif (!$livrableIsValidated && $quizPassed) {
+            $label = "REJECTED_LIVRABLE"; 
+        } elseif ($livrableIsValidated && !$quizPassed) {
+            $label = "REJECTED_QUIZ"; 
         }
 
-        if (!$livrableIsValidated && $quizPassed) {
-            return "REJECTED_LIVRABLE"; 
-        }
-
-        if ($livrableIsValidated && !$quizPassed) {
-            // Quiz raté mais code projet correct.
-            // On le force à se clore pour bloquer d'autres try.
-            if ($sessionModel->status !== 'completed') {
-                $sessionModel->update(['status' => 'completed', 'end_at' => now()]);
-            }
-            return "REJECTED_QUIZ"; 
-        }
-
-        return "REJECTED"; // Les deux ont échoué.
+        return [
+            'is_completed' => $isCompleted || $quizPassed,
+            'status' => $label,
+            'quiz_score' => round($finalPercentage),
+            'quiz_status' => $quizPassed ? 'RÉUSSI' : 'ÉCHOUÉ',
+            'livrable_status' => $livrable->status === 'VALIDATED' || $livrable->status === 'VALIDE' ? 'Validé' : 'À refaire',
+            'achieved_points' => $totalAchievedScore,
+            'max_points' => $maxPossiblePoints
+        ];
     }
 }
