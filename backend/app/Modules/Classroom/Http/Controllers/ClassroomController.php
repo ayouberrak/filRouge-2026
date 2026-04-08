@@ -29,8 +29,11 @@ class ClassroomController
 
     public function index()
     {
-        $classrooms = $this->getAllClassroomsUseCase->execute();
-        return ClassroomResource::collection($classrooms);
+        $classrooms = \App\Modules\Classroom\Infrastructure\Models\ClassroomModel::with(['formateur'])
+            ->withCount(['students'])
+            ->get();
+
+        return response()->json(['data' => $classrooms]);
     }
 
     public function create(CreateClassRequests $request)
@@ -70,5 +73,36 @@ class ClassroomController
         $classroomDTO = $request->toDTO();
         $this->updateClassroomUseCase->execute($id, $classroomDTO);
         return response()->json(['message' => 'Classroom updated successfully']);
+    }
+
+    public function assignStudents(\Illuminate\Http\Request $request, int $id)
+    {
+        $request->validate([
+            'student_ids' => 'required|array',
+            'student_ids.*' => 'exists:users,id'
+        ]);
+
+        \App\Modules\User\Infrastructure\Models\UserModel::whereIn('id', $request->student_ids)
+            ->update(['classroom_id' => $id]);
+
+        return response()->json(['message' => 'Students assigned successfully']);
+    }
+
+    /**
+     * Retourne les classes du formateur connecté
+     */
+    public function myClassrooms()
+    {
+        $formateurId = auth()->id();
+        $classrooms = \App\Modules\Classroom\Infrastructure\Models\ClassroomModel::where('formateur_id', $formateurId)
+            ->withCount('students')
+            ->get()
+            ->map(fn($c) => [
+                'id'             => $c->id,
+                'name'           => $c->name,
+                'students_count' => $c->students_count,
+            ]);
+
+        return response()->json(['data' => $classrooms]);
     }
 }
