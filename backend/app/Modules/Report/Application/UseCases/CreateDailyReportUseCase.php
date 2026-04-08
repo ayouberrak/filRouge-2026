@@ -20,7 +20,12 @@ class CreateDailyReportUseCase
             $dto->classroomId,
             $dto->date,
             $dto->absencesCount,
+            $dto->tardiesCount,
             $dto->briefStatus,
+            $dto->technicalTopics,
+            $dto->workshopsDone,
+            $dto->classMood,
+            $dto->objectivesMet,
             $dto->note
         );
 
