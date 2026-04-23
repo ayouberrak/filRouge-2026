@@ -18,6 +18,8 @@ class LivrableModel extends Model
         'link',
         'message',
         'status',
+        'formateur_id',
+        'formateur_message',
     ];
 
     public function brief()
@@ -35,8 +37,8 @@ class LivrableModel extends Model
         return $this->belongsTo(SquadModel::class, 'squad_id');
     }
 
-    public function responses()
+    public function formateur()
     {
-        return $this->hasMany(ReponseLivrableModel::class, 'livrable_id');
+        return $this->belongsTo(UserModel::class, 'formateur_id');
     }
 }

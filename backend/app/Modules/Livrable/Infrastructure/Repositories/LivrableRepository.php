@@ -3,11 +3,9 @@
 namespace App\Modules\Livrable\Infrastructure\Repositories;
 
 use App\Modules\Livrable\Domain\Entities\LivrableEntity;
-use App\Modules\Livrable\Domain\Entities\ReponseLivrableEntity;
 use App\Modules\Livrable\Domain\Repositories\LivrableRepositoryInterface;
 use App\Modules\Livrable\Domain\ValueObjects\LivrableStatus;
 use App\Modules\Livrable\Infrastructure\Models\LivrableModel;
-use App\Modules\Livrable\Infrastructure\Models\ReponseLivrableModel;
 
 class LivrableRepository implements LivrableRepositoryInterface
 {
@@ -22,6 +20,8 @@ class LivrableRepository implements LivrableRepositoryInterface
                 'link' => $livrable->getLink(),
                 'message' => $livrable->getMessage(),
                 'status' => $livrable->getStatus()->getValue(),
+                'formateur_id' => $livrable->getFormateurId(),
+                'formateur_message' => $livrable->getFormateurMessage(),
             ]
         );
 
@@ -30,7 +30,7 @@ class LivrableRepository implements LivrableRepositoryInterface
 
     public function findById(int $id): ?LivrableEntity
     {
-        $model = LivrableModel::with('responses')->find($id);
+        $model = LivrableModel::find($id);
 
         if (!$model) {
             return null;
@@ -39,34 +39,9 @@ class LivrableRepository implements LivrableRepositoryInterface
         return $this->toEntity($model);
     }
 
-    public function saveResponse(ReponseLivrableEntity $reponse): ReponseLivrableEntity
-    {
-        $reponseModel = ReponseLivrableModel::updateOrCreate(
-            ['id' => $reponse->getId()],
-            [
-                'livrable_id' => $reponse->getLivrableId(),
-                'formateur_id' => $reponse->getFormateurId(),
-                'status' => $reponse->getStatus()->getValue(),
-                'message' => $reponse->getMessage(),
-            ]
-        );
-
-        // Update the livrable status
-        LivrableModel::where('id', $reponse->getLivrableId())
-            ->update(['status' => $reponse->getStatus()->getValue()]);
-
-        return $this->toResponseEntity($reponseModel);
-    }
-
-    public function findResponseById(int $id): ?ReponseLivrableEntity
-    {
-        $model = ReponseLivrableModel::find($id);
-        return $model ? $this->toResponseEntity($model) : null;
-    }
-
     public function findByBriefId(int $briefId): array
     {
-        $models = LivrableModel::with('responses')->where('brief_id', $briefId)->get();
+        $models = LivrableModel::where('brief_id', $briefId)->get();
         return $models->map(function(LivrableModel $model) {
             return $this->toEntity($model);
         })->toArray();
@@ -74,10 +49,6 @@ class LivrableRepository implements LivrableRepositoryInterface
 
     private function toEntity(LivrableModel $model): LivrableEntity
     {
-        $responses = $model->relationLoaded('responses')
-            ? $model->responses->map(fn($resp) => $this->toResponseEntity($resp))->toArray()
-            : [];
-
         return new LivrableEntity(
             $model->id,
             $model->brief_id,
@@ -85,19 +56,9 @@ class LivrableRepository implements LivrableRepositoryInterface
             $model->squad_id,
             $model->link,
             new LivrableStatus($model->status),
-            $responses,
-            $model->updated_at,
-            $model->message
-        );
-    }
-
-    private function toResponseEntity(ReponseLivrableModel $model): ReponseLivrableEntity
-    {
-        return new ReponseLivrableEntity(
-            $model->id,
-            $model->livrable_id,
             $model->formateur_id,
-            new LivrableStatus($model->status),
+            $model->formateur_message,
+            $model->updated_at,
             $model->message,
             $model->created_at
         );
