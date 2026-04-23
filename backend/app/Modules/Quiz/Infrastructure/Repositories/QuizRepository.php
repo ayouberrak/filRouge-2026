@@ -23,8 +23,6 @@ class QuizRepository implements QuizRepositoryInterface
             'status' => $session->getStatus()->getValue(),
             'timer_minutes' => $session->getTimerMinutes(),
             'passing_score' => $session->getPassingScore(),
-            'start_at' => $session->getStartedAt()?->format('Y-m-d H:i:s'),
-            'end_at' => $session->getEndedAt()?->format('Y-m-d H:i:s'),
         ];
 
         if ($session->getId()) {
@@ -135,8 +133,6 @@ class QuizRepository implements QuizRepositoryInterface
             new QuizStatus($model->status),
             $model->timer_minutes,
             $model->passing_score,
-            $model->start_at ? new DateTime($model->start_at) : null,
-            $model->end_at ? new DateTime($model->end_at) : null,
             $questions
         );
     }

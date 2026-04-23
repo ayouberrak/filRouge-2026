@@ -58,18 +58,18 @@ class ValidateBriefCompletionUseCase
         $studentResponses = array_filter($responses, fn($r) => $r->getStudentId() === $studentId);
         
         $totalAchievedScore = 0;
+        $answeredQuestionsCount = 0;
         foreach ($sessionModel->questions as $question) {
             foreach ($studentResponses as $response) {
                 if ($response->getQuestionId() === $question->id) {
-                    $normalizedScore = ($response->getScore() / 100) * $question->points;
-                    $totalAchievedScore += $normalizedScore;
+                    $totalAchievedScore += $response->getScore(); // Assuming score is 0-100
+                    $answeredQuestionsCount++;
                     break;
                 }
             }
         }
 
-        $maxPossiblePoints = $sessionModel->questions->sum('points');
-        $finalPercentage = $maxPossiblePoints > 0 ? ($totalAchievedScore / $maxPossiblePoints) * 100 : 0;
+        $finalPercentage = $totalQuestions > 0 ? ($totalAchievedScore / $totalQuestions) : 0;
 
         $livrableIsValidated = ($livrable->status === 'VALIDATED' || $livrable->status === 'VALIDE');
         
@@ -81,8 +81,6 @@ class ValidateBriefCompletionUseCase
                 'quiz_score' => 0,
                 'quiz_status' => 'EN ATTENTE',
                 'livrable_status' => $livrable->status === 'VALIDATED' || $livrable->status === 'VALIDE' ? 'Validé' : 'À refaire',
-                'achieved_points' => 0,
-                'max_points' => $maxPossiblePoints
             ];
         }
 
@@ -105,8 +103,6 @@ class ValidateBriefCompletionUseCase
             'quiz_score' => round($finalPercentage),
             'quiz_status' => $quizPassed ? 'RÉUSSI' : 'ÉCHOUÉ',
             'livrable_status' => $livrable->status === 'VALIDATED' || $livrable->status === 'VALIDE' ? 'Validé' : 'À refaire',
-            'achieved_points' => $totalAchievedScore,
-            'max_points' => $maxPossiblePoints
         ];
     }
 }

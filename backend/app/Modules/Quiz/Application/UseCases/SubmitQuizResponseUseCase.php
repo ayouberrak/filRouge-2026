@@ -11,8 +11,7 @@ class SubmitQuizResponseUseCase
 {
     public function __construct(
         private QuizRepositoryInterface $quizRepository,
-        private MCPClient $aiClient,
-        private \App\Modules\Brief\Application\UseCases\AwardPointsForBriefCompletionUseCase $awardPointsUseCase
+        private MCPClient $aiClient
     ) {}
 
     public function execute(SubmitQuizResponseDTO $dto): ResponseEntity
@@ -78,7 +77,7 @@ class SubmitQuizResponseUseCase
                 \Illuminate\Support\Facades\Log::warning("AI evaluation failed for open_ended question: " . $e->getMessage());
                 $score = 0;
                 $isCorrect = false;
-                $feedback = "⚠️ [Échec IA] L'évaluation automatique a rencontré un problème (Erreur API). Votre réponse a été sauvegardée et sera validée manuellement par votre formateur.";
+                $feedback = "⚠️ [Échec IA] L'évaluation automatique a rencontré un problème (Erreur API). Veuillez réessayer plus tard.";
             }
         }
 
@@ -95,12 +94,7 @@ class SubmitQuizResponseUseCase
 
         $savedResponse = $this->quizRepository->saveResponse($response);
 
-        // Try to award points (only if both project and quiz are done)
-        try {
-            $this->awardPointsUseCase->execute($briefId, $dto->getStudentId());
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error("Failed to award points automatically: " . $e->getMessage());
-        }
+
 
         return $savedResponse;
     }

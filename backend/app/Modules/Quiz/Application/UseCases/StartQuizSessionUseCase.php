@@ -28,8 +28,6 @@ class StartQuizSessionUseCase
             new \App\Modules\Quiz\Domain\ValueObjects\QuizStatus('ACTIVE'),
             $session->getTimerMinutes(),
             $session->getPassingScore(),
-            new \DateTime(), // start_at défini à maintenant
-            null,
             $session->getQuestions()
         );
 

@@ -35,8 +35,6 @@ class CreateQuizSessionUseCase
             new \App\Modules\Quiz\Domain\ValueObjects\QuizStatus('PENDING'),
             $dto->getTimerMinutes(),
             $dto->getPassingScore(),
-            null,
-            null,
             $questions
         );
 

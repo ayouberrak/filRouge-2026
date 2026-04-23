@@ -11,12 +11,13 @@ use App\Modules\Quiz\Application\UseCases\StartQuizSessionUseCase;
 use App\Modules\Quiz\Application\UseCases\SubmitQuizResponseUseCase;
 use App\Modules\Quiz\Application\UseCases\ValidateBriefCompletionUseCase;
 use App\Modules\Quiz\Application\UseCases\GetEvaluatedResponsesUseCase;
-use App\Modules\Quiz\Application\UseCases\ManualGradeQuizResponseUseCase;
 use App\Modules\Quiz\Application\DTO\CreateQuizSessionDTO;
 use App\Modules\Quiz\Application\DTO\SubmitQuizResponseDTO;
 use App\Modules\Quiz\Http\Requests\CreateQuizSessionRequest;
 use App\Modules\Quiz\Http\Requests\SubmitQuizResponseRequest;
-use App\Modules\Quiz\Http\Requests\GradeQuizResponseRequest;
+use App\Modules\Quiz\Infrastructure\Models\QuizSessionModel;
+use App\Modules\Quiz\Infrastructure\Models\QuestionModel;
+use Carbon\Carbon;
 use Exception;
 
 class QuizController
@@ -26,8 +27,7 @@ class QuizController
         private StartQuizSessionUseCase $startQuizSessionUseCase,
         private SubmitQuizResponseUseCase $submitQuizResponseUseCase,
         private ValidateBriefCompletionUseCase $validateBriefCompletionUseCase,
-        private GetEvaluatedResponsesUseCase $getEvaluatedResponsesUseCase,
-        private ManualGradeQuizResponseUseCase $manualGradeQuizResponseUseCase
+        private GetEvaluatedResponsesUseCase $getEvaluatedResponsesUseCase
     ) {}
 
     /**
@@ -45,6 +45,13 @@ class QuizController
                 ->first();
 
             if ($existingSession) {
+                $existingSession->update([
+                    'timer_minutes' => $validated['timer_minutes'],
+                    'passing_score' => $validated['passing_score'],
+                    'start_at' => $validated['start_at'] ?? null,
+                    'status' => 'PENDING',
+                ]);
+
                 // Récupérer les IDs des questions existantes
                 $questionIds = \App\Modules\Quiz\Infrastructure\Models\QuestionModel
                     ::where('quiz_session_id', $existingSession->id)
@@ -89,6 +96,7 @@ class QuizController
                 Auth::id(),
                 $validated['timer_minutes'],
                 $validated['passing_score'],
+                $validated['start_at'] ?? null,
                 $validated['questions']
             );
 
@@ -135,6 +143,14 @@ class QuizController
     {
         try {
             $validated = $request->validated();
+
+            $question = QuestionModel::findOrFail($validated['question_id']);
+            $session = QuizSessionModel::findOrFail($question->quiz_session_id);
+            $session = $this->syncSessionStatus($session);
+
+            if ($session->status === 'COMPLETED') {
+                return response()->json(['error' => 'Le quiz est terminé. Vous ne pouvez plus soumettre de réponses.'], 403);
+            }
             
             $dto = new SubmitQuizResponseDTO(
                 $validated['question_id'],
@@ -196,11 +212,15 @@ class QuizController
                 return response()->json(['error' => 'Aucune session de quiz active pour ce brief'], 404);
             }
 
+            $session = $this->syncSessionStatus($session);
+
             return response()->json([
                 'data' => [
                     'id' => $session->id,
                     'status' => $session->status,
-                    'timer_minutes' => $session->timer_minutes
+                    'timer_minutes' => $session->timer_minutes,
+                    'start_at' => optional($session->start_at)?->format('Y-m-d H:i:s'),
+                    'is_accessible' => $session->status !== 'COMPLETED'
                 ]
             ]);
         } catch (\Throwable $e) {
@@ -214,6 +234,13 @@ class QuizController
     public function getQuestions(int $sessionId): JsonResponse
     {
         try {
+            $session = QuizSessionModel::findOrFail($sessionId);
+            $session = $this->syncSessionStatus($session);
+
+            if ($session->status === 'COMPLETED') {
+                return response()->json(['error' => 'Le quiz est terminé.'], 403);
+            }
+
             $questions = \App\Modules\Quiz\Infrastructure\Models\QuestionModel::where('quiz_session_id', $sessionId)
                 ->get()
                 ->map(function($q) {
@@ -252,31 +279,33 @@ class QuizController
         }
     }
 
-    /**
-     * Manually grade a quiz response (Formateur only)
-     */
-    public function gradeResponse(GradeQuizResponseRequest $request, int $responseId): JsonResponse
-    {
-        try {
-            $validated = $request->validated();
-            
-            $response = $this->manualGradeQuizResponseUseCase->execute(
-                $responseId,
-                $validated['score'],
-                $validated['ai_feedback']
-            );
 
-            return response()->json([
-                'message' => 'Response graded manually successfully',
-                'data' => [
-                    'id' => $response->id,
-                    'score' => $response->score,
-                    'is_correct' => $response->is_correct,
-                    'ai_feedback' => $response->ai_feedback
-                ]
-            ]);
-        } catch (\Throwable $e) {
-            return response()->json(['error' => $e->getMessage()], 400);
+
+    private function syncSessionStatus(QuizSessionModel $session): QuizSessionModel
+    {
+        $now = Carbon::now();
+        $startAt = $session->start_at ? Carbon::parse($session->start_at) : null;
+
+        if (!$startAt) {
+            return $session;
         }
+
+        $endAt = $startAt->copy()->addMinutes((int)$session->timer_minutes);
+
+        if ($now->greaterThanOrEqualTo($endAt)) {
+            if ($session->status !== 'COMPLETED') {
+                $session->status = 'COMPLETED';
+                $session->save();
+            }
+            return $session->fresh();
+        }
+
+        if ($now->greaterThanOrEqualTo($startAt) && $session->status === 'PENDING') {
+            $session->status = 'ACTIVE';
+            $session->save();
+            return $session->fresh();
+        }
+
+        return $session;
     }
 }
