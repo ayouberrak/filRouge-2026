@@ -14,13 +14,8 @@ class StartConversationUseCase
         $this->chatRepository = $chatRepository;
     }
 
-    /**
-     * Start a private conversation between two users.
-     * If one already exists, return it.
-     */
     public function execute(int $currentUserId, int $targetUserId): ConversationModel
     {
-        // Try to find an existing individual conversation between these two
         $existing = ConversationModel::where('type', 'individual')
             ->whereHas('users', function ($q) use ($currentUserId) {
                 $q->where('user_id', $currentUserId);

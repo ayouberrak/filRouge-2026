@@ -7,9 +7,7 @@ use Illuminate\Database\Eloquent\Collection;
 
 class SearchUsersUseCase
 {
-    /**
-     * Search for users by name or email, excluding the current user.
-     */
+
     public function execute(string $query, int $excludeUserId): Collection
     {
         return UserModel::where(function ($q) use ($query) {

@@ -17,19 +17,10 @@ class SendMessageUseCase
 
     public function execute(SendMessageDTO $dto)
     {
-        // 1. Validation métier via Value Object
         $content = new MessageContent($dto->content);
 
-        // 2. Sauvegarde en DB via le repository
-        $message = $this->chatRepository->sendMessage(
-            $dto->conversationId,
-            $dto->senderId,
-            $content->getContent()
-        );
-
-        // 3. Mettre à jour la date de modification de la conversation
-        // $message->conversation->touch(); // Assurez-vous d'avoir la relation dans le modèle
-        
+        $message = $this->chatRepository->sendMessage( $dto->conversationId , $dto->senderId , $content->getContent()
+        );        
         return $message;
     }
 }
