@@ -28,14 +28,8 @@ class UserModel extends Authenticatable
         'password',
         'role',
         'status',
-        'speciality',
-        'total_points',
         'classroom_id',
         'squad_id',
-        'avatar_url',
-        'location',
-        'bio',
-        'skills',
         'github_url',
         'linkedin_url',
     ];
@@ -50,7 +44,6 @@ class UserModel extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'skills' => 'array',
         ];
     }
 
@@ -86,7 +79,7 @@ class UserModel extends Authenticatable
 
     public function activities()
     {
-        return $this->belongsToMany(ActivityModel::class, 'activity_user');
+        return $this->belongsToMany(ActivityModel::class, 'activity_student', 'student_id', 'activity_id');
     }
 
     public function dailyReports()
