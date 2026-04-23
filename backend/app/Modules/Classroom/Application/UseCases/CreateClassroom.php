@@ -10,7 +10,7 @@ class CreateClassroom
     public function __construct(
         private ClassroomRepositoryInterface $classroomRepository
     ) {}
- 
+
     public function execute(CreateClassroomDTO $classroomDTO): void
     {
         $this->classroomRepository->create([
