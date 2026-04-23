@@ -4,16 +4,11 @@
 
     <main class="main">
       <!-- Loading Overlay -->
-      <transition name="fade">
-        <div v-if="isLoading" class="loading-overlay">
-          <div class="loader-box">
-            <div class="loader-spinner"></div>
-            <p>Initialisation du portail Nadi...</p>
-          </div>
-        </div>
-      </transition>
+      <div v-if="isLoading" style="text-align: center; padding: 40px; color: #8b949e;">
+        Chargement en cours...
+      </div>
 
-      <div class="content">
+      <div v-else class="content">
 
         <!-- ===== HEADER ===== -->
         <header class="dash-header animate-in">
@@ -37,25 +32,25 @@
         <!-- ===== KPI STATS GRID ===== -->
         <div class="kpi-grid animate-in" style="animation-delay: 0.1s">
 
-          <div class="kpi-card" @click="router.push('/student/dashboard')">
+          <div class="kpi-card" @click="router.push('/student/network')">
             <div class="kpi-icon kpi-icon--blue">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
             </div>
             <div class="kpi-body">
-              <div class="kpi-label">Classement</div>
+              <div class="kpi-label">Progression</div>
               <div class="kpi-value kpi-value--blue">#{{ studentStats?.rank || '--' }}</div>
-              <div class="kpi-sub">rang global</div>
+              <div class="kpi-sub">rang promotion</div>
             </div>
           </div>
 
-          <div class="kpi-card">
+          <div class="kpi-card" @click="router.push('/student/activity')">
             <div class="kpi-icon kpi-icon--green">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
             </div>
             <div class="kpi-body">
-              <div class="kpi-label">Points XP</div>
-              <div class="kpi-value kpi-value--green">{{ formatNumber(studentStats?.total_points || 0) }}</div>
-              <div class="kpi-sub">mérite accumulé</div>
+              <div class="kpi-label">Activités</div>
+              <div class="kpi-value kpi-value--green">PRÉSENT</div>
+              <div class="kpi-sub">engagement actif</div>
             </div>
           </div>
 
@@ -96,7 +91,7 @@
                   <h2 class="panel-title">Projet en cours</h2>
                   <p class="panel-desc">Gérez vos rendus et vos échéances</p>
                 </div>
-                <router-link to="/briefs" class="panel-link">
+                <router-link to="/student/briefs" class="panel-link">
                   Voir tous les projets
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                 </router-link>
@@ -113,8 +108,8 @@
                     </div>
                   </div>
                   <div class="brief-footer">
-                    <button class="btn-nadi-primary" @click="router.push('/briefs')">Continuer le travail</button>
-                    <button class="btn-nadi-secondary" @click="router.push('/submissions')">Déposer un livrable</button>
+                    <button class="btn-nadi-primary" @click="router.push('/student/briefs')">Continuer le travail</button>
+                    <button class="btn-nadi-secondary" @click="router.push('/student/submissions')">Déposer un livrable</button>
                   </div>
                 </div>
               </div>
@@ -152,7 +147,7 @@
               <div class="panel-header">
                 <div>
                   <h2 class="panel-title">Hall of Fame</h2>
-                  <p class="panel-desc">Top performers de la promo</p>
+                  <p class="panel-desc">Leaders de la promotion</p>
                 </div>
               </div>
 
@@ -166,14 +161,14 @@
                   <div class="leader-details">
                     <span class="leader-name">{{ student.first_name }}</span>
                     <div class="leader-progress-bg">
-                      <div class="leader-progress-fill" :style="{ width: ((student.total_points / (leaderboard[0]?.total_points || 1)) * 100) + '%' }"></div>
+                      <div class="leader-progress-fill" :style="{ width: ((student.validated_briefs_count / (leaderboard[0]?.validated_briefs_count || 1)) * 100) + '%' }"></div>
                     </div>
                   </div>
-                  <div class="leader-xp">{{ student.total_points }}</div>
+                  <div class="leader-xp">{{ student.validated_briefs_count || 0 }}</div>
                 </div>
               </div>
 
-              <button class="leaderboard-full-btn" @click="router.push('/network')">Classement complet</button>
+              <button class="leaderboard-full-btn" @click="router.push('/student/network')">Classement complet</button>
             </section>
 
           </aside>
@@ -191,18 +186,19 @@ import { useRouter } from 'vue-router';
 import SidebarStudent from '../../components/SidebarStudent.vue';
 import api from '../../services/api';
 
-// ─── State ────────────────────────────────────────────────────────────────────
-
+// --- VARIABLES D'ÉTAT (REFS) ---
+// On utilise 'ref' pour créer des variables réactives que Vue surveille
 const router    = useRouter();
-const user      = ref(null);
-const activeBrief  = ref(null);
-const leaderboard  = ref([]);
-const squad        = ref([]);
-const studentStats = ref(null);
-const isLoading    = ref(true);
+const user      = ref(null); // Informations de l'étudiant connecté
+const activeBrief  = ref(null); // Le projet actuel sur lequel travailler
+const leaderboard  = ref([]); // Classement des meilleurs étudiants
+const squad        = ref([]); // Membres de la squad (groupe)
+const studentStats = ref(null); // Statistiques (rang, XP, absences...)
+const isLoading    = ref(true); // État de chargement initial
 
-// ─── Computed ─────────────────────────────────────────────────────────────────
+// --- LOGIQUE CALCULÉE (COMPUTED) ---
 
+// Formate la date du jour (ex: lundi 23 avril)
 const formattedDate = computed(() => {
   return new Intl.DateTimeFormat('fr-FR', {
     weekday: 'long',
@@ -211,68 +207,73 @@ const formattedDate = computed(() => {
   }).format(new Date());
 });
 
-// ─── Methods ──────────────────────────────────────────────────────────────────
+// --- ACTIONS (MÉTHODES) ---
 
-const formatNumber = (num) => {
-  return new Intl.NumberFormat('fr-FR').format(num);
-};
+// --- ACTIONS (MÉTHODES) ---
 
+// Déconnexion de l'utilisateur
 const handleLogout = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
   router.push('/login');
 };
 
+// Récupérer les données du Dashboard (Version très simple sans try/catch)
 const fetchDashboardData = async () => {
-  try {
+  // 1. Tenter de charger le cache pour un affichage instantané
+  const cached = localStorage.getItem('student_dashboard_cache');
+  if (cached) {
+    const cacheData = JSON.parse(cached);
+    user.value = cacheData.user;
+    leaderboard.value = cacheData.leaderboard;
+    studentStats.value = cacheData.stats;
+    squad.value = cacheData.squad;
+    activeBrief.value = cacheData.activeBrief;
+    isLoading.value = false; // On cache le loader car on a déjà des données
+  } else {
     isLoading.value = true;
-    
-    // Core data fetching with allSettled to prevent one failure from breaking the whole dashboard
-    const results = await Promise.allSettled([
+  }
+  
+  try {
+    const [userRes, leaderboardRes, statsRes, squadRes, briefsRes] = await Promise.all([
       api.get('/user'),
       api.get('/leaderboard'),
-      api.get('/briefs'),
-      api.get('/student/stats'),
-      api.get('/squads/my')
+      api.get('/analytics/student/stats'),
+      api.get('/squads/my'),
+      api.get('/briefs')
     ]);
 
-    const [userRes, leaderboardRes, briefsRes, statsRes, squadRes] = results;
+    user.value = userRes.data;
+    leaderboard.value = leaderboardRes.data.data || [];
+    studentStats.value = statsRes.data.stats || null;
 
-    if (userRes.status === 'fulfilled') {
-      user.value = userRes.value.data;
-    }
+    const squadData = squadRes.data.data || squadRes.data;
+    squad.value = squadData?.members || (Array.isArray(squadData) ? squadData : []);
 
-    if (leaderboardRes.status === 'fulfilled') {
-      leaderboard.value = leaderboardRes.value.data.data || [];
-    }
+    const allBriefs = briefsRes.data.data || [];
+    const now = new Date();
+    activeBrief.value = allBriefs
+      .filter(b => new Date(b.date_end) > now)
+      .sort((a, b) => new Date(a.date_end) - new Date(b.date_end))[0] || null;
 
-    if (statsRes.status === 'fulfilled') {
-      studentStats.value = statsRes.value.data.stats || null;
-    }
-
-    if (squadRes.status === 'fulfilled') {
-      const sqData = squadRes.value.data.data || squadRes.value.data;
-      // Depending on structure, members could be directly inside sqData or sqData is an array
-      squad.value = Array.isArray(sqData?.members) ? sqData.members : Array.isArray(sqData) ? sqData : [];
-    } else {
-      console.error('Error fetching squad:', squadRes.reason);
-    }
-
-    if (briefsRes.status === 'fulfilled') {
-      const briefs = briefsRes.value.data.data || [];
-      const now = new Date();
-      activeBrief.value = briefs
-        .filter(b => new Date(b.date_end) > now)
-        .sort((a, b) => new Date(a.date_end) - new Date(b.date_end))[0] || null;
-    }
+    // 2. Sauvegarder dans le cache pour la prochaine fois
+    localStorage.setItem('student_dashboard_cache', JSON.stringify({
+      user: user.value,
+      leaderboard: leaderboard.value,
+      stats: studentStats.value,
+      squad: squad.value,
+      activeBrief: activeBrief.value
+    }));
 
   } catch (err) {
-    console.error('Dashboard general error:', err);
-  } finally {
-    isLoading.value = false;
+    console.error("Erreur Dashboard:", err);
   }
+
+  isLoading.value = false;
 };
 
+// --- CYCLE DE VIE ---
+// Cette fonction s'exécute quand le composant est affiché à l'écran
 onMounted(fetchDashboardData);
 </script>
 
@@ -303,28 +304,7 @@ onMounted(fetchDashboardData);
   gap: 32px;
 }
 
-/* ─── Loading State ─────────────────────────────────────────────────────────── */
-.loading-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  background: #010409;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.loader-box { text-align: center; }
-.loader-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid rgba(56, 139, 253, 0.1);
-  border-top-color: #388bfd;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 16px;
-}
-.loader-box p { font-size: 14px; color: #8b949e; letter-spacing: 0.05em; font-weight: 500; }
-@keyframes spin { to { transform: rotate(360deg); } }
+
 
 /* ─── Heading ───────────────────────────────────────────────────────────────── */
 .dash-header { display: flex; justify-content: space-between; align-items: center; }

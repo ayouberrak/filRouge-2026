@@ -71,23 +71,8 @@
           </div>
         </div>
 
-        <!-- Skeleton Grid (Loading State) -->
-        <div class="briefs-grid" v-if="isLoading">
-          <div v-for="i in 8" :key="i" class="brief-card skeleton-card">
-            <div class="card-thumbnail skeleton-box shimmer"></div>
-            <div class="card-body">
-              <div class="card-meta">
-                <div class="skeleton-shimmer skeleton-tag shimmer"></div>
-                <div class="skeleton-shimmer skeleton-points shimmer"></div>
-              </div>
-              <div class="skeleton-shimmer skeleton-title shimmer"></div>
-              <div class="skeleton-shimmer skeleton-desc shimmer"></div>
-              <div class="skeleton-shimmer skeleton-desc shimmer w-2/3"></div>
-              <div class="card-tags">
-                <div v-for="j in 3" :key="j" class="skeleton-shimmer skeleton-tag shimmer w-12"></div>
-              </div>
-            </div>
-          </div>
+        <div class="briefs-grid" v-if="isLoading" style="display: block; text-align: center; padding: 40px; color: #8b949e;">
+          Chargement en cours...
         </div>
 
         <!-- Real Grid -->
@@ -97,7 +82,7 @@
             :key="brief.id"
             class="brief-card"
             :style="{ animationDelay: `${index * 0.05}s` }"
-            @click="router.push(`/briefs/${brief.id}`)"
+            @click="router.push(`/student/briefs/${brief.id}`)"
           >
             <!-- Hover Glow Effect -->
             <div class="hover-glow"></div>
@@ -115,7 +100,7 @@
                 <span class="modality-tag" :class="brief.modality === 'COLLECTIVE' ? 'modality-tag--collective' : 'modality-tag--solo'">
                   {{ brief.modality === 'COLLECTIVE' ? 'Collectif' : 'Individuel' }}
                 </span>
-                <span class="card-points">{{ brief.points || 1200 }} <span class="points-unit">YC</span></span>
+
               </div>
 
               <h3 class="card-title">{{ brief.title }}</h3>
@@ -161,44 +146,83 @@ import { useRouter } from 'vue-router';
 import api from '../../services/api';
 import SidebarStudent from '../../components/SidebarStudent.vue';
 
-// ─── State ────────────────────────────────────────────────────────────────────
-
+// --- VARIABLES D'ÉTAT (REFS) ---
 const router        = useRouter();
-const user          = ref(null);
-const mode          = ref('promo');
-const searchQuery   = ref('');
-const modalityFilter = ref('ALL');
-const briefs        = ref([]);
-const isLoading     = ref(true);
+const user          = ref(null); // Utilisateur actuel
+const mode          = ref('promo'); // Mode d'affichage: 'promo' (assignés) ou 'explorer' (catalogue complet)
+const searchQuery   = ref(''); // Texte de recherche pour filtrer
+const modalityFilter = ref('ALL'); // Filtre de modalité: ALL, INDIVIDUAL, COLLECTIVE
+const briefs        = ref([]); // Liste des projets récupérés
+const isLoading     = ref(true); // État de chargement
 
-// ─── Options ──────────────────────────────────────────────────────────────────
-
+// --- OPTIONS DE FILTRAGE ---
 const modalityOptions = [
   { value: 'ALL',        label: 'Tous'       },
   { value: 'INDIVIDUAL', label: 'Individuel' },
   { value: 'COLLECTIVE', label: 'Collectif'  },
 ];
 
-// ─── Computed ─────────────────────────────────────────────────────────────────
+// --- LOGIQUE CALCULÉE (COMPUTED) ---
 
+// Filtre la liste des briefs en fonction de la recherche et de la modalité
 const filteredBriefs = computed(() => {
-  const q = searchQuery.value.toLowerCase().trim();
+  const query = searchQuery.value.toLowerCase().trim();
+  
   return briefs.value.filter(b => {
-    const matchesSearch =
-      !q ||
-      b.title.toLowerCase().includes(q) ||
-      (b.tags && b.tags.some(t => t.toLowerCase().includes(q)));
+    // 1. Recherche par titre ou par tag
+    const matchesSearch = !query || 
+      b.title.toLowerCase().includes(query) ||
+      (b.tags && b.tags.some(tag => tag.toLowerCase().includes(query)));
 
-    const matchesModality =
-      modalityFilter.value === 'ALL' ||
-      b.modality === modalityFilter.value;
+    // 2. Filtre par type (Solo / Collectif)
+    const matchesModality = modalityFilter.value === 'ALL' || b.modality === modalityFilter.value;
 
     return matchesSearch && matchesModality;
   });
 });
 
-// ─── Methods ──────────────────────────────────────────────────────────────────
+// --- ACTIONS (MÉTHODES) ---
 
+// Récupérer les projets depuis l'API
+const fetchBriefs = async () => {
+  // 1. Tenter de charger le cache
+  const cacheKey = `student_briefs_${mode.value}`;
+  const cached = localStorage.getItem(cacheKey);
+  if (cached) {
+    briefs.value = JSON.parse(cached);
+    isLoading.value = false;
+  } else {
+    isLoading.value = true;
+  }
+
+  try {
+    const params = mode.value === 'explorer' ? '?all=true' : '';
+    const response = await api.get(`/briefs${params}`);
+    briefs.value = response.data.data || response.data;
+
+    // 2. Sauvegarder dans le cache
+    localStorage.setItem(cacheKey, JSON.stringify(briefs.value));
+  } catch (err) {
+    console.error("Erreur Briefs:", err);
+  }
+  
+  isLoading.value = false;
+};
+
+// Changer de mode (Promotion vs Explorateur)
+const setMode = (newMode) => {
+  mode.value = newMode;
+  fetchBriefs(); // On recharge les données selon le nouveau mode
+};
+
+// Déconnexion
+const handleLogout = () => {
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('user');
+  router.push('/login');
+};
+
+// Utilitaires pour l'affichage
 const BRIEF_IMAGES = [
   'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=600&auto=format&fit=crop',
   'https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=600&auto=format&fit=crop',
@@ -207,51 +231,9 @@ const BRIEF_IMAGES = [
   'https://images.unsplash.com/photo-1534972195531-d756b9bfa9f2?q=80&w=600&auto=format&fit=crop',
 ];
 
-const getBriefImage = (brief) =>
-  BRIEF_IMAGES[brief.id % BRIEF_IMAGES.length];
+const getBriefImage = (brief) => BRIEF_IMAGES[brief.id % BRIEF_IMAGES.length];
 
-const setMode = (newMode) => {
-  mode.value = newMode;
-  fetchBriefs();
-};
-
-// ─── Data Fetching ────────────────────────────────────────────────────────────
-
-const fetchBriefs = async () => {
-  isLoading.value = true;
-  try {
-    const params = mode.value === 'explorer' ? '?all=true' : '';
-    const response = await api.get(`/briefs${params}`);
-    briefs.value = response.data.data || response.data;
-  } catch (err) {
-    console.error('Briefs fetch error:', err);
-    briefs.value = [
-      {
-        id: 1, title: 'Clean Architecture PHP', description: 'Maîtrisez DDD et les principes SOLID pour des applications maintenables.', modality: 'INDIVIDUAL', tags: ['PHP', 'DDD', 'SOLID'], points: 1500, difficulty: 'PRO',
-      },
-      {
-        id: 2, title: 'Team Project : WebApp', description: 'Construisez une application collaborative complète avec Node.js et Vue.', modality: 'COLLECTIVE', tags: ['Node.js', 'Vue', 'Teamwork'], points: 2500, difficulty: 'CORE',
-      },
-    ];
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-const handleLogout = async () => {
-  try {
-    await api.post('/logout');
-  } catch (err) {
-    console.error('Logout error:', err);
-  } finally {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user');
-    router.push('/login');
-  }
-};
-
-// ─── Lifecycle ────────────────────────────────────────────────────────────────
-
+// --- CYCLE DE VIE ---
 onMounted(() => {
   const cached = localStorage.getItem('user');
   if (cached) user.value = JSON.parse(cached);
@@ -274,20 +256,12 @@ onMounted(() => {
 .main::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
 
 /* ─── Skeleton Loading ────────────────────────────────────────────────────────── */
-.skeleton-box { background: rgba(255,255,255,0.03); border-radius: 4px; }
-.skeleton-shimmer { background: rgba(255, 255, 255, 0.04); border-radius: 4px; }
-.shimmer { position: relative; overflow: hidden; }
-.shimmer::after {
-  content: ""; position: absolute; inset: 0; transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.04), transparent);
-  animation: shimmer-anim 1.5s infinite;
-}
-@keyframes shimmer-anim { 100% { transform: translateX(100%); } }
 
-.skeleton-card { pointer-events: none; border-color: rgba(255,255,255,0.05) !important; background: transparent !important;}
-.skeleton-title { height: 18px; width: 80%; margin-bottom: 8px; }
-.skeleton-desc { height: 12px; width: 100%; margin-bottom: 6px; }
-.skeleton-tag { height: 20px; width: 56px; border-radius: 10px; }
+
+
+
+
+
 .w-2\/3 { width: 66%; }
 
 /* ─── Content ───────────────────────────────────────────────────────────────── */
@@ -438,3 +412,4 @@ onMounted(() => {
 @media (max-width: 900px) { .page-header { flex-direction: column; align-items: flex-start; } .controls { width: 100%; flex-wrap: wrap; } .search-input { width: 100%; } }
 @media (max-width: 640px) { .content { padding: 20px; } .briefs-grid { grid-template-columns: 1fr; } .stats-bar { flex-direction: column; align-items: flex-start; gap: 8px; } }
 </style>
+
