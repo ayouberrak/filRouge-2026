@@ -5,7 +5,7 @@ use App\Modules\User\Http\Controllers\UserController;
 use App\Modules\Squad\Http\Controllers\SquadController;
 use App\Modules\Absence\Http\Controllers\AbsenceController;
 use App\Modules\Report\Http\Controllers\DailyReportController;
-use App\Modules\Marketplace\Http\Controllers\MarketplaceController;
+
 use App\Modules\User\Http\Controllers\AnalyticsController;
 use Illuminate\Support\Facades\Route;
 use App\Modules\User\Http\Controllers\AuthController;
@@ -20,7 +20,7 @@ Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
     // Re-register Broadcast routes for Sanctum
-    \Illuminate\Support\Facades\Broadcast::routes(['middleware' => ['auth:sanctum']]);
+    Broadcast::routes(['middleware' => ['auth:sanctum']]);
 
     Route::post('/logout', [AuthController::class, 'logout']);
 
@@ -41,10 +41,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/users/search', [ChatController::class, 'search']);
     });
 
-    // Student Dashboard & Squad Routes
-    Route::get('/student/stats', [AnalyticsController::class, 'getStudentStats']);
-    Route::get('/students', [AnalyticsController::class, 'getStudents']);
-    Route::get('/students/{id}', [AnalyticsController::class, 'getStudentProfile']);
+    // Analytics & Student Management Routes
+    Route::prefix('analytics')->group(function () {
+        Route::get('/student/stats', [AnalyticsController::class, 'getStudentStats']);
+        Route::get('/students', [AnalyticsController::class, 'getStudents']);
+        Route::get('/students/{id}', [AnalyticsController::class, 'getStudentProfile']);
+    });
     Route::get('/squads/my', [SquadController::class, 'mySquad']);
 
     // Shared Brief Routes (Read-only for Students, Full for Formateurs/Admins)
@@ -66,10 +68,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/formateur/dashboard', function () {
             return response()->json(['message' => 'Welcome Formateur!']);
         });
-
-
-        // Student Management
-        // (Moved to general auth group)
 
         // Squad Routes
         Route::prefix('squads')->group(function () {
@@ -124,7 +122,6 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/sessions/{sessionId}/start', [QuizController::class, 'startSession']);
             Route::get('/sessions/{sessionId}/students/{studentId}/responses', [QuizController::class, 'getStudentResponses']);
             Route::get('/briefs/{briefId}/session', [QuizController::class, 'getSessionByBrief']);
-            Route::patch('/responses/{responseId}/grade', [QuizController::class, 'gradeResponse']);
             Route::get('/debug-ping', function () {
                 return response()->json(['ping' => 'pong', 'user' => Auth::id()]); });
         });
@@ -136,14 +133,14 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/admin/dashboard', [AnalyticsController::class, 'getAdminStats']);
         Route::get('/admin/stats', [AnalyticsController::class, 'getAdminStats']);
 
-        // Marketplace Routes for Admin
-        Route::prefix('admin/marketplace')->group(function () {
-            Route::get('/orders', [MarketplaceController::class, 'indexOrders']);
-            Route::patch('/orders/{id}/complete', [MarketplaceController::class, 'completeOrder']);
-            Route::patch('/orders/{id}/cancel', [MarketplaceController::class, 'cancelOrder']);
-            Route::post('/products', [MarketplaceController::class, 'storeProduct']);
-            Route::delete('/products/{id}', [MarketplaceController::class, 'deleteProduct']);
+        // Daily Reports (read-only for admin)
+        Route::prefix('reports')->group(function () {
+            Route::get('/', [DailyReportController::class, 'index']);
+            Route::get('/classroom/{classroomId}', [DailyReportController::class, 'getByClassroom']);
+            Route::get('/stats/{classroomId}', [DailyReportController::class, 'getStats']);
         });
+
+
 
         // classRoom subRoute
         Route::prefix('classrooms')->group(function () {
@@ -192,15 +189,6 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/', [LivrableController::class, 'index']);
             Route::post('/', [LivrableController::class, 'store']);
         });
-
-    });
-
-    // Marketplace Shared
-    Route::get('/marketplace/products', [MarketplaceController::class, 'indexProducts']);
-
-    Route::middleware(['status.active', 'role.student'])->group(function () {
-        Route::post('/marketplace/purchase/{id}', [MarketplaceController::class, 'purchase']);
-        Route::get('/marketplace/my-orders', [MarketplaceController::class, 'myOrders']);
 
         // Quiz Routes for Student
         Route::prefix('quizzes')->group(function () {
