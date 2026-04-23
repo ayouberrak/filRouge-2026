@@ -9,7 +9,6 @@ class DailyReportEntity
     private int $classroomId;
     private string $date;
     private int $absencesCount;
-    private int $tardiesCount;
     private string $briefStatus;
     private ?string $technicalTopics;
     private ?string $workshopsDone;
@@ -23,7 +22,6 @@ class DailyReportEntity
         int $classroomId,
         string $date,
         int $absencesCount,
-        int $tardiesCount,
         string $briefStatus,
         ?string $technicalTopics = null,
         ?string $workshopsDone = null,
@@ -36,7 +34,6 @@ class DailyReportEntity
         $this->classroomId = $classroomId;
         $this->date = $date;
         $this->absencesCount = $absencesCount;
-        $this->tardiesCount = $tardiesCount;
         $this->briefStatus = $briefStatus;
         $this->technicalTopics = $technicalTopics;
         $this->workshopsDone = $workshopsDone;
@@ -50,7 +47,6 @@ class DailyReportEntity
     public function getClassroomId(): int { return $this->classroomId; }
     public function getDate(): string { return $this->date; }
     public function getAbsencesCount(): int { return $this->absencesCount; }
-    public function getTardiesCount(): int { return $this->tardiesCount; }
     public function getBriefStatus(): string { return $this->briefStatus; }
     public function getTechnicalTopics(): ?string { return $this->technicalTopics; }
     public function getWorkshopsDone(): ?string { return $this->workshopsDone; }
@@ -66,7 +62,6 @@ class DailyReportEntity
             'classroom_id' => $this->classroomId,
             'date' => $this->date,
             'absences_count' => $this->absencesCount,
-            'tardies_count' => $this->tardiesCount,
             'brief_status' => $this->briefStatus,
             'technical_topics' => $this->technicalTopics,
             'workshops_done' => $this->workshopsDone,

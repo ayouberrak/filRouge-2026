@@ -7,7 +7,6 @@ class DailyReportDTO
     public readonly int $classroomId;
     public readonly string $date;
     public readonly int $absencesCount;
-    public readonly int $tardiesCount;
     public readonly string $briefStatus;
     public readonly ?string $technicalTopics;
     public readonly ?string $workshopsDone;
@@ -20,7 +19,6 @@ class DailyReportDTO
         int $classroomId,
         string $date,
         int $absencesCount,
-        int $tardiesCount,
         string $briefStatus,
         int $formateurId,
         ?string $technicalTopics = null,
@@ -32,7 +30,6 @@ class DailyReportDTO
         $this->classroomId = $classroomId;
         $this->date = $date;
         $this->absencesCount = $absencesCount;
-        $this->tardiesCount = $tardiesCount;
         $this->briefStatus = $briefStatus;
         $this->formateurId = $formateurId;
         $this->technicalTopics = $technicalTopics;

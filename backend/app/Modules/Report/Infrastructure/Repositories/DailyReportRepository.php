@@ -16,7 +16,6 @@ class DailyReportRepository implements DailyReportRepositoryInterface
             'classroom_id' => $report->getClassroomId(),
             'date' => $report->getDate(),
             'absences_count' => $report->getAbsencesCount(),
-            'tardies_count' => $report->getTardiesCount(),
             'brief_status' => $report->getBriefStatus(),
             'technical_topics' => $report->getTechnicalTopics(),
             'workshops_done' => $report->getWorkshopsDone(),
@@ -91,16 +90,15 @@ class DailyReportRepository implements DailyReportRepositoryInterface
 
         return new DailyReportEntity(
             $model->id,
-            $model->formateur_id,
-            $model->classroom_id,
+            (int)$model->formateur_id,
+            (int)$model->classroom_id,
             $dateStr,
-            $model->absences_count,
-            $model->tardies_count,
-            $model->brief_status,
+            (int)$model->absences_count,
+            (string)$model->brief_status,
             $model->technical_topics,
             $model->workshops_done,
-            $model->class_mood,
-            $model->objectives_met,
+            (int)$model->class_mood,
+            (bool)$model->objectives_met,
             $model->note
         );
     }
