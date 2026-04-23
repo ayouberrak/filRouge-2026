@@ -4,6 +4,7 @@ namespace App\Modules\Chat\Infrastructure\Models;
 
 use App\Modules\User\Infrastructure\Models\UserModel;
 use Illuminate\Database\Eloquent\Model;
+
 class MessageModel extends Model
 {
     protected $table = 'messages';
@@ -12,11 +13,6 @@ class MessageModel extends Model
         'conversation_id',
         'sender_id',
         'content',
-        'read_by'
-    ];
-
-    protected $casts = [
-        'read_by' => 'array'
     ];
 
     public function conversation()

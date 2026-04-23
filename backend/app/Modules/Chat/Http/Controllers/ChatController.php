@@ -50,7 +50,7 @@ class ChatController
 
     public function store(SendMessageRequest $request): JsonResponse
     {
-        $dto = SendMessageDTO::fromRequest($request->validated(), $request->user()->id);
+        $dto = SendMessageDTO::toDTOO($request->validated(), $request->user()->id);
         $message = $this->sendMessage->execute($dto);
 
         broadcast(new MessageSent($message))->toOthers();
@@ -61,9 +61,6 @@ class ChatController
     public function search(Request $request): JsonResponse
     {
         $query = $request->query('q', '');
-        if (strlen($query) < 2) {
-            return response()->json([]);
-        }
 
         $users = $this->searchUsers->execute($query, $request->user()->id);
         return response()->json($users);
@@ -75,9 +72,7 @@ class ChatController
             'user_id' => 'required|exists:users,id'
         ]);
 
-        $conversation = $this->startConversation->execute(
-            $request->user()->id,
-            $request->input('user_id')
+        $conversation = $this->startConversation->execute( $request->user()->id, $request->input('user_id')
         );
 
         return response()->json($conversation);

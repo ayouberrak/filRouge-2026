@@ -2,7 +2,6 @@
 
 namespace App\Modules\Chat\Infrastructure\Repositories;
 
-
 use App\Modules\Chat\Infrastructure\Models\ConversationModel;
 use App\Modules\Chat\Infrastructure\Models\MessageModel;
 use Illuminate\Database\Eloquent\Collection;
@@ -42,19 +41,13 @@ class ChatRepository implements ChatRepositoryInterface
 
     public function markMessageAsRead(int $messageId, int $userId): void
     {
-        $message = MessageModel::findOrFail($messageId);
-        
-        $readBy = $message->read_by ? json_decode($message->read_by, true) : [];
-        if (!in_array($userId, $readBy)) {
-            $readBy[] = $userId;
-            $message->update(['read_by' => json_encode($readBy)]);
-        }
+        // Method kept for interface compatibility but logic removed as per user request
     }
 
     public function getConversationMessages(int $conversationId): Collection
     {
         return MessageModel::where('conversation_id', $conversationId)
-            ->with('sender') // Assumes a sender() relation exists on MessageModel
+            ->with('sender')
             ->orderBy('created_at', 'asc')
             ->get();
     }
@@ -62,12 +55,10 @@ class ChatRepository implements ChatRepositoryInterface
     public function getUserConversations(int $userId): Collection
     {
         return ConversationModel::whereHas('users', function ($query) use ($userId) {
-                // Seulement si l'utilisateur n'a pas quitté la conversation
                 $query->where('user_id', $userId)
                       ->whereNull('conversation_user.left_at');
             })
             ->with(['users', 'messages' => function($query) {
-                // Récupérer le dernier message envoyé pour la liste des conversations
                 $query->latest()->limit(1);
             }])
             ->orderBy('updated_at', 'desc')

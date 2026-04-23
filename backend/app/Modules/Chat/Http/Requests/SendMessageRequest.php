@@ -15,8 +15,7 @@ class SendMessageRequest extends FormRequest
     {
         return [
             'conversation_id' => 'required|integer|exists:conversations,id',
-            'content' => 'required|string',
-            'attachment_url' => 'nullable|string'
+            'content' => 'required|string'
         ];
     }
 }
