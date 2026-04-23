@@ -154,131 +154,139 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import api from '../../services/api';
-
-// ─── Route & Router ───────────────────────────────────────────────────────────
+// --- VARIABLES D'ÉTAT (REFS) ---
 const route     = useRoute();
 const router    = useRouter();
-const sessionId = route.params.id;
+const sessionId = route.params.id; // L'ID de la session de quiz en cours
 
-// ─── State ────────────────────────────────────────────────────────────────────
-const questions            = ref([]);
-const currentQuestionIndex = ref(0);
-const selectedOpt          = ref(null);
-const openEndedText        = ref('');
-const isSubmitting         = ref(false);
-const showResult           = ref(false);
-const timerSeconds         = ref(0);
-const timerInterval        = ref(null);
-const briefTitle           = ref('Chargement des données...');
-const totalScore           = ref(0);
+const questions            = ref([]); // Liste des questions du quiz
+const currentQuestionIndex = ref(0); // Index de la question affichée (0, 1, 2...)
+const selectedOpt          = ref(null); // Option sélectionnée (pour les QCM)
+const openEndedText        = ref(''); // Texte saisi (pour les questions ouvertes)
+const isSubmitting         = ref(false); // État lors de l'envoi de la réponse
+const showResult           = ref(false); // Si vrai, on affiche l'écran de fin
+const timerSeconds         = ref(15 * 60); // Compte à rebours (15 minutes par défaut)
+const timerInterval        = ref(null); // Référence vers l'intervalle du chrono
+const briefTitle           = ref('Certification YouCode'); // Titre du projet
+const totalScore           = ref(0); // Score final calculé par l'IA
 
-// ─── Computed ─────────────────────────────────────────────────────────────────
-const currentQuestion = computed(() =>
-  questions.value[currentQuestionIndex.value]
-);
-const isLastQuestion = computed(() =>
-  currentQuestionIndex.value === questions.value.length - 1
-);
+// --- LOGIQUE CALCULÉE (COMPUTED) ---
+
+// Récupère l'objet de la question actuelle
+const currentQuestion = computed(() => questions.value[currentQuestionIndex.value]);
+
+// Vérifie si c'est la toute dernière question du quiz
+const isLastQuestion = computed(() => currentQuestionIndex.value === questions.value.length - 1);
+
+// Calcule le pourcentage de progression pour la barre de progression
 const progressPercentage = computed(() => {
   if (!questions.value.length) return 0;
   return ((currentQuestionIndex.value + 1) / questions.value.length) * 100;
 });
 
-// ─── Timer ────────────────────────────────────────────────────────────────────
+// --- CHRONOMÈTRE (TIMER) ---
+
+// Formate les secondes en MM:SS (ex: 05:42)
 const formatTime = (seconds) => {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${s.toString().padStart(2, '0')}`;
 };
 
+// Démarre le compte à rebours
 const startTimer = () => {
   timerInterval.value = setInterval(() => {
     if (timerSeconds.value > 0) {
       timerSeconds.value--;
     } else {
+      // Temps écoulé ! On termine le quiz automatiquement
       clearInterval(timerInterval.value);
       showResult.value = true;
     }
   }, 1000);
 };
 
-// ─── Methods ──────────────────────────────────────────────────────────────────
+// --- ACTIONS (MÉTHODES) ---
+
+// Sélectionner une option dans un QCM
 const selectOption = (idx) => {
   if (!isSubmitting.value) selectedOpt.value = idx;
 };
 
+// Valider la réponse et passer à la question suivante
 const handleNext = async () => {
   const isOpenEnded = currentQuestion.value?.type === 'open_ended';
-  if (isOpenEnded) {
-    if (!openEndedText.value.trim() || isSubmitting.value) return;
-  } else {
-    if (selectedOpt.value === null || isSubmitting.value) return;
-  }
+  
+  // Préparation de la réponse à envoyer
+  const responseText = isOpenEnded 
+    ? openEndedText.value 
+    : currentQuestion.value.options[selectedOpt.value];
+
+  if (!responseText && !isOpenEnded) return;
 
   isSubmitting.value = true;
-  try {
-    const responseText = isOpenEnded
-      ? openEndedText.value
-      : currentQuestion.value.options[selectedOpt.value];
+  
+  // 1. Envoyer la réponse au serveur
+  await api.post('/quizzes/responses', {
+    question_id:   currentQuestion.value.id,
+    response_text: responseText,
+  });
 
-    await api.post('/quizzes/responses', {
-      question_id:   currentQuestion.value.id,
-      response_text: responseText,
-    });
-
-    if (isLastQuestion.value) {
-      const briefId = route.query.briefId || localStorage.getItem('current_brief_id') || 1;
-      const res     = await api.get(`/quizzes/briefs/${briefId}/validate`);
-      totalScore.value = res.data.status?.score ?? '--';
-      clearInterval(timerInterval.value);
-      showResult.value = true;
-    } else {
-      currentQuestionIndex.value++;
-      selectedOpt.value = null;
-      openEndedText.value = '';
-    }
-  } catch (err) {
-    const errorMsg = err.response?.data?.error || err.message || 'Erreur critique interne';
-    console.error('Submit response error:', err);
-    alert(`Échec de communication réseau : ${errorMsg}`);
-  } finally {
-    isSubmitting.value = false;
-  }
-};
-
-const confirmExit = () => {
-  if (confirm('Voulez-vous vraiment aborter cette certification ? Vos calculs IA non soumis seront perdus.')) {
-    router.push('/submissions');
-  }
-};
-
-const finishQuiz = () => {
-  router.push('/submissions');
-};
-
-// ─── Lifecycle ────────────────────────────────────────────────────────────────
-const loadQuizData = async () => {
-  try {
-    const res          = await api.get(`/quizzes/sessions/${sessionId}/questions`);
-    questions.value    = res.data.data;
-    timerSeconds.value = 15 * 60;
+  // 2. Vérifier si c'est fini ou si on continue
+  if (isLastQuestion.value) {
+    // C'était la dernière question ! On récupère le score final
+    const briefId = route.query.briefId || 1;
+    const res = await api.get(`/quizzes/briefs/${briefId}/validate`);
+    totalScore.value = res.data.status?.score ?? '--';
     
-    // Simulate getting brief title
-    briefTitle.value = 'Mise en situation technique';
+    clearInterval(timerInterval.value);
+    showResult.value = true;
+  } else {
+    // On passe à la question suivante
+    currentQuestionIndex.value++;
+    selectedOpt.value = null; // Réinitialise le choix
+    openEndedText.value = ''; // Réinitialise le texte
+  }
+  
+  isSubmitting.value = false;
+};
 
-    startTimer();
-  } catch (err) {
-    console.error('Quiz fetch error:', err);
-    alert('Accès refusé ou session obsolète.');
+// Quitter le quiz
+const confirmExit = () => {
+  if (confirm('Voulez-vous vraiment abandonner ? Votre progression ne sera pas enregistrée.')) {
     router.push('/submissions');
   }
 };
 
+const finishQuiz = () => router.push('/submissions');
+
+// --- CHARGEMENT DES DONNÉES ---
+const loadQuizData = async () => {
+  // Cache
+  const cached = localStorage.getItem(`student_quiz_questions_${sessionId}`);
+  if (cached) {
+    questions.value = JSON.parse(cached);
+    startTimer();
+  }
+
+  try {
+    const res = await api.get(`/quizzes/sessions/${sessionId}/questions`);
+    questions.value = res.data.data;
+    localStorage.setItem(`student_quiz_questions_${sessionId}`, JSON.stringify(questions.value));
+    
+    // Si on n'avait pas de cache, on lance le chrono maintenant
+    if (!cached) startTimer();
+  } catch (err) {
+    console.error("Erreur Quiz Data:", err);
+  }
+};
+
+// --- CYCLE DE VIE ---
 onMounted(loadQuizData);
-onUnmounted(() => { if (timerInterval.value) clearInterval(timerInterval.value); });
+onUnmounted(() => {
+  // Très important : arrêter le chrono si l'utilisateur quitte la page
+  if (timerInterval.value) clearInterval(timerInterval.value);
+});
 </script>
 
 <style scoped>
@@ -437,7 +445,7 @@ onUnmounted(() => { if (timerInterval.value) clearInterval(timerInterval.value);
 /* ─── Animations ────────────────────────────────────────────────────────────── */
 @keyframes pulse-red  { 0%, 100% { opacity: 1; box-shadow: 0 0 10px rgba(248,81,73,0.3); } 50% { opacity: 0.6; box-shadow: 0 0 2px rgba(248,81,73,0.1); } }
 @keyframes pulse-blue { 0%, 100% { box-shadow: 0 0 20px rgba(56,139,253,0.2); transform: scale(1); } 50% { box-shadow: 0 0 50px rgba(56,139,253,0.4); transform: scale(1.05); } }
-@keyframes spin       { to { transform: rotate(360deg); } }
+
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 .animate-in { opacity: 0; animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 .spinner-sm { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.2); border-top-color: #fff; border-radius: 50%; animation: spin 0.8s linear infinite; }

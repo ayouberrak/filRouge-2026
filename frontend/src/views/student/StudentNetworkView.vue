@@ -48,24 +48,11 @@
         </div>
 
         <!-- Filters -->
-        <div class="filters-row animate-in">
-          <div class="speciality-tabs">
-            <button
-              v-for="cat in specialties"
-              :key="cat"
-              class="spec-tab"
-              :class="{ active: activeSpeciality === cat }"
-              @click="setSpeciality(cat)"
-            >
-              {{ cat }}
-            </button>
-          </div>
-        </div>
 
         <!-- Loading State -->
         <div v-if="loading" class="loading-state">
-          <div class="nadi-loader"></div>
-          <p>Chargement des talents...</p>
+          
+          <p>Chargement en cours...</p>
         </div>
 
         <!-- Grid -->
@@ -85,28 +72,11 @@
                 <img :src="student.avatar_url || `https://ui-avatars.com/api/?name=${student.first_name}+${student.last_name}&background=0d1117&color=388bfd`" class="talent-avatar" />
                 <div class="status-indicator"></div>
               </div>
-              <div class="points-badge">
-                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                {{ student.total_points }}
-              </div>
+
             </div>
 
             <div class="talent-body">
               <h3 class="talent-name">{{ student.first_name }} {{ student.last_name }}</h3>
-              <p class="talent-role">{{ student.speciality || 'Fullstack Developer' }}</p>
-              
-              <div class="talent-tags">
-                <span v-for="skill in (student.skills || ['PHP', 'Vue', 'SQL'])" :key="skill" class="tag">
-                  {{ skill }}
-                </span>
-              </div>
-
-              <div class="talent-meta">
-                <div class="meta-item">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  {{ student.location || 'Safi, Morocco' }}
-                </div>
-              </div>
             </div>
 
             <div class="talent-footer">
@@ -144,37 +114,24 @@ const students = ref([]);
 const totalStudents = ref(0);
 const loading = ref(true);
 const searchQuery = ref('');
-const activeSpeciality = ref('ALL');
-const specialties = ['ALL', 'Fullstack', 'Frontend', 'Backend', 'DevOps', 'Data'];
 
 let searchTimeout = null;
 
 const fetchStudents = async () => {
-  try {
-    loading.value = true;
-    const res = await api.get('/students', {
-      params: {
-        search: searchQuery.value,
-        speciality: activeSpeciality.value
-      }
-    });
-    students.value = res.data.data;
-    totalStudents.value = students.value.length;
-  } catch (err) {
-    console.error('Error fetching students:', err);
-  } finally {
-    loading.value = false;
-  }
+  loading.value = true;
+  const res = await api.get('/analytics/students', {
+    params: {
+      search: searchQuery.value
+    }
+  });
+  students.value = res.data.data;
+  totalStudents.value = students.value.length;
+  loading.value = false;
 };
 
 const debouncedFetch = () => {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(fetchStudents, 300);
-};
-
-const setSpeciality = (spec) => {
-  activeSpeciality.value = spec;
-  fetchStudents();
 };
 
 const viewProfile = (id) => {
@@ -187,7 +144,6 @@ const startChat = (id) => {
 
 const resetFilters = () => {
   searchQuery.value = '';
-  activeSpeciality.value = 'ALL';
   fetchStudents();
 };
 
@@ -541,17 +497,7 @@ onUnmounted(() => {
   padding: 80px 0;
 }
 
-.nadi-loader {
-  width: 48px;
-  height: 48px;
-  border: 3px solid rgba(56, 139, 253, 0.1);
-  border-top-color: #58a6ff;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin: 0 auto 20px;
-}
 
-@keyframes spin { to { transform: rotate(360deg); } }
 
 .empty-state {
   text-align: center;
@@ -601,3 +547,4 @@ onUnmounted(() => {
   .topbar-right { display: none; }
 }
 </style>
+

@@ -33,10 +33,6 @@
             <h2 class="glance-title">Votre Progression.</h2>
             <p class="glance-desc">Suivez vos sessions de formation, vos live codings et vos veilles technologiques en temps réel.</p>
           </div>
-          <div class="points-totem">
-            <div class="totem-value">{{ totalPoints }}</div>
-            <div class="totem-label">XP TOTAL</div>
-          </div>
         </div>
 
         <!-- Summary Statistics -->
@@ -76,7 +72,7 @@
             </div>
             
             <div v-if="isLoading" class="col-list">
-              <div v-for="i in 2" :key="i" class="card-skeleton shimmer"></div>
+              Chargement en cours...
             </div>
             <div v-else class="col-list">
               <div v-for="(act, idx) in liveCodingActivities" :key="act.id" 
@@ -86,7 +82,6 @@
                 <div class="act-glow"></div>
                 <div class="act-top">
                   <span class="act-time">{{ formatTime(act.scheduled_at) }}</span>
-                  <span class="act-pts">+{{ act.points }} XP</span>
                 </div>
                 <h4 class="act-title">{{ act.title }}</h4>
                 <p class="act-desc">{{ act.description }}</p>
@@ -110,7 +105,7 @@
             </div>
             
             <div v-if="isLoading" class="col-list">
-              <div v-for="i in 2" :key="i" class="card-skeleton shimmer"></div>
+              Chargement en cours...
             </div>
             <div v-else class="col-list">
               <div v-for="(act, idx) in veilleActivities" :key="act.id" 
@@ -120,7 +115,6 @@
                 <div class="act-glow"></div>
                 <div class="act-top">
                   <span class="act-time">{{ formatTime(act.scheduled_at) }}</span>
-                  <span class="act-pts">+{{ act.points }} XP</span>
                 </div>
                 <h4 class="act-title">{{ act.title }}</h4>
                 <p class="act-desc">{{ act.description }}</p>
@@ -144,7 +138,7 @@
             </div>
             
             <div v-if="isLoading" class="col-list">
-              <div v-for="i in 2" :key="i" class="card-skeleton shimmer"></div>
+              Chargement en cours...
             </div>
             <div v-else class="col-list">
               <div v-for="(act, idx) in workshopActivities" :key="act.id" 
@@ -154,7 +148,6 @@
                 <div class="act-glow"></div>
                 <div class="act-top">
                   <span class="act-time">{{ formatTime(act.scheduled_at) }}</span>
-                  <span class="act-pts">+{{ act.points }} XP</span>
                 </div>
                 <h4 class="act-title">{{ act.title }}</h4>
                 <div class="act-progress">
@@ -194,18 +187,6 @@
                   <h4 class="m-label">DESCRIPTION</h4>
                   <p class="m-text">{{ selectedActivity.description }}</p>
                 </section>
-
-                <section class="m-section" v-if="selectedActivity.objectives">
-                  <h4 class="m-label">OBJECTIFS</h4>
-                  <ul class="m-list">
-                    <li v-for="(obj, idx) in formatList(selectedActivity.objectives)" :key="idx">{{ obj }}</li>
-                  </ul>
-                </section>
-
-                <section class="m-section" v-if="selectedActivity.exploration_points">
-                  <h4 class="m-label">POINTS D'EXPLORATION</h4>
-                  <div class="m-text" v-html="renderMD(selectedActivity.exploration_points)"></div>
-                </section>
               </div>
 
               <aside class="modal-side">
@@ -216,10 +197,6 @@
                 <div class="side-item">
                   <span class="s-label">DURÉE</span>
                   <span class="s-value">{{ selectedActivity.duration }}</span>
-                </div>
-                <div class="side-item">
-                  <span class="s-label">RÉCOMPENSE</span>
-                  <span class="s-value text-gold">{{ selectedActivity.points }} XP</span>
                 </div>
                 
                 <div class="side-item" v-if="selectedActivity.students?.length">
@@ -246,66 +223,82 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import api from '../../services/api';
-import SidebarStudent from '../../components/SidebarStudent.vue';
-
+// --- VARIABLES D'ÉTAT (REFS) ---
 const router = useRouter();
-const user = ref(null);
-const activities = ref([]);
-const isLoading = ref(true);
-const selectedActivity = ref(null);
+const user = ref(null); // Utilisateur connecté
+const activities = ref([]); // Liste complète des activités récupérées
+const isLoading = ref(true); // État de chargement
+const selectedActivity = ref(null); // Activité sélectionnée pour afficher les détails dans la modale
 
+// --- LOGIQUE CALCULÉE (COMPUTED) ---
+
+// Filtrer les activités par type (Live Coding, Veille, Workshop)
 const liveCodingActivities = computed(() => activities.value.filter(a => a.activity_type === 'live_coding'));
-const veilleActivities = computed(() => activities.value.filter(a => a.activity_type === 'veille'));
-const workshopActivities = computed(() => activities.value.filter(a => a.activity_type === 'workshop'));
+const veilleActivities     = computed(() => activities.value.filter(a => a.activity_type === 'veille'));
+const workshopActivities   = computed(() => activities.value.filter(a => a.activity_type === 'workshop'));
 
-const totalPoints = computed(() => activities.value.reduce((sum, a) => sum + (a.points || 0), 0));
-
+// Trouver la prochaine activité à venir (basé sur la date actuelle)
 const nextActivity = computed(() => {
-  const future = activities.value.filter(a => new Date(a.scheduled_at) > new Date());
-  return future[0] || null;
+  const now = new Date();
+  const future = activities.value.filter(a => new Date(a.scheduled_at) > now);
+  return future[0] || null; // On prend la première de la liste des futures
 });
 
-const formatTime = (dateStr) => {
-  if (!dateStr) return 'TBD';
-  const d = new Date(dateStr);
-  return d.toLocaleString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-};
+// --- ACTIONS (MÉTHODES) ---
 
-const formatList = (text) => text ? text.split('\n').filter(l => l.trim()) : [];
-
-const renderMD = (text) => {
-  if (!text) return '';
-  return text.replace(/- (.*)/g, '<li>$1</li>').replace(/### (.*)/g, '<h5>$1</h5>');
-};
-
-const openDetails = (act) => {
-  selectedActivity.value = act;
-};
-
+// Charger les activités de l'étudiant
 const fetchActivities = async () => {
-  try {
+  // Cache
+  const cached = localStorage.getItem('student_activities_cache');
+  if (cached) {
+    activities.value = JSON.parse(cached);
+    isLoading.value = false;
+  } else {
     isLoading.value = true;
+  }
+
+  try {
     const res = await api.get('/activities/me');
     activities.value = res.data.data || res.data;
+    localStorage.setItem('student_activities_cache', JSON.stringify(activities.value));
   } catch (err) {
-    console.error('Error fetching activities:', err);
-  } finally {
-    isLoading.value = false;
+    console.error("Erreur Activities:", err);
   }
+  
+  isLoading.value = false;
 };
 
+// Ouvrir la modale de détails
+const openDetails = (activity) => {
+  selectedActivity.value = activity;
+};
+
+// Formater la date pour l'affichage (ex: lun. 12 avr. 14:30)
+const formatTime = (dateStr) => {
+  if (!dateStr) return 'À définir';
+  const date = new Date(dateStr);
+  return date.toLocaleString('fr-FR', { 
+    weekday: 'short', 
+    day: 'numeric', 
+    month: 'short', 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
+};
+
+// Déconnexion
 const handleLogout = () => {
   localStorage.removeItem('auth_token');
   localStorage.removeItem('user');
   router.push('/login');
 };
 
+// --- CYCLE DE VIE ---
 onMounted(() => {
   const cached = localStorage.getItem('user');
   if (cached) user.value = JSON.parse(cached);
+  
+  // Lancer la récupération des activités au chargement
   fetchActivities();
 });
 </script>
@@ -540,14 +533,8 @@ onMounted(() => {
 .btn-action { padding: 10px 24px; background: #238636; border: none; border-radius: 10px; color: white; font-weight: 700; cursor: pointer; }
 
 /* ─── States ────────────────────────────────────────────────────────────────── */
-.card-skeleton { height: 140px; background: #161b22; border-radius: 18px; }
-.shimmer { position: relative; overflow: hidden; }
-.shimmer::after {
-  content: ""; position: absolute; inset: 0; transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
-  animation: shimmer 1.5s infinite;
-}
-@keyframes shimmer { 100% { transform: translateX(100%); } }
+
+
 
 .empty-col { padding: 40px 20px; text-align: center; font-size: 13px; color: #484f58; border: 1px dashed #21262d; border-radius: 18px; }
 
@@ -559,3 +546,5 @@ onMounted(() => {
   .modal-side { display: none; }
 }
 </style>
+
+

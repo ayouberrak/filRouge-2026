@@ -240,141 +240,143 @@ import { useRouter } from 'vue-router';
 import api from '../../services/api';
 import SidebarStudent from '../../components/SidebarStudent.vue';
 
-// ─── State ────────────────────────────────────────────────────────────────────
+// --- VARIABLES D'ÉTAT (REFS) ---
 const router      = useRouter();
-const user        = ref(null);
-const isSubmitting = ref(false);
-const submitSuccess = ref(false);
-const fileInput   = ref(null);
-const isLoading   = ref(true);
+const user        = ref(null); // Utilisateur connecté
+const isSubmitting = ref(false); // État lors de l'envoi d'un justificatif
+const submitSuccess = ref(false); // Message de succès
+const fileInput   = ref(null); // Référence pour l'input file caché
+const isLoading   = ref(true); // État de chargement global
+const absences    = ref([]); // Liste des absences formatées
 
+// Formulaire pour justifier une absence
 const justifyForm = ref({
   absenceId: '',
   file:      null,
   note:      '',
 });
 
-const absences = ref([]);
+// --- LOGIQUE CALCULÉE (COMPUTED STATS) ---
 
-// ─── File Handling ────────────────────────────────────────────────────────────
+// Filtrer les absences qui n'ont pas encore de justificatif
+const pendingAbsences = computed(() =>
+  absences.value.filter(a => a.status === 'pending' && !a.justification_file)
+);
+
+// Calculer le total d'heures d'absence
+const totalAbsenceHours = computed(() => {
+  return absences.value.reduce((total, abs) => total + abs.duration, 0);
+});
+
+// Compter le nombre d'avertissements (absences rejetées par le staff)
+const warnings = computed(() => {
+  return absences.value.filter(a => a.status === 'rejected').length;
+});
+
+// Calculer le taux d'assiduité (pourcentage de présence)
+const attendanceRate = computed(() => {
+  const totalTrainingHours = 1400; // Heures totales prévues dans l'année
+  if (totalAbsenceHours.value === 0) return 100;
+  
+  const rate = 100 - ((totalAbsenceHours.value / totalTrainingHours) * 100);
+  return Math.max(0, Math.round(rate * 10) / 10); // Arrondi à 1 décimale (ex: 98.5)
+});
+
+// Calculer le décalage pour le cercle graphique (SVG ring)
+const ringOffset = computed(() => {
+  const circumference = 276.46; // 2 * pi * 44 (rayon)
+  return circumference - (circumference * attendanceRate.value) / 100;
+});
+
+// --- ACTIONS (MÉTHODES) ---
+
+// 1. Récupérer et formater les absences
+const fetchAbsences = async () => {
+  // Cache
+  const cached = localStorage.getItem('student_absences_cache');
+  if (cached) {
+    absences.value = JSON.parse(cached);
+    isLoading.value = false;
+  } else {
+    isLoading.value = true;
+  }
+
+  try {
+    const res = await api.get('/absences/my');
+    const data = res.data.absences || [];
+    
+    // Formater chaque absence pour l'affichage (Date, Heures, Type)
+    absences.value = data.map(abs => {
+      const dateObj = new Date(abs.date);
+      return {
+        id: abs.id,
+        day: dateObj.toLocaleDateString('fr-FR', { day: '2-digit' }),
+        month: dateObj.toLocaleDateString('fr-FR', { month: 'short' }),
+        reason: abs.reason || 'Non spécifié',
+        // Si + de 4h, on considère ça comme une absence, sinon un retard
+        type: abs.duration >= 240 ? 'Absence' : 'Retard',
+        status: abs.status,
+        duration: Math.round(abs.duration / 60), // Conversion minutes -> heures
+        justification_file: abs.justification_file,
+      };
+    });
+
+    localStorage.setItem('student_absences_cache', JSON.stringify(absences.value));
+  } catch (err) {
+    console.error("Erreur Absences:", err);
+  }
+  
+  isLoading.value = false;
+};
+
+// 2. Envoyer un justificatif (Fichier PDF/Image)
+const submitJustification = async () => {
+  if (!justifyForm.value.absenceId || !justifyForm.value.file) return;
+
+  isSubmitting.value = true;
+  const formData = new FormData();
+  formData.append('justification_file', justifyForm.value.file);
+  if (justifyForm.value.note) formData.append('note', justifyForm.value.note);
+
+  // Appel API avec le format multipart/form-data pour le fichier
+  await api.post(`/absences/${justifyForm.value.absenceId}/justify`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
+  // Réinitialiser le formulaire et afficher le succès
+  justifyForm.value = { absenceId: '', file: null, note: '' };
+  submitSuccess.value = true;
+  setTimeout(() => { submitSuccess.value = false; }, 3500);
+  
+  // Recharger les données pour mettre à jour la liste
+  fetchAbsences();
+  isSubmitting.value = false;
+};
+
+// --- GESTION DES FICHIERS ---
 const triggerFileInput = () => fileInput.value?.click();
-
 const handleFileChange = (e) => {
   const file = e.target.files?.[0];
   if (file) justifyForm.value.file = file;
 };
-
 const handleDrop = (e) => {
   const file = e.dataTransfer.files?.[0];
   if (file) justifyForm.value.file = file;
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-const formatAbsence = (abs) => {
-  const dateObj = new Date(abs.date);
-  const day = dateObj.toLocaleDateString('fr-FR', { day: '2-digit' });
-  const month = dateObj.toLocaleDateString('fr-FR', { month: 'short' });
-
-  // Si la durée est stockée en minutes (ex: 480), on la convertit en heures
-  const hours = abs.duration >= 30 ? Math.round(abs.duration / 60) : abs.duration;
-
-  return {
-    id: abs.id,
-    day: day,
-    month: month,
-    reason: 'Non spécifié',
-    type: hours < 4 ? 'Retard' : 'Absence',
-    status: abs.status,
-    duration: hours,
-    justification_file: abs.justification_file,
-  };
+// --- DECONNEXION ---
+const handleLogout = () => {
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('user');
+  router.push('/login');
 };
 
-const fetchAbsences = async () => {
-  isLoading.value = true;
-  try {
-    const res = await api.get('/absences/my');
-    const data = res.data.absences || [];
-    absences.value = data.map(formatAbsence);
-  } catch (err) {
-    console.error('Error fetching absences:', err);
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-// ─── Computed Stats ───────────────────────────────────────────────────────────
-const pendingAbsences = computed(() =>
-  absences.value.filter(a => a.status === 'pending' && !a.justification_file)
-);
-
-const totalAbsenceHours = computed(() => {
-  return absences.value.reduce((total, abs) => total + abs.duration, 0);
-});
-
-const warnings = computed(() => {
-  return absences.value.filter(a => a.status === 'rejected').length;
-});
-
-const attendanceRate = computed(() => {
-  const totalTrainingHours = 1400; // Base total hours for the year
-  if (totalAbsenceHours.value === 0) return 100;
-  
-  const rate = 100 - ((totalAbsenceHours.value / totalTrainingHours) * 100);
-  return Math.max(0, Math.round(rate * 10) / 10); // 1 decimal point e.g 98.5
-});
-
-const ringOffset = computed(() => {
-  const circumference = 276.46; // 2 * pi * 44
-  return circumference - (circumference * attendanceRate.value) / 100;
-});
-
-// ─── Submit ───────────────────────────────────────────────────────────────────
-const submitJustification = async () => {
-  if (!justifyForm.value.absenceId || !justifyForm.value.file) return;
-
-  isSubmitting.value = true;
-  try {
-    const formData = new FormData();
-    // formData.append('absence_id', justifyForm.value.absenceId); 
-    // The backend endpoint is /absences/{id}/justify
-    formData.append('justification_file', justifyForm.value.file);
-    if(justifyForm.value.note) {
-        formData.append('note', justifyForm.value.note);
-    }
-
-    await api.post(`/absences/${justifyForm.value.absenceId}/justify`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-
-    justifyForm.value = { absenceId: '', file: null, note: '' };
-    submitSuccess.value = true;
-    
-    await fetchAbsences(); // Refresh the list
-
-    setTimeout(() => { submitSuccess.value = false; }, 3500);
-  } catch (err) {
-    console.error('Justification submit error:', err);
-    alert(err.response?.data?.message || 'Erreur lors de l\'envoi réseau. Veuillez vérifier votre document.');
-  } finally {
-    isSubmitting.value = false;
-  }
-};
-
-// ─── Lifecycle ────────────────────────────────────────────────────────────────
+// --- CYCLE DE VIE ---
 onMounted(() => {
   const cached = localStorage.getItem('user');
   if (cached) user.value = JSON.parse(cached);
   fetchAbsences();
 });
-
-// ─── Logout ───────────────────────────────────────────────────────────────────
-const handleLogout = async () => {
-  try { await api.post('/logout'); } catch {}
-  localStorage.removeItem('auth_token');
-  localStorage.removeItem('user');
-  router.push('/login');
-};
 </script>
 
 <style scoped>
@@ -566,7 +568,7 @@ const handleLogout = async () => {
 .spinner-sm { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
 
 /* ─── Animations ────────────────────────────────────────────────────────────── */
-@keyframes spin  { to { transform: rotate(360deg); } }
+
 @keyframes pulse-gold { 0%, 100% { box-shadow: 0 0 15px rgba(210,153,34,0.3); } 50% { box-shadow: 0 0 5px rgba(210,153,34,0.1); } }
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 .animate-in { opacity: 0; animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }

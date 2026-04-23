@@ -68,8 +68,8 @@
 
           <!-- Loading -->
           <div v-if="isLoading" class="state-center animate-in">
-            <div class="spinner"></div>
-            <p>Chargement des missions...</p>
+            
+            <p>Chargement en cours...</p>
           </div>
 
           <!-- No Selection -->
@@ -120,8 +120,8 @@
                 <h3>Certification par l'Intelligence Artificielle</h3>
                 
                 <div v-if="isQuizLoading" class="quiz-loading-placeholder">
-                  <div class="skeleton-line"></div>
-                  <div class="skeleton-box"></div>
+                  
+                  
                 </div>
 
                 <div v-else-if="quizResult && ['VALIDATED', 'REJECTED_QUIZ', 'REJECTED', 'REJECTED_LIVRABLE'].includes(quizResult.status)" class="quiz-result-content">
@@ -247,6 +247,13 @@
                       {{ currentSubmission.status === 'SUBMITTED' ? 'EN ATTENTE D\'INSPECTION' : currentSubmission.status }}
                     </span>
                   </div>
+
+                  <div v-if="currentSubmission.formateur_message" class="submission-field mt-3">
+                    <span class="field-lbl">Feedback du formateur</span>
+                    <div class="feedback-bubble">
+                      {{ currentSubmission.formateur_message }}
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -274,153 +281,165 @@ import { useRouter } from 'vue-router';
 import api from '../../services/api';
 import SidebarStudent from '../../components/SidebarStudent.vue';
 
-// ─── State ────────────────────────────────────────────────────────────────────
+// --- VARIABLES D'ÉTAT (REFS) ---
 const router              = useRouter();
-const user                = ref(null);
-const briefs              = ref([]);
-const selectedBrief       = ref(null);
-const previousSubmissions = ref([]);
-const isLoading           = ref(true);
-const isSubmitting        = ref(false);
-const submitSuccess       = ref(false);
-const searchBriefs        = ref('');
-const quizResult          = ref(null);
-const isQuizLoading       = ref(false);
+const user                = ref(null); // Utilisateur connecté
+const briefs              = ref([]); // Liste des projets assignés
+const selectedBrief       = ref(null); // Le projet actuellement sélectionné dans la barre latérale
+const previousSubmissions = ref([]); // Historique des rendus de l'étudiant
+const isLoading           = ref(true); // Chargement des données au démarrage
+const isSubmitting        = ref(false); // État lors de l'envoi d'un nouveau livrable
+const submitSuccess       = ref(false); // Affichage du message de succès
+const searchBriefs        = ref(''); // Texte de recherche pour les projets
+const quizResult          = ref(null); // Résultat de l'IA pour le quiz
+const isQuizLoading       = ref(false); // Chargement du statut du quiz
 
+// Formulaire de rendu
 const form = ref({ link: '', message: '' });
 
-// ─── Computed ─────────────────────────────────────────────────────────────────
+// --- LOGIQUE CALCULÉE (COMPUTED) ---
+
+// Filtre la liste des projets à gauche selon la recherche
 const filteredBriefs = computed(() => {
-  const q = searchBriefs.value.toLowerCase().trim();
-  if (!q) return briefs.value;
+  const query = searchBriefs.value.toLowerCase().trim();
+  if (!query) return briefs.value;
   return briefs.value.filter(b =>
-    b.title.toLowerCase().includes(q) ||
-    b.description?.toLowerCase().includes(q)
+    b.title.toLowerCase().includes(query) ||
+    b.description?.toLowerCase().includes(query)
   );
 });
 
+// Trouve si le projet sélectionné a déjà été rendu (soumis)
 const currentSubmission = computed(() =>
   selectedBrief.value
     ? previousSubmissions.value.find(s => s.brief_id === selectedBrief.value.id) ?? null
     : null
 );
 
-// ─── Methods ──────────────────────────────────────────────────────────────────
-const getSubmissionStatus = (briefId) =>
-  previousSubmissions.value.some(s => s.brief_id === briefId);
+// --- ACTIONS (MÉTHODES) ---
 
-const formatDate = (dateStr) =>
-  new Date(dateStr).toLocaleDateString('fr-FR', {
-    year: 'numeric', month: 'long', day: 'numeric',
-  });
-
+// 1. Sélectionner un projet et charger ses infos (soumission + quiz)
 const selectBrief = (brief) => {
   selectedBrief.value = brief;
-  form.value          = { link: '', message: '' };
+  form.value          = { link: '', message: '' }; // Réinitialise le formulaire
   submitSuccess.value = false;
   quizResult.value    = null;
+  
+  // On vérifie si ce projet a déjà été rendu et quel est le statut du quiz
   loadPreviousSubmissions();
   checkQuizStatus(brief.id);
 };
 
-// ─── Data Fetching ────────────────────────────────────────────────────────────
+// 2. Vérifier si l'IA a validé le quiz pour ce projet
 const checkQuizStatus = async (briefId) => {
   isQuizLoading.value = true;
-  try {
-    const res = await api.get(`/quizzes/briefs/${briefId}/validate`);
-    const status = res.data.status;
-    
-    if (status && (status.is_completed || status.status !== 'PENDING_QUIZ')) {
-      quizResult.value = status;
-    } else {
-      quizResult.value = null;
-    }
-  } catch (err) {
-    console.error('Quiz status check error:', err);
+  
+  const res = await api.get(`/quizzes/briefs/${briefId}/validate`);
+  const status = res.data.status;
+  
+  // Si le quiz est terminé (peu importe le score), on récupère le résultat
+  if (status && (status.is_completed || status.status !== 'PENDING_QUIZ')) {
+    quizResult.value = status;
+  } else {
     quizResult.value = null;
-  } finally {
-    isQuizLoading.value = false;
   }
+  
+  isQuizLoading.value = false;
 };
 
+// 3. Charger la liste des projets
 const loadBriefs = async () => {
+  // Cache
+  const cached = localStorage.getItem('student_submissions_briefs_cache');
+  if (cached) {
+    briefs.value = JSON.parse(cached);
+    if (briefs.value.length > 0 && !selectedBrief.value) selectBrief(briefs.value[0]);
+  }
+
   try {
-    const res   = await api.get('/briefs');
+    const res = await api.get('/briefs');
     briefs.value = res.data?.data || [];
-    if (briefs.value.length > 0) selectBrief(briefs.value[0]);
+    localStorage.setItem('student_submissions_briefs_cache', JSON.stringify(briefs.value));
+    
+    if (briefs.value.length > 0 && !selectedBrief.value) selectBrief(briefs.value[0]);
   } catch (err) {
-    console.error('Briefs fetch error:', err);
+    console.error("Erreur Briefs:", err);
   }
 };
 
+// 4. Charger l'historique des rendus de l'étudiant
 const loadPreviousSubmissions = async () => {
+  // Cache
+  const cached = localStorage.getItem('student_submissions_list_cache');
+  if (cached) {
+    previousSubmissions.value = JSON.parse(cached);
+  }
+
   try {
     const res = await api.get('/livrables');
     previousSubmissions.value = res.data?.data || [];
+    localStorage.setItem('student_submissions_list_cache', JSON.stringify(previousSubmissions.value));
   } catch (err) {
-    console.error('Submissions fetch error:', err);
+    console.error("Erreur Submissions:", err);
   }
 };
 
+// 5. Envoyer (Soumettre) un nouveau livrable
 const submitLivrable = async () => {
   if (!form.value.link || !selectedBrief.value) return;
 
   const studentId = parseInt(user.value?.id);
-  if (isNaN(studentId)) {
-    alert('Erreur critique : identifiant utilisateur perdu.');
-    return;
-  }
+  if (isNaN(studentId)) return alert('Utilisateur non identifié.');
 
   isSubmitting.value = true;
-  try {
-    await api.post('/livrables', {
-      brief_id:   parseInt(selectedBrief.value.id),
-      student_id: studentId,
-      link:       form.value.link,
-      message:    form.value.message,
-    });
+  
+  await api.post('/livrables', {
+    brief_id:   parseInt(selectedBrief.value.id),
+    student_id: studentId,
+    link:       form.value.link,
+    message:    form.value.message,
+  });
 
-    form.value          = { link: '', message: '' };
-    submitSuccess.value = true;
-    setTimeout(() => { submitSuccess.value = false; }, 3500);
-    await loadPreviousSubmissions();
-  } catch (err) {
-    console.error('Submit error:', err);
-    const msg = err.response?.data?.error || err.response?.data?.message || err.message || 'Erreur Data';
-    alert('Erreur lors de la soumission :\n' + msg);
-  } finally {
-    isSubmitting.value = false;
-  }
+  form.value = { link: '', message: '' };
+  submitSuccess.value = true;
+  setTimeout(() => { submitSuccess.value = false; }, 3500);
+  
+  // Rafraîchir les données pour montrer que c'est soumis
+  loadPreviousSubmissions();
+  isSubmitting.value = false;
 };
 
+// 6. Lancer le quiz AI
 const startQuiz = async (briefId) => {
-  try {
-    const res       = await api.get(`/quizzes/briefs/${briefId}/session`);
-    const sessionId = res.data?.data?.id;
-    if (sessionId) {
-      router.push(`/quiz/${sessionId}?briefId=${briefId}`);
-    } else {
-      alert('Erreur serveur : Session introuvable.');
-    }
-  } catch (err) {
-    console.error('Quiz start error:', err);
-    alert(err.response?.data?.error || 'Ce quiz n\'est pas encore disponible.');
+  const res = await api.get(`/quizzes/briefs/${briefId}/session`);
+  const session = res.data?.data;
+  
+  if (session?.id) {
+    router.push(`/student/quiz/${session.id}?briefId=${briefId}`);
+  } else {
+    alert('Impossible de lancer le quiz pour le moment.');
   }
 };
 
-const handleLogout = async () => {
-  try { await api.post('/logout'); } catch {}
+// --- HELPERS ---
+const getSubmissionStatus = (briefId) => previousSubmissions.value.some(s => s.brief_id === briefId);
+const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
+
+const handleLogout = () => {
   localStorage.removeItem('auth_token');
   localStorage.removeItem('user');
   router.push('/login');
 };
 
-// ─── Lifecycle ────────────────────────────────────────────────────────────────
+// --- CYCLE DE VIE ---
 onMounted(async () => {
   const cached = localStorage.getItem('user');
   if (cached) user.value = JSON.parse(cached);
+  
   isLoading.value = true;
-  await Promise.all([loadBriefs(), loadPreviousSubmissions()]);
+  // On charge les données (plus simple que Promise.all pour un débutant)
+  await loadBriefs();
+  await loadPreviousSubmissions();
   isLoading.value = false;
 });
 </script>
@@ -672,6 +691,15 @@ onMounted(async () => {
 .status-pill-large--validated .status-dot { background: #56d364; }
 .status-pill-large--rejected { background: rgba(248,81,73,0.1); color: #ff7b72; border-color: rgba(248,81,73,0.2); }
 .status-pill-large--rejected .status-dot { background: #ff7b72; }
+.feedback-bubble {
+  background: rgba(56, 139, 253, 0.05);
+  border: 1px solid rgba(56, 139, 253, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #c9d1d9;
+}
 
 /* Toasts */
 .success-toast {
@@ -682,7 +710,7 @@ onMounted(async () => {
 .success-toast svg { width: 22px; height: 22px; }
 
 /* ─── Animations ────────────────────────────────────────────────────────────── */
-@keyframes spin { to { transform: rotate(360deg); } }
+
 @keyframes pulse-blue { 0%, 100% { opacity: 1; box-shadow: 0 0 8px #79c0ff; } 50% { opacity: 0.5; box-shadow: 0 0 2px #79c0ff; } }
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 .animate-in { opacity: 0; animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
@@ -699,3 +727,5 @@ onMounted(async () => {
   .brief-details { padding: 24px; }
 }
 </style>
+
+

@@ -50,8 +50,8 @@
                 <span class="h-stat-l">XP TOTAL</span>
               </div>
               <div class="h-stat">
-                <span class="h-stat-v">{{ form.skills?.length || 0 }}</span>
-                <span class="h-stat-l">COMPÉTENCES</span>
+                <span class="h-stat-v">{{ (user?.total_points || 0).toLocaleString() }}</span>
+                <span class="h-stat-l">XP TOTAL</span>
               </div>
             </div>
           </div>
@@ -70,47 +70,9 @@
               <div class="card-content">
                 <div class="form-row">
                   <div class="input-wrap">
-                    <label>Bio Professionnelle</label>
-                    <textarea v-model="form.bio" placeholder="Parlez-nous de vous..." rows="4"></textarea>
-                  </div>
-                </div>
-                <div class="form-row dual">
-                  <div class="input-wrap">
                     <label>Numéro de Téléphone</label>
                     <input v-model="form.phone" type="tel" placeholder="+212 600..." />
                   </div>
-                  <div class="input-wrap">
-                    <label>Spécialité</label>
-                    <input :value="user?.speciality || 'Fullstack Developer'" disabled class="input-disabled" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Skills Management -->
-            <div class="nadi-card">
-              <div class="card-head">
-                <svg class="head-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-                <h3 class="card-title">Expertises & Skills</h3>
-              </div>
-              <div class="card-content">
-                <div class="skills-input-area">
-                  <input 
-                    v-model="newSkill" 
-                    @keyup.enter="addSkill" 
-                    placeholder="Ajouter une compétence (ex: Vue.js, Laravel...)"
-                    class="skill-field"
-                  />
-                  <button @click="addSkill" class="btn-add-skill">AJOUTER</button>
-                </div>
-                <div class="skills-list">
-                  <TransitionGroup name="list">
-                    <div v-for="skill in form.skills" :key="skill" class="skill-tag shadow-blue">
-                      {{ skill }}
-                      <button @click="removeSkill(skill)" class="skill-remove">×</button>
-                    </div>
-                  </TransitionGroup>
-                  <div v-if="!form.skills?.length" class="empty-msg">Aucune compétence ajoutée</div>
                 </div>
               </div>
             </div>
@@ -183,8 +145,6 @@ const newSkill = ref('');
 
 const form = ref({
   phone: '',
-  bio: '',
-  skills: [],
   github_url: '',
   linkedin_url: '',
 });
@@ -195,51 +155,29 @@ const avatarFallback = computed(() => {
 });
 
 const fetchProfileData = async () => {
-  try {
-    const res = await api.get('/user');
-    user.value = res.data;
-    form.value = {
-      phone: user.value.phone || '',
-      bio: user.value.bio || '',
-      skills: Array.isArray(user.value.skills) ? user.value.skills : [],
-      github_url: user.value.github_url || '',
-      linkedin_url: user.value.linkedin_url || '',
-    };
-  } catch (err) {
-    console.error('Error fetching profile:', err);
-  }
-};
-
-const addSkill = () => {
-  const skill = newSkill.value.trim();
-  if (skill && !form.value.skills.includes(skill)) {
-    form.value.skills.push(skill);
-    newSkill.value = '';
-  }
-};
-
-const removeSkill = (skill) => {
-  form.value.skills = form.value.skills.filter(s => s !== skill);
+  const res = await api.get('/user');
+  user.value = res.data;
+  form.value = {
+    phone: user.value.phone || '',
+    github_url: user.value.github_url || '',
+    linkedin_url: user.value.linkedin_url || '',
+  };
 };
 
 const saveProfile = async () => {
   isSaving.value = true;
-  try {
-    await api.put('/user/profile', form.value);
-    
-    // Update local user data
-    const updatedUser = { ...user.value, ...form.value };
-    user.value = updatedUser;
-    localStorage.setItem('user', JSON.stringify(updatedUser));
-    
-    saveSuccess.value = true;
-    setTimeout(() => { saveSuccess.value = false; }, 3000);
-  } catch (err) {
-    console.error('Error saving profile:', err);
-    alert('Erreur lors de la sauvegarde. Vérifiez les URLs.');
-  } finally {
-    isSaving.value = false;
-  }
+  
+  await api.put('/user/profile', form.value);
+  
+  // Mettre à jour les données locales
+  const updatedUser = { ...user.value, ...form.value };
+  user.value = updatedUser;
+  localStorage.setItem('user', JSON.stringify(updatedUser));
+  
+  saveSuccess.value = true;
+  setTimeout(() => { saveSuccess.value = false; }, 3000);
+  
+  isSaving.value = false;
 };
 
 const handleLogout = () => {
@@ -433,7 +371,7 @@ input:focus, textarea:focus { border-color: #58a6ff; }
   border-top-color: white; border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+
 
 @media (max-width: 1000px) {
   .grid-container { grid-template-columns: 1fr; }

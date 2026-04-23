@@ -5,8 +5,8 @@
     <main class="main">
       <!-- Loading State -->
       <div v-if="loading" class="loading-overlay">
-        <div class="nadi-loader"></div>
-        <p>Chargement du profil...</p>
+        
+        <p>Chargement en cours...</p>
       </div>
 
       <template v-else-if="profile">
@@ -38,12 +38,7 @@
               <div class="hero-info">
                 <div class="name-row">
                   <h1 class="hero-name">{{ profile.first_name }} {{ profile.last_name }}</h1>
-                  <span class="role-badge">{{ profile.speciality || 'Fullstack Student' }}</span>
                 </div>
-                <p class="hero-location">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  {{ profile.location || 'Safi, Maroc' }}
-                </p>
                 <div class="hero-links">
                   <a v-if="profile.github_url" :href="profile.github_url" target="_blank" class="social-link">
                     <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
@@ -57,13 +52,13 @@
               </div>
 
               <div class="hero-stats">
-                <div class="stat-item pulse-gold">
-                  <span class="stat-value">{{ stats.total_points }}</span>
-                  <span class="stat-label">EXP POINTS</span>
+                <div class="stat-item pulse-blue">
+                  <span class="stat-value">{{ stats.validated_briefs }}</span>
+                  <span class="stat-label">BRIEFS VALIDÉS</span>
                 </div>
                 <div class="stat-item">
                   <span class="stat-value">#{{ stats.rank }}</span>
-                  <span class="stat-label">RANG GLOBAL</span>
+                  <span class="stat-label">RANG PROGRÈS</span>
                 </div>
               </div>
             </div>
@@ -72,31 +67,6 @@
           <!-- Main Grid -->
           <div class="profile-cols">
             <div class="col-main">
-              <!-- About Card -->
-              <div class="card glass-card">
-                <div class="card-header">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                  <h3>À propos</h3>
-                </div>
-                <div class="card-body">
-                  <p class="bio-text">{{ profile.bio || "Aucune description fournie pour le moment." }}</p>
-                </div>
-              </div>
-
-              <!-- Skills Card -->
-              <div class="card glass-card">
-                <div class="card-header">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
-                  <h3>Expertises</h3>
-                </div>
-                <div class="card-body">
-                  <div class="skills-grid">
-                    <div v-for="skill in (profile.skills || ['Backend', 'Vue.js', 'Clean Arc', 'Docker', 'API Design'])" :key="skill" class="skill-pill">
-                      {{ skill }}
-                    </div>
-                  </div>
-                </div>
-              </div>
 
               <!-- Achievements Card -->
               <div class="card glass-card">
@@ -138,7 +108,7 @@
                         <img :src="member.avatar_url || `https://ui-avatars.com/api/?name=${member.first_name}+${member.last_name}&background=0d1117&color=388bfd`" class="member-avatar" />
                         <div class="member-meta">
                           <span class="member-name">{{ member.first_name }}</span>
-                          <span class="member-pts">{{ member.total_points }} pts</span>
+                          <span class="member-pts">Apprenant</span>
                         </div>
                       </div>
                     </div>
@@ -188,17 +158,11 @@ const stats = ref(null);
 const loading = ref(true);
 
 const fetchProfile = async () => {
-  try {
-    loading.value = true;
-    const res = await api.get(`/students/${route.params.id}`);
-    profile.value = res.data.user;
-    stats.value = res.data.stats;
-  } catch (err) {
-    console.error('Error fetching profile:', err);
-    profile.value = null;
-  } finally {
-    loading.value = false;
-  }
+  loading.value = true;
+  const res = await api.get(`/students/${route.params.id}`);
+  profile.value = res.data.user;
+  stats.value = res.data.stats;
+  loading.value = false;
 };
 
 const startChat = (id) => {
@@ -450,11 +414,11 @@ watch(() => route.params.id, fetchProfile);
   letter-spacing: 0.1em;
 }
 
-.pulse-gold {
-  border-color: rgba(210, 153, 34, 0.3);
-  background: radial-gradient(circle at center, rgba(210, 153, 34, 0.05) 0%, transparent 100%);
+.pulse-blue {
+  border-color: rgba(56, 139, 253, 0.3);
+  background: radial-gradient(circle at center, rgba(56, 139, 253, 0.05) 0%, transparent 100%);
 }
-.pulse-gold .stat-value { color: #d29922; }
+.pulse-blue .stat-value { color: #58a6ff; }
 
 /* ─── Cards Grid ────────────────────────────────────────────────────────────── */
 .profile-cols {
@@ -588,16 +552,7 @@ watch(() => route.params.id, fetchProfile);
   gap: 20px;
 }
 
-.nadi-loader {
-  width: 48px;
-  height: 48px;
-  border: 3px solid rgba(56, 139, 253, 0.1);
-  border-top-color: #58a6ff;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
 
-@keyframes spin { to { transform: rotate(360deg); } }
 
 .error-state {
   text-align: center;
@@ -635,3 +590,5 @@ watch(() => route.params.id, fetchProfile);
   .hero-links { justify-content: center; }
 }
 </style>
+
+

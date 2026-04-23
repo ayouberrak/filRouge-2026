@@ -91,8 +91,8 @@
             <!-- Messages Window -->
             <div class="messages-area custom-scrollbar" ref="messagesContainer">
               <div v-if="loadingMessages" class="loading-state">
-                <div class="spinner"></div>
-                <p>Connexion au flux...</p>
+                
+                <p>Chargement en cours...</p>
               </div>
 
               <template v-else>
@@ -121,7 +121,7 @@
             <!-- Input Bar -->
             <footer class="chat-footer animate-in">
               <div class="input-bar">
-                <button class="nadi-action-btn attach-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
+
                 <input 
                   v-model="newMessageText" 
                   @keyup.enter="handleSendMessage"
@@ -188,7 +188,7 @@
 import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '../../services/api';
-import ChatService from '../../services/ChatService';
+import { ChatService } from '../../services/ApiService';
 import echo from '../../services/echo';
 import SidebarStudent from '../../components/SidebarStudent.vue';
 
@@ -246,15 +246,9 @@ watch(userSearchQuery, async (newVal) => {
 
 // ─── Methods ──────────────────────────────────────────────────────────────────
 const fetchConversations = async () => {
-  try {
-    const res = await ChatService.getConversations();
-    conversations.value = res.data || [];
-    return res.data || [];
-  } catch (err) { 
-    console.error('Fetch error:', err);
-    conversations.value = [];
-    return [];
-  }
+  const res = await ChatService.getConversations();
+  conversations.value = res.data || [];
+  return res.data || [];
 };
 
 const selectChat = async (chat) => {
@@ -265,13 +259,12 @@ const selectChat = async (chat) => {
   unreadChats.value.delete(chat.id);
   loadingMessages.value = true;
   
-  try {
-    const res = await ChatService.getMessages(chat.id);
-    currentMessages.value = res.data;
-    subscribeToChannel(chat.id);
-    await scrollToBottom();
-  } catch (err) { console.error(err); }
-  finally { loadingMessages.value = false; }
+  const res = await ChatService.getMessages(chat.id);
+  currentMessages.value = res.data;
+  subscribeToChannel(chat.id);
+  await scrollToBottom();
+  
+  loadingMessages.value = false;
 };
 
 const subscribeToChannel = (id) => {
@@ -295,24 +288,20 @@ const handleSendMessage = async () => {
   if (!text || !selectedChatId.value || sending.value) return;
 
   sending.value = true;
-  try {
-    const res = await ChatService.sendMessage(text, selectedChatId.value);
-    currentMessages.value.push(res.data);
-    newMessageText.value = '';
-    await scrollToBottom();
-    fetchConversations();
-  } catch (err) { console.error(err); }
-  finally { sending.value = false; }
+  const res = await ChatService.sendMessage(text, selectedChatId.value);
+  currentMessages.value.push(res.data);
+  newMessageText.value = '';
+  await scrollToBottom();
+  fetchConversations();
+  sending.value = false;
 };
 
 const startPrivateChat = async (u) => {
-  try {
-    const res = await ChatService.startConversation(u.id);
-    await fetchConversations();
-    selectChat(res.data);
-    showNewChatModal.value = false;
-    userSearchQuery.value = '';
-  } catch (err) { console.error(err); }
+  const res = await ChatService.startConversation(u.id);
+  await fetchConversations();
+  selectChat(res.data);
+  showNewChatModal.value = false;
+  userSearchQuery.value = '';
 };
 
 const getConversationName = (chat) => {
@@ -547,7 +536,7 @@ onUnmounted(() => {
 .empty-users { text-align: center; padding: 40px 20px; font-size: 13px; color: #484f58; font-weight: 500;}
 
 /* ─── Animations ────────────────────────────────────────────────────────────── */
-@keyframes spin { to { transform: rotate(360deg); } }
+ 
 @keyframes pulse-blue { 0%, 100% { opacity: 1; box-shadow: 0 0 10px #388bfd; } 50% { opacity: 0.4; box-shadow: 0 0 2px #388bfd; } }
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 .animate-in { opacity: 0; animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
@@ -567,3 +556,4 @@ onUnmounted(() => {
   .chat-sidebar { width: 100%; height: 300px; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.06); }
 }
 </style>
+
