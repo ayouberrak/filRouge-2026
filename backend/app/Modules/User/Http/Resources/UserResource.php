@@ -30,11 +30,9 @@ class UserResource extends JsonResource
         ];
 
         if ($entity instanceof FormateurEntity) {
-            $data['speciality'] = $entity->getSpeciality();
         }
 
         if ($entity instanceof StudentEntity) {
-            $data['points'] = $entity->getPoints();
             $data['classroom_id'] = $entity->getClassroomId();
             $data['squad_id'] = $entity->getSquadId();
         }
