@@ -3,15 +3,7 @@
 
     <!-- Brand -->
     <div class="brand">
-      <div class="brand-mark">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
-        </svg>
-      </div>
-      <div class="brand-text">
-        <span class="brand-name">YouCode</span>
-        <span class="brand-role">Espace Formateur</span>
-      </div>
+      <img :src="iconeSidebar" class="brand-banner" alt="Logo" />
     </div>
 
     <!-- Nav sections -->
@@ -90,6 +82,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
+import iconeSidebar from '../assets/iconeSidebar.jpg';
 
 // ─── Props & Emits ────────────────────────────────────────────────────────────
 
@@ -190,10 +183,23 @@ const pilotageItems = [
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 18px 16px;
+  height: 140px;
   border-bottom: 1px solid #21262d;
   flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+}
+.brand::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.7));
+  pointer-events: none;
+}
+.brand-banner {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .brand-mark {
   width: 28px;

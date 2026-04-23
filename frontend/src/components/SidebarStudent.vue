@@ -3,15 +3,7 @@
 
     <!-- Brand -->
     <div class="brand">
-      <div class="brand-mark">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
-        </svg>
-      </div>
-      <div class="brand-text">
-        <span class="brand-name">YouCode</span>
-        <span class="brand-role">Espace Apprenant</span>
-      </div>
+      <img :src="iconeSidebar" class="brand-banner" alt="Logo" />
     </div>
 
     <!-- Nav sections -->
@@ -57,7 +49,7 @@
         />
         <div class="user-info">
           <p class="user-name">{{ user?.first_name || 'Étudiant' }} {{ user?.last_name?.[0] || '' }}.</p>
-          <p class="user-role">{{ (user?.total_points || 0).toLocaleString() }} XP</p>
+          <p class="user-role">Apprenant</p>
         </div>
       </router-link>
       <button class="logout-btn" @click="$emit('logout')" title="Se déconnecter">
@@ -73,6 +65,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
+import iconeSidebar from '../assets/iconeSidebar.jpg';
 
 // ─── Props & Emits ────────────────────────────────────────────────────────────
 
@@ -102,22 +95,22 @@ const parcoursItems = [
     icon:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>',
   },
   {
-    path:  '/briefs',
+    path:  '/student/briefs',
     label: 'Briefs Actifs',
     icon:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
   },
   {
-    path:  '/submissions',
+    path:  '/student/submissions',
     label: 'Mes Rendus',
     icon:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>',
   },
   {
-    path:  '/absences',
+    path:  '/student/absences',
     label: 'Assiduité',
     icon:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>',
   },
   {
-    path:  '/activity',
+    path:  '/student/activity',
     label: 'Mon Activité',
     icon:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>',
   },
@@ -129,13 +122,9 @@ const communityItems = [
     label: 'Messagerie',
     icon:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>',
   },
+
   {
-    path:  '/marketplace',
-    label: 'Marketplace',
-    icon:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>',
-  },
-  {
-    path:  '/network',
+    path:  '/student/network',
     label: 'Communauté',
     icon:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>',
   },
@@ -165,10 +154,23 @@ const communityItems = [
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 18px 16px;
+  height: 140px;
   border-bottom: 1px solid #21262d;
   flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+}
+.brand::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.7));
+  pointer-events: none;
+}
+.brand-banner {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .brand-mark {
   width: 28px;

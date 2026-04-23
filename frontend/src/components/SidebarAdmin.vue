@@ -3,15 +3,7 @@
 
     <!-- Brand -->
     <div class="brand">
-      <div class="brand-mark">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-        </svg>
-      </div>
-      <div class="brand-text">
-        <span class="brand-name">YouCode</span>
-        <span class="brand-role">Administration</span>
-      </div>
+      <img :src="iconeSidebar" class="brand-banner" alt="Logo" />
     </div>
 
     <!-- Nav sections -->
@@ -59,20 +51,7 @@
         </router-link>
       </div>
 
-      <div class="nav-section">
-        <span class="nav-section-label">Commerce</span>
-        <router-link
-          v-for="item in commerceItems"
-          :key="item.path"
-          :to="item.path"
-          class="nav-item"
-          :class="{ 'nav-item--active': isActive(item.path) }"
-        >
-          <span class="nav-icon" v-html="item.icon"></span>
-          <span class="nav-label">{{ item.label }}</span>
-          <span v-if="item.badge" class="nav-badge">{{ item.badge }}</span>
-        </router-link>
-      </div>
+
 
     </nav>
 
@@ -102,6 +81,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
+import iconeSidebar from '../assets/iconeSidebar.jpg';
 
 const props = defineProps(['user']);
 defineEmits(['logout']);
@@ -140,17 +120,15 @@ const resourceItems = [
     path:  '/admin/absences',
     label: 'Absences Globale',
     icon:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+  },
+  {
+    path:  '/admin/reports',
+    label: 'Rapports Daily',
+    icon:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>',
   }
 ];
 
-const commerceItems = [
-  {
-    path:  '/admin/marketplace',
-    label: 'Marketplace',
-    badge: 'NEW',
-    icon:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>',
-  }
-];
+
 </script>
 
 <style scoped>
@@ -170,9 +148,23 @@ const commerceItems = [
 .brand {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 24px 20px;
+  height: 140px;
   border-bottom: 1px solid #21262d;
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+}
+.brand::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.7));
+  pointer-events: none;
+}
+.brand-banner {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .brand-mark {
