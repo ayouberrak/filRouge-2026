@@ -11,7 +11,7 @@ import StudentChatView from '../views/student/StudentChatView.vue';
 import StudentSubmissionsView from '../views/student/StudentSubmissionsView.vue';
 import MyProfileView from '../views/student/MyProfileView.vue';
 import StudentQuizView from '../views/student/StudentQuizView.vue';
-import StudentMarketplaceView from '../views/student/StudentMarketplaceView.vue';
+
 import TeacherDashboardView from '../views/teacher/TeacherDashboardView.vue';
 import TeacherStudentsView from '../views/teacher/TeacherStudentsView.vue';
 import TeacherSquadsView from '../views/teacher/TeacherSquadsView.vue';
@@ -25,8 +25,9 @@ import TeacherChatView from '../views/teacher/TeacherChatView.vue';
 import AdminDashboardView from '../views/admin/AdminDashboardView.vue';
 import AdminUsersView from '../views/admin/AdminUsersView.vue';
 import AdminClassroomsView from '../views/admin/AdminClassroomsView.vue';
-import AdminMarketplaceView from '../views/admin/AdminMarketplaceView.vue';
+
 import AdminAbsencesView from '../views/admin/AdminAbsencesView.vue';
+import AdminReportsView from '../views/admin/AdminReportsView.vue';
 
 const routes = [
     {
@@ -95,12 +96,7 @@ const routes = [
         component: StudentSubmissionsView,
         meta: { requiresAuth: true, role: 'student' }
     },
-    {
-        path: '/student/marketplace',
-        name: 'student.marketplace',
-        component: StudentMarketplaceView,
-        meta: { requiresAuth: true, role: 'student' }
-    },
+
 
     {
         path: '/student/quiz/:id',
@@ -196,16 +192,17 @@ const routes = [
         component: AdminClassroomsView,
         meta: { requiresAuth: true, role: 'admin' }
     },
-    {
-        path: '/admin/marketplace',
-        name: 'admin.marketplace',
-        component: AdminMarketplaceView,
-        meta: { requiresAuth: true, role: 'admin' }
-    },
+
     {
         path: '/admin/absences',
         name: 'admin.absences',
         component: AdminAbsencesView,
+        meta: { requiresAuth: true, role: 'admin' }
+    },
+    {
+        path: '/admin/reports',
+        name: 'admin.reports',
+        component: AdminReportsView,
         meta: { requiresAuth: true, role: 'admin' }
     },
 
@@ -225,6 +222,10 @@ const routes = [
             if (user.role === 'formateur') return { name: 'teacher.chat' };
             return { name: 'student.chat' };
         }
+    },
+    {
+        path: '/:pathMatch(.*)*',
+        redirect: '/'
     }
 ]
 
