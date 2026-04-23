@@ -129,42 +129,60 @@ import { useRouter } from 'vue-router';
 import SidebarAdmin from '../../components/SidebarAdmin.vue';
 import api from '../../services/api';
 
+// --- VARIABLES D'ÉTAT (REFS) ---
+// 'ref' permet de créer des variables que Vue peut surveiller pour mettre à jour l'écran
 const router = useRouter();
 const currentUser = ref(JSON.parse(localStorage.getItem('user')) || {});
-const absences = ref([]);
-const isLoading = ref(true);
-const selectedJustif = ref(null);
+const absences = ref([]); // Liste des absences
+const isLoading = ref(true); // État de chargement
+const selectedJustif = ref(null); // Absence sélectionnée pour voir le justificatif
 
-const totalPending = computed(() => absences.value.filter(a => a.status === 'pending' && a.justification_file).length);
+// --- LOGIQUE CALCULÉE (COMPUTED) ---
 
-const getAvatar = (name) => `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'U')}&background=21262d&color=a371f7&bold=true`;
-const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-const formatTime = (dateStr) => new Date(dateStr).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+// Calcule automatiquement le nombre de justifications en attente
+const totalPending = computed(() => {
+  return absences.value.filter(a => a.status === 'pending' && a.justification_file).length;
+});
 
+// --- ACTIONS (MÉTHODES) ---
+
+// 1. Récupérer les absences depuis le serveur
 const fetchAbsences = async () => {
-  try {
-    isLoading.value = true;
-    const res = await api.get('/absences');
-    absences.value = res.data.absences.data || res.data.absences || res.data;
-  } catch (err) {
-    // Error logged silently in production
-  } finally {
+  // Cache
+  const cached = localStorage.getItem('admin_absences_cache');
+  if (cached) {
+    absences.value = JSON.parse(cached);
     isLoading.value = false;
+  } else {
+    isLoading.value = true;
   }
-};
 
-const updateStatus = async (id, action) => {
   try {
-    await api.patch(`/absences/${id}/${action}`);
-    fetchAbsences();
+    const res = await api.get('/absences');
+    absences.value = res.data.absences?.data || res.data.absences || res.data;
+    localStorage.setItem('admin_absences_cache', JSON.stringify(absences.value));
   } catch (err) {
-    alert('Erreur lors de la mise à jour : ' + (err.response?.data?.message || err.message));
+    console.error("Erreur Absences:", err);
   }
+  
+  isLoading.value = false;
 };
 
+// 2. Mettre à jour le statut (Approuver / Rejeter)
+const updateStatus = async (id, action) => {
+  await api.patch(`/absences/${id}/${action}`);
+  fetchAbsences();
+};
+
+// 3. Ouvrir la prévisualisation du document
 const viewJustification = (abs) => {
   selectedJustif.value = abs;
 };
+
+// --- HELPERS (FONCTIONS D'AIDE) ---
+const getAvatar = (name) => `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'U')}&background=21262d&color=a371f7&bold=true`;
+const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+const formatTime = (dateStr) => new Date(dateStr).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
 const handleLogout = () => {
   localStorage.removeItem('auth_token');
@@ -172,6 +190,7 @@ const handleLogout = () => {
   router.push('/login');
 };
 
+// --- CYCLE DE VIE ---
 onMounted(fetchAbsences);
 </script>
 

@@ -53,9 +53,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-if="isLoading" v-for="i in 5" :key="i" class="skeleton-row">
-                 <td colspan="6"><div class="shimmer-line"></div></td>
-              </tr>
+              <tr v-if="isLoading"><td colspan="10" style="text-align: center; padding: 20px;">Chargement en cours...</td></tr>
               <tr v-else v-for="user in filteredUsers" :key="user.id">
                 <td>
                   <div class="user-cell">
@@ -160,29 +158,35 @@ import { useRouter } from 'vue-router';
 import SidebarAdmin from '../../components/SidebarAdmin.vue';
 import api from '../../services/api';
 
+// --- VARIABLES D'ÉTAT (REFS) ---
+// On utilise 'ref' pour créer des variables réactives que Vue surveille
 const router = useRouter();
 const currentUser = ref(JSON.parse(localStorage.getItem('user')) || {});
-const users = ref([]);
-const classrooms = ref([]);
-const isLoading = ref(true);
-const isSaving = ref(false);
-const searchQuery = ref('');
-const filterRole = ref('ALL');
+const users = ref([]); // Liste complète des utilisateurs
+const classrooms = ref([]); // Liste des classes
+const isLoading = ref(true); // État de chargement initial
+const isSaving = ref(false); // État lors de l'enregistrement
 
-// Modal state
-const showUserModal = ref(false);
-const isEdit = ref(false);
-const editingUserId = ref(null);
+// Filtres et Recherche
+const searchQuery = ref(''); // Texte de recherche
+const filterRole = ref('ALL'); // Filtre de rôle actuel (ALL, student, formateur, admin)
+
+// États pour la fenêtre Modale (Popup)
+const showUserModal = ref(false); // Afficher ou non la modale
+const isEdit = ref(false); // Si vrai, on modifie, sinon on crée
+const editingUserId = ref(null); // ID de l'utilisateur en cours de modification
+
+// Formulaire de l'utilisateur
 const userForm = ref({
   first_name: '',
   last_name: '',
   email: '',
   password: '',
   role: 'student',
-  speciality: 'PHP',
   classroom_id: null
 });
 
+// Options de filtrage disponibles
 const roles = [
   { val: 'ALL', label: 'Tout le monde' },
   { val: 'student', label: 'Étudiants' },
@@ -190,102 +194,100 @@ const roles = [
   { val: 'admin', label: 'Admins' }
 ];
 
+// --- LOGIQUE CALCULÉE (COMPUTED) ---
+
+// Compte le nombre d'étudiants
 const studentsCount = computed(() => users.value.filter(u => u.role === 'student').length);
+// Compte le nombre de formateurs
 const staffCount = computed(() => users.value.filter(u => u.role === 'formateur').length);
 
+// Applique la recherche et le filtre sur la liste des utilisateurs
 const filteredUsers = computed(() => {
   return users.value.filter(u => {
-    const matchesSearch = (u.first_name + ' ' + u.last_name + ' ' + u.email).toLowerCase().includes(searchQuery.value.toLowerCase());
+    const fullName = (u.first_name + ' ' + u.last_name + ' ' + u.email).toLowerCase();
+    const matchesSearch = fullName.includes(searchQuery.value.toLowerCase());
     const matchesRole = filterRole.value === 'ALL' || u.role === filterRole.value;
     return matchesSearch && matchesRole;
   });
 });
 
+// Génère un avatar automatique à partir du prénom
 const getAvatar = (name) => `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'U')}&background=21262d&color=a371f7&bold=true`;
 
+// --- ACTIONS (MÉTHODES) ---
+
+// 1. Charger les données (Utilisateurs + Classes)
 const fetchData = async () => {
-  try {
+  // Cache
+  const cachedUsers = localStorage.getItem('admin_users_cache');
+  const cachedClasses = localStorage.getItem('admin_classrooms_cache');
+  if (cachedUsers && cachedClasses) {
+    users.value = JSON.parse(cachedUsers);
+    classrooms.value = JSON.parse(cachedClasses);
+    isLoading.value = false;
+  } else {
     isLoading.value = true;
+  }
+
+  try {
     const [userRes, classRes] = await Promise.all([
       api.get('/users'),
       api.get('/classrooms')
     ]);
-    // Handle Laravel Resource wrapping
-    if (userRes.data.users && userRes.data.users.data) {
-      users.value = userRes.data.users.data;
-    } else if (userRes.data.users) {
-      users.value = userRes.data.users;
-    } else {
-      users.value = userRes.data.data || userRes.data;
-    }
-    classrooms.value = classRes.data.data;
+
+    const rawUsers = userRes.data.users || userRes.data.data || userRes.data;
+    users.value = Array.isArray(rawUsers) ? rawUsers : (rawUsers.data || []);
+    classrooms.value = classRes.data.data || classRes.data;
+
+    // Sauvegarder cache
+    localStorage.setItem('admin_users_cache', JSON.stringify(users.value));
+    localStorage.setItem('admin_classrooms_cache', JSON.stringify(classrooms.value));
   } catch (err) {
-    console.error('Error fetching data:', err);
-  } finally {
-    isLoading.value = false;
+    console.error("Erreur Admin Data:", err);
   }
+  
+  isLoading.value = false;
 };
 
+// 2. Ouvrir la modale pour créer un utilisateur
 const openCreateModal = () => {
   isEdit.value = false;
-  userForm.value = {
-    first_name: '',
-    last_name: '',
-    email: '',
-    password: '',
-    role: 'student',
-    speciality: 'PHP',
-    classroom_id: null
-  };
+  userForm.value = { first_name: '', last_name: '', email: '', password: '', role: 'student', classroom_id: null };
   showUserModal.value = true;
 };
 
+// 3. Ouvrir la modale pour modifier un utilisateur
 const editUser = (user) => {
   isEdit.value = true;
   editingUserId.value = user.id;
-  userForm.value = {
-    first_name: user.first_name,
-    last_name: user.last_name,
-    email: user.email,
-    role: user.role,
-    speciality: user.speciality || 'PHP',
-    classroom_id: user.classroom_id
-  };
+  userForm.value = { ...user }; // On copie les données de l'utilisateur dans le formulaire
   showUserModal.value = true;
 };
 
-const closeUserModal = () => {
-  showUserModal.value = false;
-};
+const closeUserModal = () => showUserModal.value = false;
 
+// 4. Enregistrer (Créer ou Modifier)
 const saveUser = async () => {
-  try {
-    isSaving.value = true;
-    if (isEdit.value) {
-      await api.put(`/users/update/${editingUserId.value}`, userForm.value);
-    } else {
-      await api.post('/users/create', userForm.value);
-    }
-    showUserModal.value = false;
-    fetchData();
-  } catch (err) {
-    alert('Erreur lors de l\'enregistrement : ' + (err.response?.data?.message || err.message));
-  } finally {
-    isSaving.value = false;
+  isSaving.value = true;
+  if (isEdit.value) {
+    await api.put(`/users/update/${editingUserId.value}`, userForm.value);
+  } else {
+    await api.post('/users/create', userForm.value);
   }
+  showUserModal.value = false;
+  fetchData();
+  isSaving.value = false;
 };
 
+// 5. Bannir ou Débloquer un utilisateur
 const toggleBan = async (user) => {
-  const isBanned = user.status === 'banned';
-  if (!confirm(`Êtes-vous sûr de vouloir ${isBanned ? 'débloquer' : 'bannir'} ${user.first_name}?`)) return;
+  const isCurrentlyBanned = user.status === 'banned';
+  const action = isCurrentlyBanned ? 'débloquer' : 'bannir';
   
-  try {
-    const newStatus = isBanned ? 'active' : 'banned';
-    await api.patch(`/users/ban/${user.id}`);
-    user.status = newStatus;
-  } catch (err) {
-    alert('Erreur lors du changement de statut');
-  }
+  if (!confirm(`Voulez-vous vraiment ${action} ${user.first_name}?`)) return;
+  
+  await api.patch(`/users/ban/${user.id}`);
+  user.status = isCurrentlyBanned ? 'active' : 'banned';
 };
 
 const handleLogout = () => {
@@ -294,6 +296,7 @@ const handleLogout = () => {
   router.push('/login');
 };
 
+// --- CYCLE DE VIE ---
 onMounted(fetchData);
 </script>
 
@@ -385,9 +388,10 @@ onMounted(fetchData);
 
 .empty-table { text-align: center; padding: 80px 20px; color: #484f58; font-style: italic; font-size: 15px; }
 
-.skeleton-row .shimmer-line { height: 24px; background: linear-gradient(90deg, #161b22, #21262d, #161b22); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px; margin: 4px 0; }
-@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+
 
 .animate-in { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 </style>
+
