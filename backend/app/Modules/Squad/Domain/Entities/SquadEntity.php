@@ -6,12 +6,7 @@ use App\Modules\Squad\Domain\ValueObjects\SquadName;
 
 class SquadEntity
 {
-    public function __construct(
-        private ?int $id,
-        private SquadName $name,
-        private int $classroomId,
-        private array $members = []
-    ) {}
+    public function __construct(private ?int $id, private SquadName $name, private int $classroomId, private array $members = []) {}
 
     public function getId(): ?int
     {
@@ -33,12 +28,6 @@ class SquadEntity
         return $this->members;
     }
 
-    // Behavioral Methods
-
-    public function rename(string $newName): void
-    {
-        $this->name = new SquadName($newName);
-    }
 
     public function addMember(int $userId): void
     {
