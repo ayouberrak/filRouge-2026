@@ -76,7 +76,6 @@ class ListBriefSubmissions
                 'id' => $student->id,
                 'name' => $student->first_name . ' ' . $student->last_name,
                 'avatar' => $student->avatar ?? 'https://avatar.cc/100?u=' . $student->id,
-                'points' => $student->total_points ?? 0,
                 'quiz_session_id' => $sessionId,
                 'submission' => $submission ? [
                     'id' => $submission->getId(),
@@ -84,7 +83,8 @@ class ListBriefSubmissions
                     'url' => $submission->getLink(),
                     'message' => $submission->getMessage(),
                     'status' => $submission->getStatus()->getValue(),
-                    'responses' => array_map(fn($r) => $r->toArray(), $submission->getResponses()),
+                    'formateur_id' => $submission->getFormateurId(),
+                    'formateur_message' => $submission->getFormateurMessage(),
                     'quiz_score' => $quizScore
                 ] : null
             ];

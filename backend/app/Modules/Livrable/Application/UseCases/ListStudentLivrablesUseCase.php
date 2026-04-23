@@ -15,7 +15,7 @@ class ListStudentLivrablesUseCase
     {
         // On récupère via Eloquent pour simplifier et retourner les données formatées
         $livrables = LivrableModel::where('student_id', $studentId)
-            ->with(['brief', 'responses'])
+            ->with(['brief'])
             ->orderBy('created_at', 'desc')
             ->get();
 

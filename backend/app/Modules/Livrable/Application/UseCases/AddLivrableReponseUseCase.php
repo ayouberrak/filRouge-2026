@@ -3,7 +3,7 @@
 namespace App\Modules\Livrable\Application\UseCases;
 
 use App\Modules\Livrable\Application\DTO\AddLivrableReponseDTO;
-use App\Modules\Livrable\Domain\Entities\ReponseLivrableEntity;
+use App\Modules\Livrable\Domain\Entities\LivrableEntity;
 use App\Modules\Livrable\Domain\Repositories\LivrableRepositoryInterface;
 use App\Modules\Livrable\Domain\ValueObjects\LivrableStatus;
 use App\Modules\Brief\Domain\Repositories\BriefRepositoryInterface;
@@ -15,11 +15,10 @@ class AddLivrableReponseUseCase
 {
     public function __construct(
         private LivrableRepositoryInterface $repository,
-        private BriefRepositoryInterface $briefRepository,
-        private \App\Modules\Brief\Application\UseCases\AwardPointsForBriefCompletionUseCase $awardPointsUseCase
+        private BriefRepositoryInterface $briefRepository
     ) {}
 
-    public function execute(AddLivrableReponseDTO $dto): ReponseLivrableEntity
+    public function execute(AddLivrableReponseDTO $dto): LivrableEntity
     {
         return DB::transaction(function () use ($dto) {
             $livrable = $this->repository->findById($dto->livrableId);
@@ -31,28 +30,11 @@ class AddLivrableReponseUseCase
                 throw new InvalidArgumentException("Le statut de réponse doit être 'VALIDATED' ou 'REJECTED'.");
             }
 
-            $status = new LivrableStatus($dto->status);
+            $livrable->setStatus(new LivrableStatus($dto->status));
+            $livrable->setFormateurId($dto->formateurId);
+            $livrable->setFormateurMessage($dto->message);
 
-            $reponse = new ReponseLivrableEntity(
-                null,
-                $dto->livrableId,
-                $dto->formateurId,
-                $status,
-                $dto->message
-            );
-
-            $savedReponse = $this->repository->saveResponse($reponse);
-
-            // Try to award points (only if both project and quiz are done)
-            if (strtoupper($dto->status) === 'VALIDATED') {
-                try {
-                    $this->awardPointsUseCase->execute($livrable->getBriefId(), $livrable->getStudentId());
-                } catch (\Throwable $e) {
-                    \Illuminate\Support\Facades\Log::error("Failed to award points during project validation: " . $e->getMessage());
-                }
-            }
-
-            return $savedReponse;
+            return $this->repository->save($livrable);
         });
     }
 }
