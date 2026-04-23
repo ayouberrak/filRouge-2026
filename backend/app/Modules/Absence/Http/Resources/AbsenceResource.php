@@ -7,14 +7,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class AbsenceResource extends JsonResource
 {
-    /**
-     * Transform the resource into an array.
-     *
-     * @return array<string, mixed>
-     */
     public function toArray(Request $request): array
     {
-        /** @var \App\Modules\Absence\Domain\Entities\AbsenceEntity $entity */
         $entity = $this->resource;
 
         return [
@@ -30,7 +24,9 @@ class AbsenceResource extends JsonResource
             'date' => $entity->getDate(),
             'duration' => $entity->getDuration(),
             'status' => $entity->getStatus()->getValue(),
-            'justification_file' => $entity->getJustificationFile() ? asset('storage/' . $entity->getJustificationFile()) : null,
+            'justification_file' => $entity->getJustificationFile()
+                                ? asset('storage/' . $entity->getJustificationFile()) 
+                                : null,
         ];
     }
 }

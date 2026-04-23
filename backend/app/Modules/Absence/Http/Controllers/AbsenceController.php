@@ -65,20 +65,17 @@ class AbsenceController
     {
         $absence = $this->createAbsenceUseCase->execute($request->toDTO());
         return response()->json([
-            'message' => 'Absence created successfully',
+            'message' => 'absence created',
             'absence' => new AbsenceResource($absence)
         ], 201);
     }
 
     public function justify(int $id, JustifyAbsenceRequest $request)
     {
-        // Store the file and get the path
         $path = $request->file('justification_file')->store('justifications', 'public');
-        
         $this->submitAbsenceJustificationUseCase->execute($request->toDTO($id, $path));
-        
         return response()->json([
-            'message' => 'Justification submitted successfully'
+            'message' => 'justification submitted'
         ]);
     }
 
@@ -86,7 +83,7 @@ class AbsenceController
     {
         $this->approveAbsenceUseCase->execute($id);
         return response()->json([
-            'message' => 'Absence approved successfully'
+            'message' => 'absence approved'
         ]);
     }
 
@@ -94,7 +91,7 @@ class AbsenceController
     {
         $this->rejectAbsenceUseCase->execute($id);
         return response()->json([
-            'message' => 'Absence rejected successfully'
+            'message' => 'absence rejected'
         ]);
     }
 
@@ -102,7 +99,7 @@ class AbsenceController
     {
         $this->deleteAbsenceUseCase->execute($id);
         return response()->json([
-            'message' => 'Absence deleted successfully'
+            'message' => 'absence deleted'
         ]);
     }
 }
