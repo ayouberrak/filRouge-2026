@@ -45,7 +45,7 @@
             class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 rounded-lg transition-all duration-300 transform active:scale-[0.98] shadow-lg shadow-indigo-600/20 flex items-center justify-center space-x-2 disabled:opacity-50"
           >
             <span v-if="loading" class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-            <span>{{ loading ? 'Connexion...' : 'Se connecter' }}</span>
+            <span>{{ loading ? 'Chargement en cours...' : 'Se connecter' }}</span>
           </button>
         </form>
 
@@ -71,28 +71,24 @@ const loading = ref(false);
 const handleLogin = async () => {
     loading.value = true;
     error.value = '';
-    try {
-        const response = await api.post('/login', {
-            email: email.value,
-            password: password.value
-        });
-        
-        localStorage.setItem('auth_token', response.data.access_token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        
-        // Redirection intelligente selon le rôle
-        const role = response.data.user.role;
-        if (role === 'formateur') {
-            router.push('/teacher/dashboard');
-        } else if (role === 'admin') {
-            router.push('/admin/dashboard');
-        } else {
-            router.push('/student/dashboard');
-        }
-    } catch (err) {
-        error.value = err.response?.data?.message || 'Une erreur est survenue lors de la connexion. Vérifiez que le serveur backend est démarré.';
-    } finally {
-        loading.value = false;
+    const response = await api.post('/login', {
+        email: email.value,
+        password: password.value
+    });
+    
+    localStorage.setItem('auth_token', response.data.access_token);
+    localStorage.setItem('user', JSON.stringify(response.data.user));
+    
+    // Redirection intelligente selon le rôle
+    const role = response.data.user.role;
+    if (role === 'formateur') {
+        router.push('/teacher/dashboard');
+    } else if (role === 'admin') {
+        router.push('/admin/dashboard');
+    } else {
+        router.push('/student/dashboard');
     }
+    loading.value = false;
 };
 </script>
+

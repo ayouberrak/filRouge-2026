@@ -20,10 +20,7 @@
         </header>
 
         <!-- ===== CLASSROOMS GRID ===== -->
-        <div v-if="isLoading" class="grid-skeleton">
-          <div v-for="i in 4" :key="i" class="skeleton-card shimmer"></div>
-        </div>
-        
+        <div v-if="isLoading" style="text-align: center; padding: 20px;">Chargement en cours...</div>
         <div v-else class="class-grid animate-in" style="animation-delay: 0.1s">
           <div v-for="(cls, idx) in classrooms" :key="cls.id" class="class-card">
             <div class="card-header">
@@ -55,7 +52,7 @@
                    <span>Assigner un coach</span>
                  </div>
               </div>
-            </div>
+            </div>  
 
             <div class="card-footer">
                <div class="stat-item">
@@ -158,15 +155,23 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import SidebarAdmin from '../../components/SidebarAdmin.vue';
-import api from '../../services/api';
+// Nous importons nos services centralisés pour plus de clarté
+import { BriefService } from '../../services/ApiService'; 
+import api from '../../services/api'; 
 
+// --- VARIABLES D'ÉTAT (REFS) ---
+// Ces variables permettent de stocker les données et de mettre à jour l'interface automatiquement
 const router = useRouter();
 const currentUser = ref(JSON.parse(localStorage.getItem('user')) || {});
-const classrooms = ref([]);
-const isLoading = ref(true);
-const showModal = ref(false);
+const classrooms = ref([]); // Liste des classes
+const isLoading = ref(true); // État de chargement
+
+// Modals (fenêtres surgissantes)
+const showModal = ref(false); 
 const showAssignModal = ref(false);
 const showAssignStudentsModal = ref(false);
+
+// Formulaires
 const newClassName = ref('');
 const selectedClassroom = ref(null);
 const selectedFormateurId = ref('');
@@ -175,8 +180,8 @@ const allStudents = ref([]);
 const selectedStudentIds = ref([]);
 const studentSearch = ref('');
 
-const getAvatar = (name) => `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'U')}&background=21262d&color=a371f7&bold=true`;
-
+// --- LOGIQUE CALCULÉE (COMPUTED) ---
+// Ces fonctions se recalculent toutes seules quand les données changent
 const filteredStudents = computed(() => {
   if (!studentSearch.value) return allStudents.value;
   const s = studentSearch.value.toLowerCase();
@@ -187,61 +192,79 @@ const filteredStudents = computed(() => {
   );
 });
 
+// --- ACTIONS (MÉTHODES) ---
+
+// 1. Récupérer les données depuis le serveur
 const fetchData = async () => {
-  try {
-    isLoading.value = true;
-    
-    // Fetch Classrooms
-    try {
-      const classRes = await api.get('/classrooms');
-      classrooms.value = classRes.data.data;
-    } catch (e) { console.error('Error fetching classrooms:', e); }
-
-    // Fetch Formateurs (Staff)
-    try {
-      const formRes = await api.get('/analytics/students?role=formateur');
-      formateurs.value = formRes.data.data;
-    } catch (e) { console.error('Error fetching formateurs:',e); }
-
-    // Fetch ALL Students for selection
-    try {
-      const studentsRes = await api.get('/analytics/students?role=student');
-      allStudents.value = studentsRes.data.data;
-    } catch (e) { console.error('Error fetching students:', e); }
-
-  } finally {
+  // Cache
+  const cachedCls = localStorage.getItem('admin_classrooms_cache');
+  const cachedForm = localStorage.getItem('admin_formateurs_cache');
+  const cachedSt = localStorage.getItem('admin_all_students_cache');
+  
+  if (cachedCls && cachedForm && cachedSt) {
+    classrooms.value = JSON.parse(cachedCls);
+    formateurs.value = JSON.parse(cachedForm);
+    allStudents.value = JSON.parse(cachedSt);
     isLoading.value = false;
+  } else {
+    isLoading.value = true;
   }
+
+  try {
+    const [classRes, formRes, studentsRes] = await Promise.all([
+      api.get('/classrooms'),
+      api.get('/analytics/students?role=formateur'),
+      api.get('/analytics/students?role=student')
+    ]);
+
+    classrooms.value = classRes.data.data;
+    formateurs.value = formRes.data.data;
+    allStudents.value = studentsRes.data.data;
+
+    // Update Cache
+    localStorage.setItem('admin_classrooms_cache', JSON.stringify(classrooms.value));
+    localStorage.setItem('admin_formateurs_cache', JSON.stringify(formateurs.value));
+    localStorage.setItem('admin_all_students_cache', JSON.stringify(allStudents.value));
+  } catch (err) {
+    console.error("Erreur Admin Data:", err);
+  }
+  
+  isLoading.value = false;
 };
 
+// 2. Créer une nouvelle classe
 const createClassroom = async () => {
   if (!newClassName.value) return;
-  try {
-    await api.post('/classrooms/create', { name: newClassName.value });
-    newClassName.value = '';
-    showModal.value = false;
-    fetchData();
-  } catch (err) {
-    alert('Erreur lors de la création');
-  }
+  await api.post('/classrooms/create', { name: newClassName.value });
+  newClassName.value = '';
+  showModal.value = false;
+  fetchData();
 };
 
+// 3. Supprimer une classe
 const deleteClassroom = async (id) => {
   if (!confirm('Voulez-vous supprimer cette classe ?')) return;
-  try {
-    await api.delete(`/classrooms/${id}`);
-    fetchData();
-  } catch (err) {
-    alert('Erreur lors de la suppression');
-  }
+  await api.delete(`/classrooms/${id}`);
+  fetchData();
 };
 
+// 4. Gestion des assignations
 const openAssignModal = (cls) => {
   selectedClassroom.value = cls;
   selectedFormateurId.value = cls.formateur_id || '';
   showAssignModal.value = true;
 };
 
+const doAssign = async () => {
+  if (!selectedFormateurId.value) return;
+  await api.post(`/classrooms/${selectedClassroom.value.id}/assign-formateur`, {
+    formateur_id: selectedFormateurId.value
+  });
+  showAssignModal.value = false;
+  fetchData();
+};
+
+// 5. Gestion des étudiants
 const openAddStudentsModal = (cls) => {
   selectedClassroom.value = cls;
   selectedStudentIds.value = [];
@@ -255,35 +278,16 @@ const toggleStudentSelection = (id) => {
   else selectedStudentIds.value.push(id);
 };
 
-const doAssign = async () => {
-  if (!selectedFormateurId.value) return;
-  try {
-    await api.post(`/classrooms/${selectedClassroom.value.id}/assign-formateur`, {
-      formateur_id: selectedFormateurId.value
-    });
-    showAssignModal.value = false;
-    fetchData();
-  } catch (err) {
-    alert('Erreur lors de l\'assignation');
-  }
-};
-
 const doAssignStudents = async () => {
   if (!selectedStudentIds.value.length) return;
-  try {
-    await api.post(`/classrooms/${selectedClassroom.value.id}/assign-students`, {
-      student_ids: selectedStudentIds.value
-    });
-    showAssignStudentsModal.value = false;
-    fetchData();
-  } catch (err) {
-    alert('Erreur lors de l\'ajout des étudiants');
-  }
+  await api.post(`/classrooms/${selectedClassroom.value.id}/assign-students`, {
+    student_ids: selectedStudentIds.value
+  });
+  showAssignStudentsModal.value = false;
+  fetchData();
 };
 
-const openCreateModal = () => {
-  showModal.value = true;
-};
+const openCreateModal = () => showModal.value = true;
 
 const handleLogout = () => {
   localStorage.removeItem('auth_token');
@@ -291,6 +295,10 @@ const handleLogout = () => {
   router.push('/login');
 };
 
+const getAvatar = (name) => `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'U')}&background=21262d&color=a371f7&bold=true`;
+
+// --- CYCLE DE VIE ---
+// Cette fonction s'exécute quand le composant est affiché à l'écran
 onMounted(fetchData);
 </script>
 
@@ -377,12 +385,10 @@ onMounted(fetchData);
 .btn-action.danger svg { width: 14px; height: 14px; }
 
 /* Skeleton */
-.grid-skeleton { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }
-.skeleton-card { height: 260px; background: #0d1117; border-radius: 20px; border: 1px solid #21262d; }
-.shimmer { position: relative; overflow: hidden; }
-.shimmer::after { content: ""; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent); animation: shimmer-anim 1.5s infinite; }
-@keyframes shimmer-anim { 100% { transform: translateX(100%); } }
+
 
 .animate-in { animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 </style>
+
+

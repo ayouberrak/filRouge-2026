@@ -97,16 +97,22 @@ import { useRouter } from 'vue-router';
 import SidebarAdmin from '../../components/SidebarAdmin.vue';
 import api from '../../services/api';
 
+// --- VARIABLES D'ÉTAT (REFS) ---
+// On utilise 'ref' pour créer des variables que Vue peut surveiller et mettre à jour dans l'interface
 const router = useRouter();
 const user = ref(JSON.parse(localStorage.getItem('user')) || {});
-const stats = ref({});
+const stats = ref({}); // Contiendra les chiffres du dashboard
 const recentActivity = ref([]);
 const isLoading = ref(true);
 
+// --- LOGIQUE CALCULÉE (COMPUTED) ---
+
+// Formate la date du jour (ex: lundi 23 avril)
 const formattedDate = computed(() => {
   return new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
 });
 
+// Génère la liste des cartes KPI dynamiquement
 const kpiStats = computed(() => [
   {
     label: 'Étudiants Totaux',
@@ -133,26 +139,45 @@ const kpiStats = computed(() => [
     trendClass: 'down'
   },
   {
-    label: 'Commandes Shop',
-    value: stats.value.marketplace_orders || 0,
-    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>',
+    label: 'Classes Actives',
+    value: stats.value.active_classrooms || 0,
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M3 7v1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7M4 21v-4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4M20 7V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v3"/></svg>',
     class: 'gold',
-    trend: 'NEW',
-    trendClass: 'up'
+    trend: 'stable',
+    trendClass: 'neutral'
   }
 ]);
 
+// --- ACTIONS (MÉTHODES) ---
+
+// Récupère les statistiques depuis l'API Laravel
 const fetchStats = async () => {
-  try {
+  // 1. Charger le cache
+  const cached = localStorage.getItem('admin_dashboard_cache');
+  if (cached) {
+    const cacheData = JSON.parse(cached);
+    stats.value = cacheData.stats;
+    recentActivity.value = cacheData.activity;
+    isLoading.value = false;
+  } else {
     isLoading.value = true;
+  }
+
+  try {
     const res = await api.get('/admin/stats');
     stats.value = res.data.data;
     recentActivity.value = stats.value.recent_activity || [];
+
+    // 2. Sauvegarder dans le cache
+    localStorage.setItem('admin_dashboard_cache', JSON.stringify({
+      stats: stats.value,
+      activity: recentActivity.value
+    }));
+
   } catch (err) {
-    console.error('Error fetching admin stats:', err);
-  } finally {
-    isLoading.value = false;
+    console.error("Erreur Dashboard Admin:", err);
   }
+  isLoading.value = false;
 };
 
 const handleLogout = () => {
@@ -161,6 +186,7 @@ const handleLogout = () => {
   router.push('/login');
 };
 
+// --- CYCLE DE VIE ---
 onMounted(fetchStats);
 </script>
 
