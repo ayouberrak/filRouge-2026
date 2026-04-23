@@ -13,8 +13,6 @@ class QuizSessionEntity
     private QuizStatus $status;
     private int $timerMinutes;
     private int $passingScore;
-    private ?DateTime $startedAt;
-    private ?DateTime $endedAt;
     
     /** @var QuestionEntity[] */
     private array $questions;
@@ -26,8 +24,6 @@ class QuizSessionEntity
         QuizStatus $status,
         int $timerMinutes,
         int $passingScore = 75,
-        ?DateTime $startedAt = null,
-        ?DateTime $endedAt = null,
         array $questions = []
     ) {
         $this->id = $id;
@@ -36,8 +32,6 @@ class QuizSessionEntity
         $this->status = $status;
         $this->timerMinutes = $timerMinutes;
         $this->passingScore = $passingScore;
-        $this->startedAt = $startedAt;
-        $this->endedAt = $endedAt;
         $this->questions = $questions;
     }
 
@@ -47,14 +41,12 @@ class QuizSessionEntity
     public function getStatus(): QuizStatus { return $this->status; }
     public function getTimerMinutes(): int { return $this->timerMinutes; }
     public function getPassingScore(): int { return $this->passingScore; }
-    public function getStartedAt(): ?DateTime { return $this->startedAt; }
-    public function getEndedAt(): ?DateTime { return $this->endedAt; }
     
     /** @return QuestionEntity[] */
     public function getQuestions(): array { return $this->questions; }
 
     public function isCompleted(): bool
     {
-        return $this->status->isCompleted() || $this->endedAt !== null;
+        return $this->status->isCompleted();
     }
 }

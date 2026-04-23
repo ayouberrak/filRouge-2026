@@ -21,13 +21,9 @@ class QuizSessionModel extends Model
         'status',
         'timer_minutes',
         'passing_score',
-        'start_at',
-        'end_at'
     ];
 
     protected $casts = [
-        'start_at' => 'datetime',
-        'end_at' => 'datetime',
         'timer_minutes' => 'integer',
         'passing_score' => 'integer',
     ];

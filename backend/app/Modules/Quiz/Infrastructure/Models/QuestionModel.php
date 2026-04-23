@@ -19,12 +19,10 @@ class QuestionModel extends Model
         'content',
         'correct_answer',
         'context_data',
-        'points'
     ];
 
     protected $casts = [
         'context_data' => 'array',
-        'points' => 'integer',
     ];
 
     public function quizSession(): BelongsTo
