@@ -17,13 +17,11 @@ class SubmitAbsenceJustification
         $absence = $this->absenceRepository->findById($dto->absence_id);
 
         if (!$absence) {
-            throw new InvalidArgumentException("Absence not found.");
+            throw new InvalidArgumentException("absence not found.");
         }
 
-        // Apply domain logic
         $absence->submitJustification($dto->justification_file);
 
-        // Persist
         $this->absenceRepository->update($absence->getId(), [
             'justification_file' => $absence->getJustificationFile()
         ]);
