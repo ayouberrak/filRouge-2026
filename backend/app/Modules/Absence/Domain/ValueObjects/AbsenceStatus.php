@@ -11,14 +11,21 @@ class AbsenceStatus
     public const REJECTED = 'rejected';
     public const UNJUSTIFIED = 'unjustified';
 
+    public const VALID_STATUSES = [
+        self::PENDING,
+        self::JUSTIFIED,
+        self::REJECTED,
+        self::UNJUSTIFIED
+    ];
+
     private string $value;
 
     public function __construct(string $status)
     {
         $status = strtolower(trim($status));
         
-        if (!in_array($status, [self::PENDING, self::JUSTIFIED, self::REJECTED, self::UNJUSTIFIED])) {
-            throw new InvalidArgumentException("Invalid absence status: {$status}");
+        if (!in_array($status, self::VALID_STATUSES, true)) {
+            throw new InvalidArgumentException("invalid absence status");
         }
 
         $this->value = $status;
