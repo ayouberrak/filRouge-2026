@@ -26,15 +26,9 @@ class CreateActivityUseCase
             new ActivityType($dto->type),
             $dto->duration,
             $dto->durationMinutes,
-            $dto->points,
             $dto->formateurId,
             $dto->classroomId,
-            $dto->scheduledAt,
-            $dto->objectives,
-            $dto->context,
-            $dto->exploration_points,
-            $dto->work_rule,
-            $dto->resources
+            $dto->scheduledAt
         );
 
         $savedActivity = $this->repository->save($activity);
@@ -42,8 +36,7 @@ class CreateActivityUseCase
         if (!empty($dto->studentIds)) {
             $this->repository->assignToStudents($savedActivity->getId(), $dto->studentIds);
             
-            // Dispatch notification event
-            ActivityAssignedToStudents::dispatch($savedActivity->getId(), $dto->studentIds);
+            event(new ActivityAssignedToStudents($savedActivity->getId(), $dto->studentIds)); 
         }
 
         return $savedActivity;
