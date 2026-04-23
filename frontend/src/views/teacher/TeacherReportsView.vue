@@ -5,8 +5,8 @@
     <main class="main">
       <!-- Loading -->
       <div v-if="isLoading" class="loading-screen">
-        <div class="spinner"></div>
-        <span>Chargement des rapports...</span>
+        
+        <span>Chargement en cours...</span>
       </div>
 
       <!-- No Classroom -->
@@ -96,14 +96,7 @@
                     <button type="button" @click="!formIsLocked && form.absences_count++" :disabled="formIsLocked">+</button>
                   </div>
                 </div>
-                <div class="field-group">
-                  <label class="field-label">⏱ <span style="color:#d29922">Retards</span></label>
-                  <div class="counter" :class="{ locked: formIsLocked, 'c-yellow': true }">
-                    <button type="button" @click="!formIsLocked && (form.tardies_count = Math.max(0, form.tardies_count - 1))" :disabled="formIsLocked">−</button>
-                    <span>{{ form.tardies_count }}</span>
-                    <button type="button" @click="!formIsLocked && form.tardies_count++" :disabled="formIsLocked">+</button>
-                  </div>
-                </div>
+
               </div>
 
               <!-- ROW 2: Mood + Objectives -->
@@ -198,7 +191,7 @@
                   <div class="tl-sub">{{ rep.note || rep.technical_topics || 'Aucune observation' }}</div>
                   <div class="tl-badges">
                     <span class="badge red" v-if="rep.absences_count > 0">{{ rep.absences_count }} abs</span>
-                    <span class="badge yellow" v-if="rep.tardies_count > 0">{{ rep.tardies_count }} ret</span>
+
                     <span class="badge mood">{{ moodEmoji(rep.class_mood) }}</span>
                     <span class="badge" :class="rep.objectives_met ? 'green' : 'red'">{{ rep.objectives_met ? '✓ OK' : '✗' }}</span>
                     <span class="badge today-pill" v-if="isToday(rep.date)">Aujourd'hui</span>
@@ -230,10 +223,7 @@
           <div style="font-size:26px;font-weight:900;color:#dc2626;">{{ pdfReport.absences_count }}</div>
           <div style="font-size:10px;text-transform:uppercase;color:#666;">Absences</div>
         </div>
-        <div style="background:#f4f4f4;border-radius:10px;padding:14px;text-align:center;">
-          <div style="font-size:26px;font-weight:900;color:#d97706;">{{ pdfReport.tardies_count }}</div>
-          <div style="font-size:10px;text-transform:uppercase;color:#666;">Retards</div>
-        </div>
+
         <div style="background:#f4f4f4;border-radius:10px;padding:14px;text-align:center;">
           <div style="font-size:26px;">{{ moodEmoji(pdfReport.class_mood) }}</div>
           <div style="font-size:10px;text-transform:uppercase;color:#666;">Climat {{ pdfReport.class_mood }}/5</div>
@@ -274,7 +264,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import SidebarTeacher from '../../components/SidebarTeacher.vue';
-import DailyReportService from '../../services/DailyReportService';
+import { DailyReportService } from '../../services/ApiService';
 import api from '../../services/api';
 
 const router = useRouter();
@@ -299,7 +289,7 @@ const stats = ref({ avg_absences: 0, total_reports: 0, last_report: null });
 const today = new Date().toISOString().split('T')[0];
 
 const form = ref({
-  date: today, absences_count: 0, tardies_count: 0,
+  date: today, absences_count: 0,
   brief_status: '', technical_topics: '', workshops_done: '',
   class_mood: 3, objectives_met: true, note: ''
 });
@@ -332,20 +322,50 @@ onMounted(async () => {
 
 // ─── Data Fetching ────────────────────────────────────
 const fetchClassroom = async () => {
+  // Cache
+  const cached = localStorage.getItem('teacher_reports_classroom_cache');
+  if (cached) {
+    const data = JSON.parse(cached);
+    selectedClass.value = data;
+    classroomId.value = data.id;
+  }
+
   try {
     const res = await api.get('/classrooms/my');
     const classes = res.data?.data || res.data || [];
     if (classes.length > 0) {
       selectedClass.value = classes[0];
       classroomId.value = classes[0].id;
+      localStorage.setItem('teacher_reports_classroom_cache', JSON.stringify(classes[0]));
     }
-  } catch (err) { 
-    console.error('Classroom fetch error', err); 
+  } catch (err) {
+    console.error("Erreur Classroom:", err);
   }
 };
 
 const fetchData = async () => {
   if (!classroomId.value) return;
+
+  // Cache
+  const cacheKeyStats = `teacher_reports_stats_${classroomId.value}`;
+  const cacheKeyReports = `teacher_reports_list_${classroomId.value}`;
+  const cachedStats = localStorage.getItem(cacheKeyStats);
+  const cachedReports = localStorage.getItem(cacheKeyReports);
+  
+  if (cachedStats && cachedReports) {
+    stats.value = JSON.parse(cachedStats);
+    reports.value = JSON.parse(cachedReports);
+    
+    // Détecter aujourd'hui dans le cache
+    const foundToday = reports.value.find(r => r.date === today);
+    if (foundToday) {
+      formIsLocked.value = true;
+      populateForm(foundToday);
+      pdfReport.value = foundToday;
+    }
+    isLoading.value = false;
+  }
+
   try {
     const [statsRes, reportsRes] = await Promise.all([
       DailyReportService.getStats(classroomId.value),
@@ -354,14 +374,18 @@ const fetchData = async () => {
     
     stats.value = statsRes.data?.data ?? statsRes.data ?? stats.value;
     
-    // Normalize reports array
+    // Normaliser les rapports
     const rawData = reportsRes.data?.data ?? reportsRes.data ?? [];
     reports.value = (Array.isArray(rawData) ? rawData : []).map(r => ({
       ...r,
       date: typeof r.date === 'string' ? r.date.substring(0, 10) : r.date,
     }));
 
-    // Detect today's report accurately
+    // Update Cache
+    localStorage.setItem(cacheKeyStats, JSON.stringify(stats.value));
+    localStorage.setItem(cacheKeyReports, JSON.stringify(reports.value));
+
+    // Détecter le rapport du jour
     const foundToday = reports.value.find(r => {
       const reportDate = typeof r.date === 'string' ? r.date.substring(0, 10) : '';
       return reportDate === today;
@@ -372,15 +396,15 @@ const fetchData = async () => {
       populateForm(foundToday);
       pdfReport.value = foundToday;
     } else {
-      // If no report today, ensure form is unlocked (unless user manually modified)
-      // but only if we were previously locked
       if (!isSubmitting.value) {
         formIsLocked.value = false;
       }
     }
-  } catch (err) { 
-    console.error('Fetch data error', err); 
+  } catch (err) {
+    console.error("Erreur Reports Data:", err);
   }
+  
+  isLoading.value = false;
 };
 
 // Populate form with existing report data
@@ -388,7 +412,6 @@ const populateForm = (rep) => {
   if (!rep) return;
   Object.assign(form.value, {
     absences_count: rep.absences_count ?? 0,
-    tardies_count: rep.tardies_count ?? 0,
     brief_status: rep.brief_status ?? '',
     technical_topics: rep.technical_topics ?? '',
     workshops_done: rep.workshops_done ?? '',
@@ -406,35 +429,23 @@ const unlockForm = () => {
 const handleSubmit = async () => {
   if (!classroomId.value || isSubmitting.value) return;
   isSubmitting.value = true;
-  try {
-    const payload = {
-      classroom_id: Number(classroomId.value),
-      date: today,
-      absences_count: Number(form.value.absences_count),
-      tardies_count: Number(form.value.tardies_count),
-      brief_status: form.value.brief_status,
-      technical_topics: form.value.technical_topics || null,
-      workshops_done: form.value.workshops_done || null,
-      class_mood: Number(form.value.class_mood),
-      objectives_met: !!form.value.objectives_met,
-      note: form.value.note || null,
-    };
 
-    await DailyReportService.submitReport(payload);
-    await fetchData();
-    alert('✅ Rapport enregistré avec succès !');
-  } catch (err) {
-    console.error('Submit error:', err);
-    const errors = err?.response?.data?.errors;
-    if (errors && typeof errors === 'object') {
-      const errorLines = Object.entries(errors).map(([k, v]) => `• ${k}: ${Array.isArray(v) ? v.join(', ') : v}`).join('\n');
-      alert(`❌ Erreur de validation :\n${errorLines}`);
-    } else {
-      alert(`❌ ${err?.response?.data?.message || 'Erreur lors de l\'enregistrement.'}`);
-    }
-  } finally {
-    isSubmitting.value = false;
-  }
+  const payload = {
+    classroom_id: Number(classroomId.value),
+    date: today,
+    absences_count: Number(form.value.absences_count),
+    brief_status: form.value.brief_status,
+    technical_topics: form.value.technical_topics || null,
+    workshops_done: form.value.workshops_done || null,
+    class_mood: Number(form.value.class_mood),
+    objectives_met: !!form.value.objectives_met,
+    note: form.value.note || null,
+  };
+
+  await DailyReportService.submitReport(payload);
+  await fetchData();
+  alert('✅ Rapport enregistré !');
+  isSubmitting.value = false;
 };
 
 const selectReport = (rep) => { 
@@ -510,7 +521,6 @@ const moodEmoji = (m) => ({ 1: '😟', 2: '😐', 3: '🙂', 4: '😊', 5: '🔥
 .loading-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; gap: 20px; color: #8b949e; }
 .spinner { width: 36px; height: 36px; border: 3px solid rgba(56,139,253,0.15); border-top-color: #388bfd; border-radius: 50%; animation: spin 0.7s linear infinite; }
 .spin-sm { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.25); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
 .empty-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; gap: 14px; text-align: center; }
 .empty-ico { font-size: 60px; }
 .empty-screen h3 { font-size: 20px; font-weight: 800; color: #fff; margin: 0; }
@@ -635,3 +645,4 @@ const moodEmoji = (m) => ({ 1: '😟', 2: '😐', 3: '🙂', 4: '😊', 5: '🔥
   .content { padding: 24px 28px; gap: 24px; }
 }
 </style>
+

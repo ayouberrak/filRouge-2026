@@ -6,7 +6,7 @@
       <!-- Full Loading -->
       <div v-if="isInitialLoading" class="loader-full">
         <div class="loader-ring"></div>
-        <p>Chargement du Studio...</p>
+        <p>Chargement en cours...</p>
       </div>
 
       <div v-else class="studio-layout animate-in">
@@ -57,20 +57,11 @@
                   <label class="field-label">Titre du Projet <span class="required">*</span></label>
                   <input type="text" v-model="briefForm.title" placeholder="Ex: Clean Architecture avec Laravel" class="field-input" />
                 </div>
-                <div class="field-row">
-                  <div class="field-group">
-                    <label class="field-label">Image de Couverture (URL)</label>
-                    <div class="input-with-icon">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8.5 10a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM21 15l-5-5L5 21"/></svg>
-                      <input type="text" v-model="briefForm.image_url" placeholder="https://..." class="field-input-icon" />
-                    </div>
-                  </div>
-                  <div class="field-group field-group--sm">
-                    <label class="field-label">Points de Mérite</label>
-                    <div class="points-input-wrap">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                      <input type="number" v-model="briefForm.points" class="field-input-icon" min="0" max="9999" />
-                    </div>
+                <div class="field-group">
+                  <label class="field-label">Image de Couverture (URL)</label>
+                  <div class="input-with-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8.5 10a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM21 15l-5-5L5 21"/></svg>
+                    <input type="text" v-model="briefForm.image_url" placeholder="https://..." class="field-input-icon" />
                   </div>
                 </div>
                 <div class="field-group">
@@ -94,23 +85,6 @@
                 <div class="field-group">
                   <label class="field-label">Contexte Détaillé</label>
                   <textarea v-model="briefForm.context" rows="5" class="field-textarea" placeholder="Décrivez le scénario pédagogique, les enjeux et le cadre de travail..."></textarea>
-                </div>
-                <div class="config-grid">
-                  <div class="config-card" :class="{ 'config-card--active': briefForm.difficulty === 'EASY' }" @click="briefForm.difficulty = 'EASY'">
-                    <div class="config-icon config-icon--green">🌱</div>
-                    <div class="config-name">Débutant</div>
-                    <div class="config-sub">EASY</div>
-                  </div>
-                  <div class="config-card" :class="{ 'config-card--active': briefForm.difficulty === 'MEDIUM' }" @click="briefForm.difficulty = 'MEDIUM'">
-                    <div class="config-icon config-icon--amber">⚡</div>
-                    <div class="config-name">Intermédiaire</div>
-                    <div class="config-sub">MEDIUM</div>
-                  </div>
-                  <div class="config-card" :class="{ 'config-card--active': briefForm.difficulty === 'HARD' }" @click="briefForm.difficulty = 'HARD'">
-                    <div class="config-icon config-icon--red">🔥</div>
-                    <div class="config-name">Avancé</div>
-                    <div class="config-sub">HARD</div>
-                  </div>
                 </div>
                 <div class="field-row">
                   <div class="field-group">
@@ -143,47 +117,29 @@
               <div class="section-label">
                 <div class="section-num">03</div>
                 <div>
-                  <div class="section-title">Contenu Pédagogique</div>
-                  <div class="section-desc">Objectifs, livrables et critères</div>
+                  <div class="section-title">Thématiques & Tags</div>
+                  <div class="section-desc">Mots-clés et catégories du projet</div>
                 </div>
               </div>
               <div class="section-fields">
-                <!-- Objectives -->
-                <div class="list-builder">
-                  <div class="list-builder-header">
-                    <label class="field-label">Objectifs d'Apprentissage</label>
-                    <button class="btn-add-item" @click="addItem('objectives')">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                      Ajouter
-                    </button>
+                <!-- Tags Management -->
+                <div class="field-group">
+                  <label class="field-label">Mots-clés (Tags)</label>
+                  <div class="tags-input-wrapper">
+                    <input 
+                      v-model="tagInput" 
+                      @keydown.enter.prevent="addTag" 
+                      placeholder="Ajouter un tag..." 
+                      class="field-input" 
+                    />
+                    <button @click.prevent="addTag" class="btn-add-tag">Ajouter</button>
                   </div>
-                  <div v-for="(o, i) in briefForm.objectives" :key="'o'+i" class="list-row">
-                    <div class="list-row-num">{{ i + 1 }}</div>
-                    <input v-model="briefForm.objectives[i]" class="list-input" :placeholder="`Objectif ${i+1}...`" />
-                    <button class="btn-remove-item" @click="removeItem('objectives', i)">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                    </button>
+                  <div class="tags-display">
+                    <div v-for="tag in briefForm.tags" :key="tag" class="tag-badge">
+                      {{ tag }}
+                      <button @click.prevent="removeTag(tag)" class="btn-remove-tag">×</button>
+                    </div>
                   </div>
-                  <div v-if="briefForm.objectives.length === 0" class="list-empty">Aucun objectif — cliquez sur Ajouter</div>
-                </div>
-
-                <!-- Deliverables -->
-                <div class="list-builder">
-                  <div class="list-builder-header">
-                    <label class="field-label">Livrables Attendus</label>
-                    <button class="btn-add-item" @click="addItem('deliverables')">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                      Ajouter
-                    </button>
-                  </div>
-                  <div v-for="(l, i) in briefForm.deliverables" :key="'d'+i" class="list-row">
-                    <div class="list-row-icon">📦</div>
-                    <input v-model="briefForm.deliverables[i]" class="list-input" :placeholder="`Livrable ${i+1}...`" />
-                    <button class="btn-remove-item" @click="removeItem('deliverables', i)">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                    </button>
-                  </div>
-                  <div v-if="briefForm.deliverables.length === 0" class="list-empty">Aucun livrable défini</div>
                 </div>
               </div>
             </div>
@@ -208,6 +164,17 @@
                 </div>
 
                 <div v-else class="questions-stack">
+                  <div class="field-row">
+                    <div class="field-group">
+                      <label class="field-label">Date & Heure de démarrage du Quiz</label>
+                      <input type="datetime-local" v-model="briefForm.quiz_start_at" class="field-input" />
+                    </div>
+                    <div class="field-group field-group--sm">
+                      <label class="field-label">Durée du Quiz (minutes)</label>
+                      <input type="number" min="1" v-model.number="briefForm.quiz_duration_minutes" class="field-input" />
+                    </div>
+                  </div>
+
                   <div v-for="(q, idx) in briefForm.questions" :key="idx" class="q-card animate-in">
                     <div class="q-card-header">
                       <div class="q-badge">Q{{ idx + 1 }}</div>
@@ -326,13 +293,6 @@
               <!-- Card Body -->
               <div class="preview-body">
                 <div class="preview-meta-row">
-                  <span class="preview-difficulty" :class="`diff-${briefForm.difficulty?.toLowerCase()}`">
-                    {{ briefForm.difficulty === 'EASY' ? '🌱 Débutant' : briefForm.difficulty === 'MEDIUM' ? '⚡ Intermédiaire' : '🔥 Avancé' }}
-                  </span>
-                  <span class="preview-points">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                    {{ briefForm.points }} pts
-                  </span>
                 </div>
 
                 <h2 class="preview-title">{{ briefForm.title || 'Titre du Projet' }}</h2>
@@ -351,24 +311,15 @@
                   <p class="preview-context">{{ briefForm.context.slice(0, 160) }}{{ briefForm.context.length > 160 ? '...' : '' }}</p>
                 </div>
 
-                <!-- Objectives Preview -->
-                <div class="preview-section" v-if="briefForm.objectives.some(o => o)">
-                  <div class="preview-section-title">Objectifs</div>
-                  <ul class="preview-list">
-                    <li v-for="obj in briefForm.objectives.filter(o => o).slice(0, 4)" :key="obj">
-                      <span class="list-bullet">→</span>
-                      {{ obj }}
-                    </li>
-                  </ul>
-                </div>
-
-                <!-- Deliverables Preview -->
-                <div class="preview-section" v-if="briefForm.deliverables.some(d => d)">
-                  <div class="preview-section-title">Livrables Attendus</div>
-                  <div class="preview-deliverables">
-                    <span v-for="d in briefForm.deliverables.filter(d => d).slice(0, 3)" :key="d" class="deliverable-chip">📦 {{ d }}</span>
+                <!-- Tags Preview -->
+                <div class="preview-section" v-if="briefForm.tags.length > 0">
+                  <div class="preview-section-title">Mots-clés</div>
+                  <div class="preview-tags">
+                    <span v-for="tag in briefForm.tags" :key="tag" class="preview-tag-chip">#{{ tag }}</span>
                   </div>
                 </div>
+
+
 
                 <!-- Quiz Badge -->
                 <div v-if="briefForm.questions.length > 0" class="preview-quiz-badge">
@@ -397,8 +348,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import SidebarTeacher from '../../components/SidebarTeacher.vue';
-import BriefService from '../../services/BriefService';
-import QuizService from '../../services/QuizService';
+import { BriefService, QuizService } from '../../services/ApiService';
 
 const router = useRouter();
 const route  = useRoute();
@@ -407,52 +357,48 @@ const isSaving = ref(false);
 const isInitialLoading = ref(false);
 const isNew = computed(() => !route.params.id);
 
+const tagInput = ref('');
+
 const briefForm = ref({
   title: '',
   image_url: '',
   description: '',
   context: '',
-  points: 100,
-  difficulty: 'MEDIUM',
   modality: 'INDIVIDUAL',
   status: 'DRAFT',
   date_start: new Date().toISOString().split('T')[0],
   date_end: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
-  objectives: [''],
-  deliverables: [''],
-  performance_criteria: [],
-  target_competencies: [],
+  quiz_start_at: '',
+  quiz_duration_minutes: 30,
   tags: [],
-  resources: [],
-  pedagogical_modalities: '',
-  evaluation_modalities: '',
   questions: []
 });
 
 onMounted(async () => {
   if (isNew.value) return;
-  try {
-    isInitialLoading.value = true;
-    const response = await BriefService.getById(route.params.id);
-    Object.assign(briefForm.value, response.data);
-    if (!briefForm.value.objectives?.length) briefForm.value.objectives = [''];
-    if (!briefForm.value.deliverables?.length) briefForm.value.deliverables = [''];
-    try {
-      const qResp = await QuizService.getSessionByBrief(response.data.id);
-      if (qResp.data?.data?.id) {
-        const qList = await QuizService.getQuestionsBySession(qResp.data.data.id);
-        briefForm.value.questions = (qList.data?.data || []).map(q => ({
-          type: q.type || 'multiple_choice',
-          content: q.content,
-          options: q.options?.length ? q.options : ['', '', '', ''],
-          correct: 0,
-          scenario: q.type === 'open_ended' ? (q.context_data?.scenario || '') : '',
-          ai_feedback: ''
-        }));
-      }
-    } catch (e) { /* No quiz — OK */ }
-  } catch (error) { console.error("Load error:", error); }
-  finally { isInitialLoading.value = false; }
+  isInitialLoading.value = true;
+  const response = await BriefService.getById(route.params.id);
+  Object.assign(briefForm.value, response.data);
+  
+  // Charger le quiz si existant
+  const qResp = await QuizService.getSessionByBrief(response.data.id);
+  if (qResp.data?.data?.id) {
+    briefForm.value.quiz_duration_minutes = qResp.data.data.timer_minutes || 30;
+    briefForm.value.quiz_start_at = qResp.data.data.start_at
+      ? qResp.data.data.start_at.replace(' ', 'T').slice(0, 16)
+      : '';
+
+    const qList = await QuizService.getQuestionsBySession(qResp.data.data.id);
+    briefForm.value.questions = (qList.data?.data || []).map(q => ({
+      type: q.type || 'multiple_choice',
+      content: q.content,
+      options: q.options?.length ? q.options : ['', '', '', ''],
+      correct: 0,
+      scenario: q.type === 'open_ended' ? (q.context_data?.scenario || '') : '',
+      ai_feedback: ''
+    }));
+  }
+  isInitialLoading.value = false;
 });
 
 const addItem = (key) => {
@@ -465,47 +411,51 @@ const addItem = (key) => {
 
 const removeItem = (key, idx) => briefForm.value[key].splice(idx, 1);
 
-const handleSave = async () => {
-  try {
-    isSaving.value = true;
-    const payload = { ...briefForm.value };
-    payload.objectives = payload.objectives.filter(o => o.trim() !== '');
-    payload.deliverables = payload.deliverables.filter(d => d.trim() !== '');
-
-    let savedBrief;
-    if (isNew.value) {
-      const resp = await BriefService.create(payload);
-      savedBrief = resp.data;
-    } else {
-      const resp = await BriefService.update(route.params.id, payload);
-      savedBrief = resp.data;
-    }
-
-    const validQuestions = briefForm.value.questions.filter(q => q.content.trim() !== '');
-    if (validQuestions.length > 0) {
-      await QuizService.createSession({
-        brief_id: savedBrief.id,
-        timer_minutes: 30,
-        passing_score: 50,
-        questions: validQuestions.map(q => ({
-          content: q.content,
-          type: q.type || 'multiple_choice',
-          points: 1,
-          correct_answer: q.type === 'open_ended' ? '' : (q.options[q.correct] || ''),
-          context_data: q.type === 'open_ended'
-            ? JSON.stringify({ scenario: q.scenario || q.content })
-            : JSON.stringify({ options: q.options })
-        }))
-      });
-    }
-
-    router.push('/teacher/briefs');
-  } catch (error) {
-    console.error("Save error:", error.response?.data || error);
-    alert("Erreur: " + (error.response?.data?.message || error.message));
-  } finally {
-    isSaving.value = false;
+const addTag = () => {
+  if (tagInput.value.trim() && !briefForm.value.tags.includes(tagInput.value.trim())) {
+    briefForm.value.tags.push(tagInput.value.trim());
+    tagInput.value = '';
   }
+};
+
+const removeTag = (t) => {
+  briefForm.value.tags = briefForm.value.tags.filter(tag => tag !== t);
+};
+
+const handleSave = async () => {
+  isSaving.value = true;
+  const payload = { ...briefForm.value };
+
+  let savedBrief;
+  if (isNew.value) {
+    const resp = await BriefService.create(payload);
+    savedBrief = resp.data;
+  } else {
+    const resp = await BriefService.update(route.params.id, payload);
+    savedBrief = resp.data;
+  }
+
+  const validQuestions = briefForm.value.questions.filter(q => q.content.trim() !== '');
+  if (validQuestions.length > 0) {
+    await QuizService.createSession({
+      brief_id: savedBrief.id,
+      timer_minutes: Number(briefForm.value.quiz_duration_minutes || 30),
+      start_at: briefForm.value.quiz_start_at ? briefForm.value.quiz_start_at.replace('T', ' ') + ':00' : null,
+      passing_score: 50,
+      questions: validQuestions.map(q => ({
+        content: q.content,
+        type: q.type || 'multiple_choice',
+        points: 1,
+        correct_answer: q.type === 'open_ended' ? '' : (q.options[q.correct] || ''),
+        context_data: q.type === 'open_ended'
+          ? JSON.stringify({ scenario: q.scenario || q.content })
+          : JSON.stringify({ options: q.options })
+      }))
+    });
+  }
+
+  router.push('/teacher/briefs');
+  isSaving.value = false;
 };
 
 const goBack = () => router.push('/teacher/briefs');
@@ -525,7 +475,7 @@ const handleLogout = () => router.push('/login');
 /* Loader */
 .loader-full { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 20px; color: #8b949e; }
 .loader-ring { width: 40px; height: 40px; border: 3px solid rgba(56,139,253,0.2); border-top-color: #388bfd; border-radius: 50%; animation: spin 0.9s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+ 
 
 /* Studio Layout */
 .studio-layout { display: grid; grid-template-columns: 1fr 420px; min-height: 100%; }
@@ -728,6 +678,19 @@ const handleLogout = () => router.push('/login');
 .deliverable-chip { font-size: 11px; font-weight: 600; color: #c9d1d9; background: rgba(48,54,61,0.4); border: 1px solid rgba(48,54,61,0.6); padding: 4px 10px; border-radius: 7px; }
 
 .preview-quiz-badge { display: flex; align-items: center; gap: 12px; padding: 14px; background: rgba(63,185,80,0.06); border: 1px solid rgba(63,185,80,0.2); border-radius: 12px; }
+
+/* Tags Input */
+.tags-input-wrapper { display: flex; gap: 10px; }
+.btn-add-tag { background: #388bfd; color: #fff; border: none; padding: 0 16px; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+.btn-add-tag:hover { background: #1f6feb; }
+.tags-display { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.tag-badge { display: flex; align-items: center; gap: 6px; background: rgba(56,139,253,0.1); color: #388bfd; border: 1px solid rgba(56,139,253,0.2); padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+.btn-remove-tag { background: transparent; border: none; color: #388bfd; font-size: 16px; cursor: pointer; line-height: 1; padding: 0; opacity: 0.6; }
+.btn-remove-tag:hover { opacity: 1; }
+
+.preview-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 5px; }
+.preview-tag-chip { font-size: 11px; font-weight: 700; color: #388bfd; background: rgba(56,139,253,0.1); border: 1px solid rgba(56,139,253,0.2); padding: 3px 10px; border-radius: 6px; }
+
 .preview-quiz-badge svg { width: 20px; height: 20px; color: #3fb950; flex-shrink: 0; }
 .quiz-badge-title { font-size: 12px; font-weight: 800; color: #3fb950; margin-bottom: 2px; }
 .quiz-badge-sub { font-size: 11px; color: #8b949e; }
@@ -739,3 +702,5 @@ const handleLogout = () => router.push('/login');
 .animate-in { animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 </style>
+
+

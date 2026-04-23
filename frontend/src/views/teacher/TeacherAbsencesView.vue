@@ -142,7 +142,7 @@
 import { ref, reactive, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import SidebarTeacher from '../../components/SidebarTeacher.vue';
-import AbsenceService from '../../services/AbsenceService';
+import { AbsenceService } from '../../services/ApiService';
 import api from '../../services/api';
 
 const router      = useRouter();
@@ -233,64 +233,90 @@ const setStatus = async (type, duration = '') => {
   const key = entryKey(studentId, day);
   const currentEntry = attendanceData[key];
 
-  try {
-    if (!type) {
-      if (currentEntry?.id) {
-        await AbsenceService.delete(currentEntry.id);
-      }
-      delete attendanceData[key];
-    } else {
-      let durationMins = 0;
-      if (type === 'A') durationMins = 480;
-      else if (type === 'D') durationMins = 240;
-      else durationMins = parseInt(duration) || 5;
-
-      const dateStr = `${currentYear.value}-${String(currentDate.value.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const response = await AbsenceService.create({ 
-        student_id: studentId, 
-        date: dateStr, 
-        duration: durationMins 
-      });
-
-      attendanceData[key] = { id: response.data.absence.id, type, duration };
+  if (!type) {
+    if (currentEntry?.id) {
+      await AbsenceService.delete(currentEntry.id);
     }
-  } catch (error) {
-    console.error("Attendance sync error:", error);
-    alert('Erreur de synchronisation.');
-  } finally {
-    activeMenu.value = null;
+    delete attendanceData[key];
+  } else {
+    let durationMins = 0;
+    if (type === 'A') durationMins = 480;
+    else if (type === 'D') durationMins = 240;
+    else durationMins = parseInt(duration) || 5;
+
+    const dateStr = `${currentYear.value}-${String(currentDate.value.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const response = await AbsenceService.create({ 
+      student_id: studentId, 
+      date: dateStr, 
+      duration: durationMins 
+    });
+
+    attendanceData[key] = { id: response.data.absence.id, type, duration };
   }
+  activeMenu.value = null;
 };
 
 const closeMenu = () => { activeMenu.value = null; };
 
 const fetchStudents = async () => {
+  // Cache
+  const cached = localStorage.getItem('teacher_absences_students_cache');
+  if (cached) {
+    students.value = JSON.parse(cached);
+  }
+
   try {
-    const response = await api.get('/students', { params: { classroom_id: classroomId.value } });
+    const response = await api.get('/analytics/students', { params: { classroom_id: classroomId.value } });
     students.value = response.data.data.map(s => ({
       id: s.id,
       name: `${s.first_name} ${s.last_name}`,
       points: s.total_points || 0,
       avatar: s.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(s.first_name + ' ' + s.last_name)}&background=161b22&color=388bfd&bold=true`
     })).sort((a, b) => a.name.localeCompare(b.name));
-  } catch (error) { console.error("Load students error:", error); }
+    
+    localStorage.setItem('teacher_absences_students_cache', JSON.stringify(students.value));
+  } catch (err) {
+    console.error("Erreur Students:", err);
+  }
 };
 
 const fetchAttendance = async () => {
-  isLoadingData.value = true;
-  Object.keys(attendanceData).forEach(k => delete attendanceData[k]);
+  const mk = monthKey();
+  
+  // Cache per month
+  const cacheKey = `teacher_absences_data_${mk}`;
+  const cached = localStorage.getItem(cacheKey);
+  if (cached) {
+    const data = JSON.parse(cached);
+    Object.keys(attendanceData).forEach(k => delete attendanceData[k]);
+    Object.assign(attendanceData, data);
+    isLoadingData.value = false;
+  } else {
+    isLoadingData.value = true;
+  }
+
   try {
-    const mk = monthKey();
     const response = await AbsenceService.getByClassroom(classroomId.value, mk);
+    const newAttendance = {};
     response.data.absences.forEach(abs => {
       let type = 'R';
       let dStr = abs.duration + "'";
       if (abs.duration === 480) { type = 'A'; dStr = ''; }
       else if (abs.duration === 240) { type = 'D'; dStr = ''; }
       const day = parseInt(abs.date.split('-')[2]);
-      attendanceData[`${abs.student_id}-${mk}-${day}`] = { id: abs.id, type, duration: dStr };
+      newAttendance[`${abs.student_id}-${mk}-${day}`] = { id: abs.id, type, duration: dStr };
     });
-  } finally { isLoadingData.value = false; }
+    
+    // Merge or Replace
+    Object.keys(attendanceData).forEach(k => delete attendanceData[k]);
+    Object.assign(attendanceData, newAttendance);
+    
+    localStorage.setItem(cacheKey, JSON.stringify(newAttendance));
+  } catch (err) {
+    console.error("Erreur Attendance:", err);
+  } finally { 
+    isLoadingData.value = false; 
+  }
 };
 
 onMounted(async () => {

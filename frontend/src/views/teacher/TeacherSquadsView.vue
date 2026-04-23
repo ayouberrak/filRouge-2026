@@ -38,8 +38,7 @@
             </div>
 
             <div v-if="isLoading" class="loading-state">
-               <div class="loader"></div>
-               Synchronisation des unités...
+               Chargement en cours...
             </div>
 
             <div v-else-if="squads.length === 0" class="empty-state">
@@ -159,23 +158,47 @@ const user = ref(JSON.parse(localStorage.getItem('user')) || { first_name: 'Form
 const squads = ref([]);
 const unassignedStudents = ref([]);
 const isLoading = ref(true);
-const classroomId = ref(1); // Promotion 2026
+const classroomId = ref(null);
 const activeDropTarget = ref(null);
 
 const fetchData = async (silent = false) => {
-  if (!silent) isLoading.value = true;
-  try {
-    const [squadsRes, studentsRes] = await Promise.all([
-      api.get('/squads', { params: { classroom_id: classroomId.value } }),
-      api.get('/students', { params: { classroom_id: classroomId.value } })
-    ]);
-    squads.value = squadsRes.data.squads || [];
-    unassignedStudents.value = studentsRes.data.data.filter(s => !s.squad_id);
-  } catch (error) {
-    console.error("Load squads error:", error);
-  } finally {
-    isLoading.value = false;
+  if (!silent) {
+    // Cache
+    const cachedSquads = localStorage.getItem('teacher_squads_cache');
+    const cachedStudents = localStorage.getItem('teacher_unassigned_students_cache');
+    if (cachedSquads && cachedStudents) {
+      squads.value = JSON.parse(cachedSquads);
+      unassignedStudents.value = JSON.parse(cachedStudents);
+      isLoading.value = false;
+    } else {
+      isLoading.value = true;
+    }
   }
+
+  try {
+    if (!classroomId.value) {
+      const classroomsRes = await api.get('/classrooms/my');
+      const classrooms = classroomsRes.data?.data || classroomsRes.data || [];
+      classroomId.value = classrooms[0]?.id ?? null;
+    }
+
+    const [squadsRes, studentsRes] = await Promise.all([
+      api.get('/squads', classroomId.value ? { params: { classroom_id: classroomId.value } } : undefined),
+      api.get('/analytics/students', classroomId.value ? { params: { classroom_id: classroomId.value } } : undefined)
+    ]);
+    
+    squads.value = squadsRes.data?.squads?.data || squadsRes.data?.squads || [];
+    const students = studentsRes.data?.data || [];
+    unassignedStudents.value = students.filter(s => !s.squad_id);
+
+    // Update Cache
+    localStorage.setItem('teacher_squads_cache', JSON.stringify(squads.value));
+    localStorage.setItem('teacher_unassigned_students_cache', JSON.stringify(unassignedStudents.value));
+  } catch (err) {
+    console.error("Erreur Squads Data:", err);
+  }
+  
+  isLoading.value = false;
 };
 
 onMounted(fetchData);
@@ -214,19 +237,13 @@ const onDrop = async (event, squadId) => {
   const squad = squads.value.find(s => s.id === squadId);
   if (squad) squad.members.push(student);
 
-  try {
-    await api.post(`/squads/${squadId}/members`, { user_id: studentId });
-    await fetchData(true);
-  } catch (error) {
-    alert("Erreur lors de l'assignation opérationnelle.");
-    await fetchData();
-  }
+  await api.post(`/squads/${squadId}/members`, { user_id: studentId });
+  await fetchData(true);
 };
 
 // ─── ACTIONS ──────────────────────────────────────────────────────────────────
 
 const assignToSquad = async (studentId, squadId) => {
-  // Manual trigger for drop logic
   const studentIndex = unassignedStudents.value.findIndex(s => s.id === studentId);
   if (studentIndex === -1) return;
   const student = unassignedStudents.value[studentIndex];
@@ -234,44 +251,27 @@ const assignToSquad = async (studentId, squadId) => {
   const squad = squads.value.find(s => s.id === squadId);
   if (squad) squad.members.push(student);
   
-  try {
-    await api.post(`/squads/${squadId}/members`, { user_id: studentId });
-    await fetchData(true);
-  } catch (error) {
-    alert("Échec de l'assignation rapide.");
-    await fetchData();
-  }
+  await api.post(`/squads/${squadId}/members`, { user_id: studentId });
+  await fetchData(true);
 };
 
 const removeFromSquad = async (squadId, studentId) => {
-  if (!confirm("🚨 Confirmer l'extraction de l'étudiant du squadron ?")) return;
-  try {
-    await api.delete(`/squads/${squadId}/members/${studentId}`);
-    await fetchData();
-  } catch (error) {
-    alert("Erreur lors de l'extraction.");
-  }
+  if (!confirm("Extraction de l'étudiant ?")) return;
+  await api.delete(`/squads/${squadId}/members/${studentId}`);
+  await fetchData();
 };
 
 const dissolveSquad = async (squadId) => {
-  if (!confirm("🚨 ALERTE : La dissolution du groupe est irréversible. Confirmer ?")) return;
-  try {
-    await api.delete(`/squads/${squadId}`);
-    await fetchData();
-  } catch (error) {
-    alert("Erreur critique lors de la dissolution.");
-  }
+  if (!confirm("Dissoudre le groupe ?")) return;
+  await api.delete(`/squads/${squadId}`);
+  await fetchData();
 };
 
 const createSquad = async () => {
-  const name = prompt("Indicatif d'appel du groupe :");
+  const name = prompt("Nom du groupe :");
   if (!name || name.length < 3) return;
-  try {
-    await api.post('/squads/create', { name, classroom_id: classroomId.value });
-    await fetchData();
-  } catch (error) {
-    alert("Échec de l'initialisation du groupe.");
-  }
+  await api.post('/squads/create', { name, classroom_id: classroomId.value });
+  await fetchData();
 };
 
 const getAvatar = (name) => `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'U')}&background=161b22&color=388bfd&bold=true`;
@@ -388,10 +388,10 @@ const handleLogout = () => router.push('/login');
 .pool-empty p, .empty-state p { font-size: 13px; }
 
 .loader { width: 22px; height: 22px; border: 2px solid rgba(56,139,253,0.2); border-top-color: #388bfd; border-radius: 50%; animation: spin 0.8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
 
 /* Animate-in */
 .animate-in { animation: fadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 </style>
+
 

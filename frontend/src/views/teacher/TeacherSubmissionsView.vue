@@ -90,7 +90,7 @@
                     <span class="student-name">{{ student.name }}</span>
                     <span class="status-badge" :class="statusClass(student)">{{ statusLabel(student) }}</span>
                   </div>
-                  <span class="student-points">{{ student.points?.toLocaleString() }} pts</span>
+
                 </div>
               </div>
             </template>
@@ -144,7 +144,6 @@
                   </div>
                 </div>
               </div>
-
               <!-- Tab Navigation -->
               <div class="tab-nav">
                 <button class="tab-btn" :class="{ 'tab-btn--active': activeTab === 'project' }" @click="switchTab('project')">
@@ -158,7 +157,7 @@
                 </button>
               </div>
 
-              <!-- ======= TAB: PROJET ======= -->
+              <!-- ======= TAB CONTENT ======= -->
               <div v-if="activeTab === 'project'" class="tab-content">
 
                 <!-- GitHub Repository -->
@@ -200,13 +199,9 @@
                     <svg class="s-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     <span class="s-label">Message du Formateur</span>
                   </div>
-                  <div v-if="selectedStudent.submission.responses?.length" class="history-list">
-                    <div v-for="resp in sortedResponses(selectedStudent.submission.responses)" :key="resp.id" class="message-bubble formateur-msg-bubble">
-                      <div class="bubble-head">
-                        <span class="bubble-date">{{ formatDate(resp.created_at) || 'Date inconnue' }}</span>
-                      </div>
-                      <p class="bubble-text" v-if="resp.message && resp.message.trim() !== ''">{{ resp.message }}</p>
-                      <p class="bubble-text empty-msg" v-else>Le formateur n'a laissé aucun commentaire spécifique.</p>
+                  <div v-if="selectedStudent.submission.formateur_message" class="history-list">
+                    <div class="message-bubble formateur-msg-bubble">
+                      <p class="bubble-text">{{ selectedStudent.submission.formateur_message }}</p>
                     </div>
                   </div>
                   <div v-else class="message-bubble empty-msg">Aucun message de votre part.</div>
@@ -237,7 +232,7 @@
                     <span class="validated-icon">🏆</span>
                     <div>
                       <div class="validated-title">Projet Officiellement Validé</div>
-                      <div class="validated-sub">L'étudiant a reçu ses points de mérite. Le brief est clôturé.</div>
+                      <div class="validated-sub">Le projet est maintenant officiellement clôturé.</div>
                     </div>
                   </div>
                 </div>
@@ -281,10 +276,7 @@
                         <span class="score-stat-label">Réponses correctes</span>
                         <span class="score-stat-val c-green">{{ correctCount }} / {{ quizData.length }}</span>
                       </div>
-                      <div class="score-stat-row">
-                        <span class="score-stat-label">Points accumulés</span>
-                        <span class="score-stat-val">{{ quizPointsTotal }} pts</span>
-                      </div>
+
                       <div class="score-verdict" :class="quizScorePercent >= 70 ? 'verdict-pass' : 'verdict-fail'">
                         {{ quizScorePercent >= 70 ? '✓ Niveau Validé' : '✗ Niveau Insuffisant' }}
                       </div>
@@ -301,7 +293,6 @@
                           <span v-if="item.question_type === 'open_ended'" class="q-type-badge q-type-badge--open">⚡ Mise en situation</span>
                           <span v-else class="q-type-badge q-type-badge--mcq">✓ QCM</span>
                           <span>{{ item.question_type === 'open_ended' ? `${item.score}%` : (item.is_correct ? '✓ Correct' : '✗ Incorrect') }}</span>
-                          <span class="q-score">+{{ item.score }} pts</span>
                         </div>
                       </div>
                       <div class="qcard-body">
@@ -314,52 +305,9 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                             <span>Analyse IA</span>
                             <span v-if="item.question_type === 'open_ended'" class="ai-full-label">— Évaluation complète</span>
-                            
-                            <!-- Manual Grade Trigger -->
-                            <button 
-                              v-if="item.question_type === 'open_ended'"
-                              class="btn-manual-grade"
-                              @click="toggleManualGrade(item)"
-                              title="Corriger la note"
-                            >
-                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                              {{ gradingResponseId === item.id ? 'Annuler' : 'Noter' }}
-                            </button>
                           </div>
                           
-                          <!-- Manual Grade Form -->
-                          <div v-if="gradingResponseId === item.id" class="manual-grade-form animate-in">
-                            <div class="grade-header-form">
-                              <span class="form-title">Correction Manuelle</span>
-                              <div class="form-divider"></div>
-                            </div>
-
-                            <div class="grade-inputs">
-                              <div class="grade-row">
-                                <div class="grade-field score-field">
-                                  <label>Score (%)</label>
-                                  <div class="input-with-icon">
-                                    <input v-model="manualGradeForm.score" type="number" min="0" max="100" class="grade-input-score" />
-                                    <span class="percent-symbol">%</span>
-                                  </div>
-                                </div>
-                                <div class="grade-field feedback-field">
-                                  <label>Commentaire de correction</label>
-                                  <textarea v-model="manualGradeForm.feedback" class="grade-input-feedback" rows="3" placeholder="Expliquez votre évaluation..."></textarea>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div class="form-actions">
-                              <button @click="submitManualGrade" :disabled="isGrading" class="btn-save-grade">
-                                  <div v-if="isGrading" class="spinner-sm"></div>
-                                  <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-                                  <span>Enregistrer l'évaluation</span>
-                              </button>
-                            </div>
-                          </div>
-
-                          <p v-else class="ai-feedback-text" :class="{ 'ai-feedback-text--full': item.question_type === 'open_ended' }">
+                          <p class="ai-feedback-text" :class="{ 'ai-feedback-text--full': item.question_type === 'open_ended' }">
                             {{ item.ai_feedback }}
                           </p>
                         </div>
@@ -367,58 +315,17 @@
                           <div class="ai-feedback-header">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
                             <span>Analyse IA en attente</span>
-                            
-                            <!-- Even if pending, allow manual grade -->
-                            <button 
-                              class="btn-manual-grade"
-                              @click="toggleManualGrade(item)"
-                            >
-                              {{ gradingResponseId === item.id ? 'Annuler' : 'Noter manuellement' }}
-                            </button>
                           </div>
-                          
-                          <!-- Manual Grade Form (Same as above) -->
-                          <div v-if="gradingResponseId === item.id" class="manual-grade-form animate-in">
-                            <div class="grade-header-form">
-                              <span class="form-title">Correction Manuelle</span>
-                              <div class="form-divider"></div>
-                            </div>
-
-                            <div class="grade-inputs">
-                              <div class="grade-row">
-                                <div class="grade-field score-field">
-                                  <label>Score (%)</label>
-                                  <div class="input-with-icon">
-                                    <input v-model="manualGradeForm.score" type="number" min="0" max="100" class="grade-input-score" />
-                                    <span class="percent-symbol">%</span>
-                                  </div>
-                                </div>
-                                <div class="grade-field feedback-field">
-                                  <label>Commentaire de validation</label>
-                                  <textarea v-model="manualGradeForm.feedback" class="grade-input-feedback" rows="3" placeholder="Votre évaluation détaillée..."></textarea>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div class="form-actions">
-                              <button @click="submitManualGrade" :disabled="isGrading" class="btn-save-grade">
-                                  <div v-if="isGrading" class="spinner-sm"></div>
-                                  <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-                                  <span>Valider la note</span>
-                              </button>
-                            </div>
-                          </div>
-                          <p v-else class="ai-feedback-text">L'évaluation IA sera disponible après la soumission complète du quiz.</p>
+                          <p class="ai-feedback-text">L'évaluation IA sera disponible après la soumission complète du quiz.</p>
                         </div>
                       </div>
                     </div>
                   </div>
                 </template>
-
               </div>
 
-            </div>
-          </div>
+            </div> <!-- Closes review-content -->
+          </div> <!-- Closes review-scroller -->
 
           <!-- Empty Desk -->
           <div v-else class="review-empty">
@@ -439,8 +346,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import SidebarTeacher from '../../components/SidebarTeacher.vue';
-import BriefService from '../../services/BriefService';
-import SubmissionService from '../../services/SubmissionService';
+import { BriefService, SubmissionService } from '../../services/ApiService';
 import api from '../../services/api';
 
 const router = useRouter();
@@ -460,54 +366,48 @@ const isValidationLoading = ref(false);
 const validationError = ref(null);
 const briefValidationStatus = ref(null);
 
-// Manual Grading State
-const gradingResponseId = ref(null);
-const manualGradeForm = ref({
-  score: 70,
-  feedback: ''
-});
-const isGrading = ref(false);
 
 const pendingCount = computed(() => students.value.filter(s => s.submission && (s.submission.status === 'SUBMITTED' || s.submission.status === 'PENDING')).length);
 const validatedCount = computed(() => students.value.filter(s => s.submission && (s.submission.status === 'VALIDE' || s.submission.status === 'VALIDATED')).length);
 const selectedBriefTitle = computed(() => briefs.value.find(b => b.id === selectedBriefId.value)?.title);
 const selectedStudent = computed(() => students.value.find(s => s.id === selectedStudentId.value));
+
 const quizScorePercent = computed(() => {
   if (!quizData.value.length) return 0;
   const totalPossible = quizData.value.reduce((acc, q) => acc + (q.max_points || 10), 0);
   const totalEarned = quizData.value.reduce((acc, q) => {
-    // Pour QCM, si correct on prend max_points, sinon 0
     if (q.question_type === 'multiple_choice') {
       return acc + (q.is_correct ? (q.max_points || 10) : 0);
     }
-    // Pour open_ended, le score est déjà en % du max_points
     const basePoints = q.max_points || 10;
     return acc + (basePoints * (q.score / 100));
   }, 0);
-  
   if (totalPossible === 0) return 0;
   return Math.round((totalEarned / totalPossible) * 100);
 });
 
 const correctCount = computed(() => quizData.value.filter(q => q.is_correct).length);
 
-const quizPointsTotal = computed(() => {
-  return quizData.value.reduce((acc, q) => {
-    if (q.question_type === 'multiple_choice') {
-      return acc + (q.is_correct ? (q.max_points || 10) : 0);
-    }
-    const basePoints = q.max_points || 10;
-    return acc + Math.round(basePoints * (q.score / 100));
-  }, 0);
-});
 
 onMounted(async () => {
-  try {
+  // Cache
+  const cached = localStorage.getItem('teacher_submissions_briefs_cache');
+  if (cached) {
+    briefs.value = JSON.parse(cached);
+    isBriefsLoading.value = false;
+  } else {
     isBriefsLoading.value = true;
+  }
+
+  try {
     const response = await BriefService.getAllList();
     briefs.value = Array.isArray(response.data) ? response.data : (response.data?.data || []);
-  } catch (e) { console.error("Load briefs error:", e); }
-  finally { isBriefsLoading.value = false; }
+    localStorage.setItem('teacher_submissions_briefs_cache', JSON.stringify(briefs.value));
+  } catch (err) {
+    console.error("Erreur Briefs:", err);
+  }
+  
+  isBriefsLoading.value = false;
 });
 
 const handleSelectBrief = async (id) => {
@@ -515,12 +415,26 @@ const handleSelectBrief = async (id) => {
   selectedStudentId.value = null;
   quizData.value = [];
   activeTab.value = 'project';
-  try {
+
+  // Cache per brief
+  const cacheKey = `teacher_submissions_students_${id}`;
+  const cached = localStorage.getItem(cacheKey);
+  if (cached) {
+    students.value = JSON.parse(cached);
+    isSubmissionsLoading.value = false;
+  } else {
     isSubmissionsLoading.value = true;
+  }
+
+  try {
     const response = await SubmissionService.getAllByBrief(id);
     students.value = Array.isArray(response.data) ? response.data : (response.data?.data || []);
-  } catch (e) { console.error("Load submissions error:", e); }
-  finally { isSubmissionsLoading.value = false; }
+    localStorage.setItem(cacheKey, JSON.stringify(students.value));
+  } catch (err) {
+    console.error("Erreur Submissions:", err);
+  }
+  
+  isSubmissionsLoading.value = false;
 };
 
 const selectStudent = async (student) => {
@@ -531,19 +445,11 @@ const selectStudent = async (student) => {
   briefValidationStatus.value = null;
   validationError.value = null;
   
-  // Appeler l'API de validation globale pour avoir le verdict net (Git + Quiz)
+  // Appeler l'API de validation globale (Git + Quiz)
   isValidationLoading.value = true;
-  try {
-    console.log("Fetching global validation status for student:", student.id);
-    const validationRes = await api.get(`/quizzes/briefs/${selectedBriefId.value}/validate?student_id=${student.id}`);
-    briefValidationStatus.value = validationRes.data?.status;
-    console.log("Validation status retrieved:", briefValidationStatus.value);
-  } catch (err) {
-    console.error("Error fetching overall validation status:", err);
-    validationError.value = "Impossible de récupérer le statut";
-  } finally {
-    isValidationLoading.value = false;
-  }
+  const validationRes = await api.get(`/quizzes/briefs/${selectedBriefId.value}/validate?student_id=${student.id}`);
+  briefValidationStatus.value = validationRes.data?.status;
+  isValidationLoading.value = false;
 };
 
 const switchTab = async (tab) => {
@@ -557,72 +463,26 @@ const loadQuizData = async () => {
   if (!selectedStudent.value) return;
   quizLoading.value = true;
   quizData.value = [];
+
+  let sessionId = selectedStudent.value.quiz_session_id;
+  if (!sessionId) {
+    const sessionRes = await api.get(`/quizzes/briefs/${selectedBriefId.value}/session`);
+    sessionId = sessionRes.data?.data?.id;
+  }
   
-  try {
-    let sessionId = selectedStudent.value.quiz_session_id;
-
-    // Fallback : Si l'ID de session n'est pas dans l'objet étudiant, on le cherche via l'API
-    if (!sessionId) {
-      console.log("Session ID missing in student object, fetching from API...");
-      const sessionRes = await api.get(`/quizzes/briefs/${selectedBriefId.value}/session`);
-      sessionId = sessionRes.data?.data?.id;
-    }
-
-    if (!sessionId) {
-      console.warn("No quiz session found for brief:", selectedBriefId.value);
-      return;
-    }
-
-    console.log(`Loading quiz responses for student ${selectedStudent.value.id} in session ${sessionId}`);
+  if (sessionId) {
     const res = await api.get(`/quizzes/sessions/${sessionId}/students/${selectedStudent.value.id}/responses`);
-    
     if (res.data?.data) {
       quizData.value = res.data.data;
-      console.log(`Successfully loaded ${quizData.value.length} responses.`);
     }
-  } catch (e) {
-    console.error("Critical error loading quiz data:", e);
-  } finally {
-    quizLoading.value = false;
   }
+  
+  quizLoading.value = false;
 };
 
-const toggleManualGrade = (item) => {
-  if (gradingResponseId.value === item.id) {
-    gradingResponseId.value = null;
-  } else {
-    gradingResponseId.value = item.id;
-    manualGradeForm.value.score = item.score || 70;
-    manualGradeForm.value.feedback = item.ai_feedback?.replace('[Validation Manuelle] ', '') || '';
-  }
-};
 
-const submitManualGrade = async () => {
-  if (!gradingResponseId.value) return;
-  isGrading.value = true;
-  try {
-    const res = await api.patch(`/quizzes/responses/${gradingResponseId.value}/grade`, {
-      score: manualGradeForm.value.score,
-      ai_feedback: manualGradeForm.value.feedback
-    });
-    
-    // Mettre à jour localement
-    const idx = quizData.value.findIndex(q => q.id === gradingResponseId.value);
-    if (idx !== -1) {
-      quizData.value[idx].score = res.data.data.score;
-      quizData.value[idx].is_correct = res.data.data.is_correct;
-      quizData.value[idx].ai_feedback = res.data.data.ai_feedback;
-    }
-    
-    gradingResponseId.value = null;
-    alert("Évaluation mise à jour avec succès !");
-  } catch (e) {
-    console.error("Manual grade error:", e);
-    alert("Erreur lors de la mise à jour de la note.");
-  } finally {
-    isGrading.value = false;
-  }
-};
+
+
 
 const statusLabel = (s) => {
   if (!s.submission) return 'En attente';
@@ -652,10 +512,6 @@ const formatDate = (dateStr) => {
   });
 };
 
-const sortedResponses = (responses) => {
-  if (!responses) return [];
-  return [...responses].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-};
 
 const getProjectStatusLabel = (student) => {
   if (isValidationLoading.value) return '⏳...';
@@ -675,7 +531,7 @@ const getProjectStatusClass = (student) => {
 };
 
 const getQuizStatusLabel = (student) => {
-  if (isValidationLoading.value) return 'Chargement...';
+  if (isValidationLoading.value) return 'Chargement en cours...';
   if (validationError.value) return 'N/A';
   if (briefValidationStatus.value) {
     const score = briefValidationStatus.value.quiz_score ?? 0;
@@ -727,21 +583,18 @@ const getOverallStatusIcon = (student) => {
 const saveReview = async (verdict) => {
   if (!selectedStudent.value?.submission) return;
   const backendVerdict = verdict === 'VALIDE' ? 'VALIDATED' : 'REJECTED';
-  try {
-    isSaving.value = true;
-    await SubmissionService.review(selectedStudent.value.submission.id, {
-      status: backendVerdict,
-      message: feedback.value,
-      formateur_id: user.value.id
-    });
-    handleSelectBrief(selectedBriefId.value);
-    feedback.value = '';
-  } catch (e) {
-    console.error("Review save error:", e);
-    alert("Erreur lors de la sauvegarde de la correction.");
-  } finally {
-    isSaving.value = false;
-  }
+
+  isSaving.value = true;
+  await SubmissionService.review(selectedStudent.value.submission.id, {
+    status: backendVerdict,
+    message: feedback.value,
+    formateur_id: user.value.id
+  });
+  
+  // Rafraîchir
+  handleSelectBrief(selectedBriefId.value);
+  feedback.value = '';
+  isSaving.value = false;
 };
 
 const handleLogout = () => router.push('/login');
@@ -825,7 +678,7 @@ const handleLogout = () => router.push('/login');
 .tab-btn:hover { color: #c9d1d9; background: rgba(255,255,255,0.04); }
 .tab-btn--active { background: rgba(56,139,253,0.12); color: #388bfd; border-color: rgba(56,139,253,0.22); }
 .tab-spinner { width: 10px; height: 10px; border: 2px solid rgba(56,139,253,0.3); border-top-color: #388bfd; border-radius: 50%; animation: spin 0.8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+
 .tab-content { display: flex; flex-direction: column; gap: 24px; }
 
 /* Section Labels */
@@ -963,35 +816,6 @@ const handleLogout = () => router.push('/login');
 @keyframes pulse { 0%,100% { transform: scale(0.8); opacity: 0.3; } 50% { transform: scale(1.2); opacity: 0.7; } }
 
 /* Manual Grading UI - Premium Rethink */
-.btn-manual-grade { display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(56, 139, 253, 0.08); border: 1px solid rgba(56, 139, 253, 0.2); border-radius: 8px; color: #58a6ff; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); margin-left: auto; }
-.btn-manual-grade:hover { background: rgba(56, 139, 253, 0.15); border-color: rgba(56, 139, 253, 0.4); transform: translateY(-1px); }
-.btn-manual-grade svg { width: 13px; height: 13px; opacity: 0.9; }
-
-.manual-grade-form { margin-top: 20px; padding: 20px; background: rgba(22, 27, 34, 0.6); border: 1px solid rgba(56, 139, 253, 0.15); border-radius: 12px; backdrop-filter: blur(8px); display: flex; flex-direction: column; gap: 18px; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
-.grade-header-form { display: flex; align-items: center; gap: 12px; }
-.form-title { font-size: 11px; font-weight: 800; color: #58a6ff; text-transform: uppercase; letter-spacing: 0.1em; white-space: nowrap; }
-.form-divider { flex: 1; height: 1px; background: linear-gradient(90deg, rgba(56, 139, 253, 0.2), transparent); }
-
-.grade-row { display: flex; gap: 20px; align-items: flex-start; }
-.score-field { width: 120px; flex-shrink: 0; }
-.feedback-field { flex: 1; }
-
-.grade-field label { font-size: 10px; font-weight: 700; color: #8b949e; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; display: block; }
-.input-with-icon { position: relative; display: flex; align-items: center; }
-.percent-symbol { position: absolute; right: 12px; color: #8b949e; font-size: 12px; font-weight: 700; pointer-events: none; }
-
-.grade-input-score { width: 100%; background: #0d1117; border: 1.5px solid rgba(48, 54, 61, 0.8); border-radius: 8px; padding: 10px 30px 10px 12px; color: #fff; font-size: 15px; font-weight: 700; font-family: 'JetBrains Mono', monospace; transition: all 0.2s; }
-.grade-input-score:focus { border-color: #388bfd; background: #161b22; box-shadow: 0 0 0 3px rgba(56, 139, 253, 0.15); }
-
-.grade-input-feedback { width: 100%; background: #0d1117; border: 1.5px solid rgba(48, 54, 61, 0.8); border-radius: 8px; padding: 12px; color: #f0f6fc; font-size: 13px; font-family: inherit; line-height: 1.6; resize: vertical; transition: all 0.2s; }
-.grade-input-feedback:focus { border-color: #388bfd; background: #161b22; box-shadow: 0 0 0 3px rgba(56, 139, 253, 0.15); }
-
-.form-actions { display: flex; justify-content: flex-end; }
-.btn-save-grade { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 24px; background: linear-gradient(135deg, #238636, #2ea043); color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.3s; box-shadow: 0 4px 12px rgba(35, 134, 54, 0.2); }
-.btn-save-grade:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(35, 134, 54, 0.3); filter: brightness(1.1); }
-.btn-save-grade:active { transform: translateY(0); }
-.btn-save-grade svg { width: 16px; height: 16px; }
-
 .animate-in { animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
 @keyframes slideUpFade { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 
@@ -1001,3 +825,4 @@ const handleLogout = () => router.push('/login');
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(48,54,61,0.4); border-radius: 10px; }
 </style>
+

@@ -29,9 +29,7 @@
         </header>
 
         <!-- ===== LOADING ===== -->
-        <div v-if="isLoading" class="loading-grid" style="margin-top: 0">
-          <div v-for="i in 4" :key="i" class="skeleton-card"></div>
-        </div>
+        <div v-if="isLoading" style="text-align: center; padding: 20px;">Chargement en cours...</div>
 
         <template v-else>
 
@@ -145,8 +143,8 @@
             <aside class="leaderboard-panel animate-in" style="animation-delay: 0.15s">
               <div class="panel-header">
                 <div>
-                  <h2 class="panel-title">Classement</h2>
-                  <p class="panel-desc">Top performers · Points de mérite</p>
+                  <h2 class="panel-title">Progrès des Briefs</h2>
+                  <p class="panel-desc">Top performers · Briefs Validés</p>
                 </div>
               </div>
 
@@ -169,19 +167,19 @@
                   <div class="rank-info">
                     <span class="rank-name">{{ student.first_name }} {{ student.last_name }}</span>
                     <div class="rank-bar-wrap">
-                      <div class="rank-bar" :style="{ width: ((student.total_points / (leaderboard[0]?.total_points || 1)) * 100) + '%', background: idx === 0 ? '#f2bc1b' : idx === 1 ? '#8b949e' : idx === 2 ? '#d45a1e' : '#388bfd' }"></div>
+                      <div class="rank-bar" :style="{ width: ((student.validated_briefs_count / (leaderboard[0]?.validated_briefs_count || 1)) * 100) + '%', background: idx === 0 ? '#f2bc1b' : idx === 1 ? '#8b949e' : idx === 2 ? '#d45a1e' : '#388bfd' }"></div>
                     </div>
                   </div>
-                  <!-- Points -->
+                  <!-- Stats -->
                   <div class="rank-pts">
-                    <span class="rank-pts-val">{{ student.total_points?.toLocaleString() }}</span>
-                    <span class="rank-pts-label">pts</span>
+                    <span class="rank-pts-val">{{ student.validated_briefs_count || 0 }}</span>
+                    <span class="rank-pts-label">v-briefs</span>
                   </div>
                 </div>
               </div>
 
               <button class="leaderboard-footer" @click="router.push('/teacher/students')">
-                Voir le classement complet
+                Voir la progression de tous les étudiants
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
               </button>
             </aside>
@@ -237,6 +235,7 @@ const stats = ref({ total_students: 0, pending_deliverables: 0, absences_today: 
 const squads = ref([]);
 const leaderboard = ref([]);
 const isLoading = ref(true);
+const classroomId = ref(null);
 
 const formattedDate = computed(() =>
   new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())
@@ -247,21 +246,50 @@ const getAvatar = (name) =>
   `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'U')}&background=161b22&color=388bfd&bold=true`;
 
 onMounted(async () => {
-  isLoading.value = true;
+  // 1. Charger le cache pour l'instantanéité
+  const cached = localStorage.getItem('teacher_dashboard_cache');
+  if (cached) {
+    const cacheData = JSON.parse(cached);
+    stats.value = cacheData.stats;
+    squads.value = cacheData.squads;
+    leaderboard.value = cacheData.leaderboard;
+    classroomId.value = cacheData.classroomId;
+    isLoading.value = false;
+  } else {
+    isLoading.value = true;
+  }
+  
   try {
-    const [statsRes, leaderboardRes, squadsRes] = await Promise.all([
+    const [classroomsRes, statsRes, leaderboardRes] = await Promise.all([
+      api.get('/classrooms/my'),
       api.get('/dashboard/stats'),
-      api.get('/leaderboard'),
-      api.get('/squads', { params: { classroom_id: 1 } })
+      api.get('/leaderboard')
     ]);
+
+    const classrooms = classroomsRes.data?.data || classroomsRes.data || [];
+    classroomId.value = classrooms[0]?.id ?? null;
+
     stats.value = { ...stats.value, ...(statsRes.data?.data || {}) };
     leaderboard.value = leaderboardRes.data?.data || [];
-    squads.value = squadsRes.data?.squads || [];
-  } catch (e) {
-    console.error('Dashboard fetch error:', e);
-  } finally {
-    isLoading.value = false;
+
+    if (classroomId.value) {
+      const squadsRes = await api.get('/squads', { params: { classroom_id: classroomId.value } });
+      squads.value = squadsRes.data?.squads?.data || squadsRes.data?.squads || [];
+    }
+
+    // 2. Mettre à jour le cache
+    localStorage.setItem('teacher_dashboard_cache', JSON.stringify({
+      stats: stats.value,
+      squads: squads.value,
+      leaderboard: leaderboard.value,
+      classroomId: classroomId.value
+    }));
+
+  } catch (err) {
+    console.error("Erreur Dashboard Teacher:", err);
   }
+
+  isLoading.value = false;
 });
 
 const handleLogout = () => {
@@ -297,8 +325,8 @@ const handleLogout = () => {
 
 /* ===== SKELETON LOADING ===== */
 .loading-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
-.skeleton-card { height: 120px; border-radius: 16px; background: linear-gradient(90deg, rgba(22,27,34,0.6) 25%, rgba(48,54,61,0.3) 50%, rgba(22,27,34,0.6) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
-@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+
 
 /* ===== KPI GRID ===== */
 .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
@@ -411,3 +439,5 @@ const handleLogout = () => {
 @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.85); } }
 </style>
+
+

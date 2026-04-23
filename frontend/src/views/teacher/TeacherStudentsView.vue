@@ -47,8 +47,8 @@
             <div class="ms-value text-green">{{ students.filter(s => s.status === 'active').length }}</div>
           </div>
           <div class="mini-stat-card">
-            <div class="ms-label">Moyenne Points</div>
-            <div class="ms-value text-blue">{{ Math.round(students.reduce((a, s) => a + (s.total_points || 0), 0) / (students.length || 1)).toLocaleString() }}</div>
+            <div class="ms-label">Briefs Validés</div>
+            <div class="ms-value text-blue">{{ Math.round(students.reduce((a, s) => a + (s.validated_briefs_count || 0), 0) / (students.length || 1)).toLocaleString() }}</div>
           </div>
         </div>
 
@@ -60,7 +60,7 @@
                 <th class="col-student">Étudiant</th>
                 <th class="col-email">Email</th>
                 <th class="col-squad">Squad</th>
-                <th class="col-points text-center">Points</th>
+                <th class="col-points text-center">Briefs</th>
                 <th class="col-status text-center">Statut</th>
                 <th class="col-actions text-right"></th>
               </tr>
@@ -91,7 +91,7 @@
                    <span v-else class="squad-none">Non assigné</span>
                 </td>
                 <td class="text-center">
-                  <span class="points-badge">{{ (student.total_points || 0).toLocaleString() }}</span>
+                  <span class="points-badge">{{ student.validated_briefs_count || 0 }}</span>
                 </td>
                 <td class="text-center">
                    <div 
@@ -118,8 +118,7 @@
               <tr v-if="isLoading" class="table-empty">
                 <td colspan="6">
                   <div class="loader-wrap">
-                    <div class="loader"></div>
-                    Initialisation des données promotionnelles...
+                    Chargement en cours...
                   </div>
                 </td>
               </tr>
@@ -156,17 +155,26 @@ const isLoading = ref(true);
 const classroomId = ref(1); // Promotion 2026
 
 const fetchStudents = async () => {
-  isLoading.value = true;
+  // Cache
+  const cached = localStorage.getItem('teacher_students_cache');
+  if (cached) {
+    students.value = JSON.parse(cached);
+    isLoading.value = false;
+  } else {
+    isLoading.value = true;
+  }
+
   try {
-    const response = await api.get('/students', {
+    const response = await api.get('/analytics/students', {
       params: { classroom_id: classroomId.value }
     });
     students.value = response.data.data;
-  } catch (error) {
-    console.error("Load students error:", error);
-  } finally {
-    isLoading.value = false;
+    localStorage.setItem('teacher_students_cache', JSON.stringify(students.value));
+  } catch (err) {
+    console.error("Erreur Students:", err);
   }
+  
+  isLoading.value = false;
 };
 
 onMounted(fetchStudents);
@@ -294,7 +302,7 @@ const handleLogout = () => {
 .loader-wrap, .empty-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; color: #484f58; font-size: 14px; }
 .empty-wrap svg { width: 40px; height: 40px; opacity: 0.3; }
 .loader { width: 24px; height: 24px; border: 2px solid rgba(56,139,253,0.2); border-top-color: #388bfd; border-radius: 50%; animation: spin 0.8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+
 
 /* Cols */
 .col-student { width: 300px; }
@@ -311,4 +319,5 @@ const handleLogout = () => {
 .text-center { text-align: center; }
 .text-right { text-align: right; }
 </style>
+
 

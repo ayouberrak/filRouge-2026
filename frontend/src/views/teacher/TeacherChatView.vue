@@ -96,7 +96,7 @@
             <div class="messages-viewport custom-scrollbar" ref="messagesContainer">
               <div v-if="loadingMessages" class="loading-state">
                 <div class="loading-spinner"></div>
-                <span>Chargement des messages...</span>
+                <span>Chargement en cours...</span>
               </div>
               
               <template v-else>
@@ -186,7 +186,7 @@
 import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '../../services/api';
-import ChatService from '../../services/ChatService';
+import { ChatService } from '../../services/ApiService';
 import echo from '../../services/echo';
 import SidebarTeacher from '../../components/SidebarTeacher.vue';
 
@@ -234,10 +234,8 @@ const currentChat = computed(() =>
 // ─── Watchers ─────────────────────────────────────────────────────────────────
 watch(userSearchQuery, async (newVal) => {
   if (newVal.length >= 2) {
-    try {
-      const res = await ChatService.searchUsers(newVal);
-      userResults.value = res.data;
-    } catch (err) { console.error('Search error:', err); }
+    const res = await ChatService.searchUsers(newVal);
+    userResults.value = res.data;
   } else {
     userResults.value = [];
   }
@@ -259,11 +257,9 @@ watch(() => route.params.id, (newId) => {
 
 // ─── Methods ──────────────────────────────────────────────────────────────────
 const fetchConversations = async () => {
-  try {
-    const res = await ChatService.getConversations();
-    conversations.value = res.data;
-    return res.data;
-  } catch (err) { console.error(err); }
+  const res = await ChatService.getConversations();
+  conversations.value = res.data;
+  return res.data;
 };
 
 const selectChat = async (chat, updateRoute = true) => {
@@ -279,13 +275,11 @@ const selectChat = async (chat, updateRoute = true) => {
   unreadChats.value.delete(chat.id);
   loadingMessages.value = true;
   
-  try {
-    const res = await ChatService.getMessages(chat.id);
-    currentMessages.value = res.data;
-    subscribeToChannel(chat.id);
-    await scrollToBottom();
-  } catch (err) { console.error(err); }
-  finally { loadingMessages.value = false; }
+  const res = await ChatService.getMessages(chat.id);
+  currentMessages.value = res.data;
+  subscribeToChannel(chat.id);
+  await scrollToBottom();
+  loadingMessages.value = false;
 };
 
 const subscribeToChannel = (id) => {
@@ -310,24 +304,20 @@ const handleSendMessage = async () => {
   if (!text || !selectedChatId.value || sending.value) return;
 
   sending.value = true;
-  try {
-    const res = await ChatService.sendMessage(text, selectedChatId.value);
-    currentMessages.value.push(res.data);
-    newMessageText.value = '';
-    await scrollToBottom();
-    fetchConversations();
-  } catch (err) { console.error(err); }
-  finally { sending.value = false; }
+  const res = await ChatService.sendMessage(text, selectedChatId.value);
+  currentMessages.value.push(res.data);
+  newMessageText.value = '';
+  await scrollToBottom();
+  fetchConversations();
+  sending.value = false;
 };
 
 const startPrivateChat = async (u) => {
-  try {
-    const res = await ChatService.startConversation(u.id);
-    await fetchConversations();
-    selectChat(res.data);
-    showNewChatModal.value = false;
-    userSearchQuery.value = '';
-  } catch (err) { console.error(err); }
+  const res = await ChatService.startConversation(u.id);
+  await fetchConversations();
+  selectChat(res.data);
+  showNewChatModal.value = false;
+  userSearchQuery.value = '';
 };
 
 const getConversationName = (chat) => {
@@ -563,9 +553,11 @@ onUnmounted(() => {
 .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
 
 .loading-spinner { width: 32px; height: 32px; border: 3px solid rgba(56, 139, 253, 0.2); border-top-color: #388bfd; border-radius: 50%; animation: spin 0.8s linear infinite; }
-@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+ to { transform: rotate(360deg); } 
 .btn-spinner { width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; }
 
 .fade-scale-enter-active, .fade-scale-leave-active { transition: all 0.3s ease; }
 .fade-scale-enter-from, .fade-scale-leave-to { opacity: 0; transform: scale(0.95); }
 </style>
+
+

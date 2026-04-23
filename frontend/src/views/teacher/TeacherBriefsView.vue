@@ -35,7 +35,7 @@
         <!-- Loader -->
         <div v-if="isLoading" class="state-box">
           <div class="loader-ring"></div>
-          <p>Chargement des projets...</p>
+          <p>Chargement en cours...</p>
         </div>
 
         <!-- Empty -->
@@ -94,10 +94,7 @@
 
               <!-- Stats Row -->
               <div class="card-stats">
-                <div class="stat">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                  <span>{{ brief.points || 0 }} pts</span>
-                </div>
+
                 <div v-if="brief.classrooms?.length > 0" class="stat stat--green">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
                   <span>{{ brief.classrooms.length }} classe{{ brief.classrooms.length > 1 ? 's' : '' }}</span>
@@ -159,7 +156,7 @@
                   <div class="modal-brief-info">
                     <span class="modal-brief-id">#{{ selectedBrief?.id }}</span>
                     <h3 class="modal-brief-title">{{ selectedBrief?.title }}</h3>
-                    <span class="modal-brief-pts">{{ selectedBrief?.points }} pts · {{ selectedBrief?.difficulty }}</span>
+                    <span class="modal-brief-pts">{{ selectedBrief?.difficulty }}</span>
                   </div>
                 </div>
 
@@ -174,7 +171,7 @@
                   <!-- Loading classrooms -->
                   <div v-if="isClassroomsLoading" class="classrooms-loading">
                     <div class="btn-spinner" style="border-color: rgba(56,139,253,0.3); border-top-color: #388bfd;"></div>
-                    <span>Chargement des classes...</span>
+                    <span>Chargement en cours...</span>
                   </div>
 
                   <!-- No classrooms -->
@@ -234,7 +231,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import SidebarTeacher from '../../components/SidebarTeacher.vue';
-import BriefService from '../../services/BriefService';
+import { BriefService } from '../../services/ApiService';
 import api from '../../services/api';
 
 const router = useRouter();
@@ -276,62 +273,76 @@ const diffLabel = (d) => d === 'EASY' ? '🌱 Débutant' : d === 'MEDIUM' ? '⚡
 const diffClass = (d) => d === 'EASY' ? 'diff-easy' : d === 'MEDIUM' ? 'diff-medium' : 'diff-hard';
 
 onMounted(async () => {
+  // Cache
+  const cached = localStorage.getItem('teacher_briefs_cache');
+  if (cached) {
+    briefs.value = JSON.parse(cached);
+    isLoading.value = false;
+  } else {
+    isLoading.value = true;
+  }
+
   try {
     const response = await BriefService.getAllList();
     briefs.value = Array.isArray(response.data) ? response.data : (response.data?.data || []);
-  } catch (e) { console.error("Erreur récup briefs:", e); }
-  finally { isLoading.value = false; }
+    localStorage.setItem('teacher_briefs_cache', JSON.stringify(briefs.value));
+  } catch (err) {
+    console.error("Erreur Briefs:", err);
+  }
+  
+  isLoading.value = false;
 });
 
 const openAssignModal = async (brief) => {
   selectedBrief.value = brief;
   selectedClassroomIds.value = [];
   showModal.value = true;
-  // Load real classrooms from backend
-  if (myClassrooms.value.length === 0) {
-    try {
-      isClassroomsLoading.value = true;
-      const res = await api.get('/classrooms/my');
-      myClassrooms.value = res.data?.data || [];
-    } catch (e) {
-      console.error('Load classrooms error:', e);
-      myClassrooms.value = [];
-    } finally {
-      isClassroomsLoading.value = false;
-    }
+  
+  // Cache for classrooms
+  const cachedClassrooms = localStorage.getItem('teacher_briefs_my_classrooms_cache');
+  if (cachedClassrooms) {
+    myClassrooms.value = JSON.parse(cachedClassrooms);
   }
+
+  // Charger les classes s'il n'y en a pas encore (ou rafraîchir en fond)
+  if (myClassrooms.value.length === 0) {
+    isClassroomsLoading.value = true;
+  }
+
+  try {
+    const res = await api.get('/classrooms/my');
+    myClassrooms.value = res.data?.data || [];
+    localStorage.setItem('teacher_briefs_my_classrooms_cache', JSON.stringify(myClassrooms.value));
+  } catch (err) {
+    console.error("Erreur Classrooms:", err);
+  }
+  
+  isClassroomsLoading.value = false;
 };
 
 const confirmAssign = async () => {
   if (selectedClassroomIds.value.length === 0) return;
-  try {
-    isAssigning.value = true;
-    await BriefService.assignClassrooms(selectedBrief.value.id, selectedClassroomIds.value);
 
-    // ✅ Mise à jour optimiste locale — pas besoin de refetch
-    const idx = briefs.value.findIndex(b => b.id === selectedBrief.value.id);
-    if (idx !== -1) {
-      // Construit les objets classrooms à partir des IDs sélectionnés + données chargées
-      const assignedClassrooms = myClassrooms.value.filter(c => selectedClassroomIds.value.includes(c.id));
-      briefs.value[idx] = {
-        ...briefs.value[idx],
-        status: 'PUBLISHED',
-        classrooms: [
-          ...(briefs.value[idx].classrooms || []),
-          ...assignedClassrooms.filter(c => !(briefs.value[idx].classrooms || []).some(ex => ex.id === c.id))
-        ]
-      };
-    }
+  isAssigning.value = true;
+  await BriefService.assignClassrooms(selectedBrief.value.id, selectedClassroomIds.value);
 
-    showModal.value = false;
-    selectedClassroomIds.value = [];
-  } catch (e) {
-    console.error('Erreur assign:', e);
-    const errMsg = e.response?.data?.message || e.response?.data?.errors || e.message;
-    alert('Échec de l\'assignation : ' + JSON.stringify(errMsg));
-  } finally {
-    isAssigning.value = false;
+  // Mise à jour locale (optimiste)
+  const idx = briefs.value.findIndex(b => b.id === selectedBrief.value.id);
+  if (idx !== -1) {
+    const assignedClassrooms = myClassrooms.value.filter(c => selectedClassroomIds.value.includes(c.id));
+    briefs.value[idx] = {
+      ...briefs.value[idx],
+      status: 'PUBLISHED',
+      classrooms: [
+        ...(briefs.value[idx].classrooms || []),
+        ...assignedClassrooms.filter(c => !(briefs.value[idx].classrooms || []).some(ex => ex.id === c.id))
+      ]
+    };
   }
+
+  showModal.value = false;
+  selectedClassroomIds.value = [];
+  isAssigning.value = false;
 };
 
 
@@ -373,7 +384,7 @@ const handleLogout = () => router.push('/login');
 .state-box h3 { font-size: 16px; font-weight: 700; color: #8b949e; }
 .state-box p { font-size: 13px; max-width: 260px; line-height: 1.6; }
 .loader-ring { width: 36px; height: 36px; border: 3px solid rgba(56,139,253,0.15); border-top-color: #388bfd; border-radius: 50%; animation: spin 0.9s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
+
 
 /* Grid */
 .briefs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 24px; }
@@ -498,4 +509,6 @@ const handleLogout = () => router.push('/login');
 .animate-in { animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 </style>
+
+
 

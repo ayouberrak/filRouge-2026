@@ -67,7 +67,7 @@
                   <span class="dot"></span>
                   {{ formatStatus(act.status) }}
                 </span>
-                <span class="points">+{{ act.points }} XP</span>
+
               </div>
             </div>
 
@@ -182,39 +182,22 @@
                   <label>Durée technique (minutes)</label>
                   <input type="number" v-model="form.duration_minutes" placeholder="Pour l'auto-completion" />
                 </div>
-                <div class="input-group">
-                  <label>Points XP</label>
-                  <input type="number" v-model="form.points" />
-                </div>
+
               </div>
             </div>
 
             <div class="form-section">
-              <h2 class="section-title">Contenu & Objectifs</h2>
+              <h2 class="section-title">Contenu</h2>
               <div class="input-group">
                 <label>Description (Aperçu carte)</label>
-                <textarea v-model="form.description" rows="3" placeholder="Brève description attractive..."></textarea>
-              </div>
-              <div class="input-group">
-                <label>Objectifs Pédagogiques</label>
-                <textarea v-model="form.objectives" rows="4" placeholder="Compétences visées..."></textarea>
+                <textarea v-model="form.description" rows="5" placeholder="Brève description attractive..."></textarea>
               </div>
             </div>
           </div>
 
           <!-- Sidebar Form -->
           <div class="editor-side">
-            <div class="elite-panel resource-panel">
-              <h2 class="section-title">Ressources & Règles</h2>
-              <div class="input-group">
-                <label>Règles de travail</label>
-                <textarea v-model="form.work_rule" rows="4" placeholder="Ex: Travail en binôme, interdiction d'utiliser Copilot..."></textarea>
-              </div>
-              <div class="input-group">
-                <label>Ressources (Liens)</label>
-                <textarea v-model="form.resources" rows="4" placeholder="Un lien par ligne..."></textarea>
-              </div>
-            </div>
+            <!-- Sidebar Form Removed Resources section -->
 
             <div class="assignment-preview elite-panel" v-if="form.type">
               <h2 class="section-title">Modalité d'Assignation</h2>
@@ -268,7 +251,6 @@
                 <img :src="getAvatar(s)" class="student-avatar" />
                 <div class="student-info">
                   <span class="name">{{ s.first_name }} {{ s.last_name }}</span>
-                  <span class="pts">{{ s.total_points || 0 }} XP</span>
                 </div>
                 <div class="check-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
@@ -298,7 +280,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import SidebarTeacher from '../../components/SidebarTeacher.vue';
-import ActivityService from '../../services/ActivityService';
+import { ActivityService } from '../../services/ApiService';
 import api from '../../services/api';
 
 const router = useRouter();
@@ -325,11 +307,9 @@ const form = ref({
   title: '',
   description: '',
   type: 'workshop',
-  points: 100,
   duration: '2h',
-  objectives: '',
-  work_rule: '',
-  resources: ''
+  duration_minutes: 120,
+  scheduled_at: ''
 });
 
 // Assignment Modal
@@ -399,20 +379,37 @@ const getAvatar = (s) => {
 
 const fetchData = async () => {
   fetchError.value = null;
-  try {
-    console.log("Fetching activities for classroom:", classroomId.value);
-    const actRes = await ActivityService.getByClassroom(classroomId.value);
-    // Standardize handling of { data: [...] } format
-    const fetchedData = actRes.data?.data || actRes.data;
-    console.log("Activities received:", fetchedData);
-    activities.value = Array.isArray(fetchedData) ? fetchedData : [];
-
-    const stuRes = await api.get('/students', { params: { classroom_id: classroomId.value } });
-    classroomStudents.value = stuRes.data?.data || [];
-  } catch (err) {
-    console.error("Fetch data error:", err);
-    fetchError.value = err.response?.data?.message || err.message || "Impossible de charger les activités.";
+  
+  // Cache
+  const cachedAct = localStorage.getItem(`teacher_activities_cache_${classroomId.value}`);
+  const cachedStu = localStorage.getItem(`teacher_classroom_students_cache_${classroomId.value}`);
+  
+  if (cachedAct && cachedStu) {
+    activities.value = JSON.parse(cachedAct);
+    classroomStudents.value = JSON.parse(cachedStu);
+    isLoading.value = false;
+  } else {
+    isLoading.value = true;
   }
+
+  try {
+    const [actRes, stuRes] = await Promise.all([
+      ActivityService.getByClassroom(classroomId.value),
+      api.get('/analytics/students', { params: { classroom_id: classroomId.value } })
+    ]);
+
+    const fetchedData = actRes.data?.data || actRes.data;
+    activities.value = Array.isArray(fetchedData) ? fetchedData : [];
+    classroomStudents.value = stuRes.data?.data || [];
+
+    // Update Cache
+    localStorage.setItem(`teacher_activities_cache_${classroomId.value}`, JSON.stringify(activities.value));
+    localStorage.setItem(`teacher_classroom_students_cache_${classroomId.value}`, JSON.stringify(classroomStudents.value));
+  } catch (err) {
+    console.error("Erreur Activity Data:", err);
+  }
+  
+  isLoading.value = false;
 };
 
 const openEditor = (act) => {
@@ -422,17 +419,13 @@ const openEditor = (act) => {
       ...act,
       type: act.type || act.activity_type,
       scheduled_at: act.scheduled_at ? act.scheduled_at.substring(0, 16) : '', // format for datetime-local
-      duration_minutes: act.duration_minutes || 60,
-      objectives: act.objectives || '',
-      work_rule: act.work_rule || '',
-      resources: act.resources || ''
+      duration_minutes: act.duration_minutes || 60
     };
   } else {
     editingId.value = null;
     form.value = {
-      title: '', description: '', type: 'workshop', points: 100,
-      duration: '2h', duration_minutes: 120, scheduled_at: new Date().toISOString().substring(0, 16),
-      objectives: '', work_rule: '', resources: ''
+      title: '', description: '', type: 'workshop',
+      duration: '2h', duration_minutes: 120, scheduled_at: new Date().toISOString().substring(0, 16)
     };
   }
   showEditor.value = true;
@@ -440,39 +433,24 @@ const openEditor = (act) => {
 
 const saveActivity = async () => {
   isSaving.value = true;
-  try {
-    const payload = {
-      ...form.value,
-      classroom_id: classroomId.value,
-      formateur_id: user.value.id || 1,
-      student_ids: [] // DTO compatibility
-    };
+  const payload = {
+    ...form.value,
+    classroom_id: classroomId.value,
+    formateur_id: user.value.id || 1,
+    student_ids: [] // DTO compatibility
+  };
 
-    const res = await ActivityService.create(payload);
-    const newAct = res.data?.data || res.data;
+  const res = await ActivityService.create(payload);
+  const newAct = res.data?.data || res.data;
 
-    // Special behavior for Quiz: auto-assign to everyone
-    if (newAct.type === 'quiz' || newAct.activity_type === 'quiz') {
-      await ActivityService.assignToClassroom(newAct.id, classroomId.value);
-    }
-
-    await fetchData();
-    showEditor.value = false;
-  } catch (err) {
-    console.error("Save error:", err);
-    // Extract Laravel validation errors if present
-    const validationErrors = err.response?.data?.errors;
-    let errorMsg = err.response?.data?.message || err.message || "Erreur lors de l'enregistrement.";
-    
-    if (validationErrors) {
-      const details = Object.values(validationErrors).flat().join('\n');
-      errorMsg += "\n\nDétails :\n" + details;
-    }
-    
-    alert(errorMsg);
-  } finally {
-    isSaving.value = false;
+  // Spécial pour Quiz : auto-assignation à tout le monde
+  if (newAct.type === 'quiz' || newAct.activity_type === 'quiz') {
+    await ActivityService.assignToClassroom(newAct.id, classroomId.value);
   }
+
+  await fetchData();
+  showEditor.value = false;
+  isSaving.value = false;
 };
 
 const openAssignModal = (act) => {
@@ -499,15 +477,10 @@ const toggleStudent = (id) => {
 const confirmAssignment = async () => {
   if (!selectedActivity.value) return;
   isAssigning.value = true;
-  try {
-    await ActivityService.assignToStudents(selectedActivity.value.id, selectedStudentIds.value);
-    await fetchData();
-    closeAssignModal();
-  } catch (err) {
-    alert("Erreur d'assignation.");
-  } finally {
-    isAssigning.value = false;
-  }
+  await ActivityService.assignToStudents(selectedActivity.value.id, selectedStudentIds.value);
+  await fetchData();
+  closeAssignModal();
+  isAssigning.value = false;
 };
 
 const handleLogout = () => router.push('/login');
