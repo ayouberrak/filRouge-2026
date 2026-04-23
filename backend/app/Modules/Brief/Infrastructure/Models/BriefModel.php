@@ -5,7 +5,7 @@ namespace App\Modules\Brief\Infrastructure\Models;
 use App\Modules\User\Infrastructure\Models\UserModel;
 use App\Modules\Classroom\Infrastructure\Models\ClassroomModel;
 use App\Modules\Livrable\Infrastructure\Models\LivrableModel;
-
+use App\Modules\Quiz\Infrastructure\Models\QuizSessionModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -19,31 +19,17 @@ class BriefModel extends Model
         'image_url',
         'description',
         'context',
-        'objectives',
         'date_start',
         'date_end',
-        'difficulty',
         'modality',
-        'pedagogical_modalities',
-        'evaluation_modalities',
         'status',
-        'points',
         'tags',
-        'resources',
-        'deliverables',
-        'performance_criteria',
-        'target_competencies',
         'file',
         'formateur_id'
     ];
 
     protected $casts = [
-        'objectives' => 'array',
         'tags' => 'array',
-        'resources' => 'array',
-        'deliverables' => 'array',
-        'performance_criteria' => 'array',
-        'target_competencies' => 'array',
         'date_start' => 'datetime',
         'date_end' => 'datetime',
     ];
@@ -65,6 +51,6 @@ class BriefModel extends Model
 
     public function quizSessions()
     {
-        return $this->hasMany(\App\Modules\Quiz\Infrastructure\Models\QuizSessionModel::class, 'brief_id');
+        return $this->hasMany(QuizSessionModel::class, 'brief_id');
     }
 }
