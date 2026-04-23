@@ -26,7 +26,7 @@ return new class extends Migration
         Schema::create('questions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('quiz_session_id')->constrained('quiz_sessions')->cascadeOnDelete();
-            $table->enum('type', ['multiple_choice', 'code_simulation']);
+            $table->enum('type', ['multiple_choice', 'code'])->default('multiple_choice');
             $table->text('content');
             $table->text('correct_answer')->nullable();
             $table->json('context_data')->nullable();

@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignId('squad_id')->nullable()->constrained('squads')->cascadeOnDelete();
             $table->string('link');
             $table->enum('status', ['SUBMITTED', 'VALIDATED', 'REJECTED'])->default('SUBMITTED');
+            $table->text('message')->nullable();
             $table->timestamps();
         });
     }
