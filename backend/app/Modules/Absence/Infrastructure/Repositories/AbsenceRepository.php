@@ -6,12 +6,15 @@ use App\Modules\Absence\Domain\Repositories\AbsenceRepositoryInterface;
 use App\Modules\Absence\Infrastructure\Models\AbsenceModel;
 use App\Modules\Absence\Domain\Entities\AbsenceEntity;
 use App\Modules\Absence\Domain\ValueObjects\AbsenceStatus;
+use App\Modules\User\Infrastructure\Models\UserModel;
 
 class AbsenceRepository implements AbsenceRepositoryInterface
 {
-    private function mapToDomain(?AbsenceModel $model): ?AbsenceEntity
+    private function mapToDomain($model): ?AbsenceEntity
     {
-        if (!$model) return null;
+        if (!$model) {
+            return null;
+        }
 
         return new AbsenceEntity(
             $model->id,
@@ -26,26 +29,24 @@ class AbsenceRepository implements AbsenceRepositoryInterface
     }
 
     public function findById(int $id): ?AbsenceEntity
-    { 
-        return $this->mapToDomain(AbsenceModel::find($id)); 
+    {
+        return $this->mapToDomain(AbsenceModel::find($id));
     }
 
     public function findAll(): array
-    { 
+    {
         $models = AbsenceModel::with('student.classroom')->get();
-        $entities = [];
+        $absences = [];
         foreach ($models as $model) {
-            if ($model instanceof AbsenceModel) {
-                $entities[] = $this->mapToDomain($model);
-            }
+            $absences[] = $this->mapToDomain($model);
         }
-        return $entities;
+        return $absences;
     }
 
     public function create(array $data): ?AbsenceEntity
-    { 
-            $model = AbsenceModel::create($data);
-            return $this->mapToDomain($model); 
+    {
+        $model = AbsenceModel::create($data);
+        return $this->mapToDomain($model);
     }
 
     public function update(int $id, array $data): ?AbsenceEntity
@@ -66,21 +67,23 @@ class AbsenceRepository implements AbsenceRepositoryInterface
 
     public function findByStudentId(int $studentId): array
     {
-        $models = AbsenceModel::with('student.classroom')->where('student_id', $studentId)->get();
-        $entities = [];
+        $models = AbsenceModel::with('student.classroom')
+                                ->where('student_id', $studentId)
+                                ->get();
+
+        $absences = [];
         foreach ($models as $model) {
-            if ($model instanceof AbsenceModel) {
-                $entities[] = $this->mapToDomain($model);
-            }
+            $absences[] = $this->mapToDomain($model);
         }
-        return $entities;
+        return $absences;
     }
 
     public function findByClassroomId(int $classroomId, ?string $month = null): array
     {
-        $query = AbsenceModel::whereHas('student', function ($query) use ($classroomId) {
-            $query->where('classroom_id', $classroomId);
-        });
+        $studentIDS = UserModel::where('classroom_id', $classroomId)
+                                ->pluck('id');
+
+        $query = AbsenceModel::whereIn('student_id', $studentIDS);
 
         if ($month) {
             $query->where('date', 'like', $month . '%');
@@ -88,12 +91,10 @@ class AbsenceRepository implements AbsenceRepositoryInterface
 
         $models = $query->get();
 
-        $entities = [];
+        $absences = [];
         foreach ($models as $model) {
-            if ($model instanceof AbsenceModel) {
-                $entities[] = $this->mapToDomain($model);
-            }
+            $absences[] = $this->mapToDomain($model);
         }
-        return $entities;
+        return $absences;
     }
 }
