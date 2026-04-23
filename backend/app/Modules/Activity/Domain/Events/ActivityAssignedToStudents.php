@@ -9,10 +9,6 @@ class ActivityAssignedToStudents
 {
     use Dispatchable, SerializesModels;
 
-    /**
-     * @param int $activityId
-     * @param int[] $studentIds
-     */
     public function __construct(
         public int $activityId,
         public array $studentIds
