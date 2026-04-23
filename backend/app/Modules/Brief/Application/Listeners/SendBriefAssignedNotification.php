@@ -13,15 +13,17 @@ class SendBriefAssignedNotification
     public function handle(BriefAssignedToClassrooms $event): void
     {
         $brief = BriefModel::find($event->briefId);
-        if (!$brief) return;
+        if (!$brief) {
+            return;
+        }
 
-        $classrooms = ClassroomModel::with('students')->whereIn('id', $event->classroomIds)->get();
+        $classrooms = ClassroomModel::with('students')
+                                    ->whereIn('id', $event->classroomIds)
+                                    ->get();
 
         foreach ($classrooms as $classroom) {
             foreach ($classroom->students as $student) {
-                if ($student->email) {
-                    Mail::to($student->email)->send(new BriefAssignedMail($brief));
-                }
+                Mail::to($student->email)->send(new BriefAssignedMail($brief));
             }
         }
     }
