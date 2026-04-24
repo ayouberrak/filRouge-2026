@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import LoginView from '../views/LoginView.vue';
+import ForgotPasswordView from '../views/ForgotPasswordView.vue';
+import ResetPasswordView from '../views/ResetPasswordView.vue';
 import DashboardView from '../views/student/DashboardView.vue';
 import StudentBriefsView from '../views/student/StudentBriefsView.vue';
 import BriefDetailView from '../views/student/BriefDetailView.vue';
@@ -34,6 +36,18 @@ const routes = [
         path: '/login',
         name: 'login',
         component: LoginView,
+        meta: { guest: true }
+    },
+    {
+        path: '/forgot-password',
+        name: 'forgot-password',
+        component: ForgotPasswordView,
+        meta: { guest: true }
+    },
+    {
+        path: '/reset-password',
+        name: 'reset-password',
+        component: ResetPasswordView,
         meta: { guest: true }
     },
     {
