@@ -393,31 +393,42 @@ const submitLivrable = async () => {
 
   isSubmitting.value = true;
   
-  await api.post('/livrables', {
-    brief_id:   parseInt(selectedBrief.value.id),
-    student_id: studentId,
-    link:       form.value.link,
-    message:    form.value.message,
-  });
+  try {
+    await api.post('/livrables', {
+      brief_id:   parseInt(selectedBrief.value.id),
+      student_id: studentId,
+      link:       form.value.link,
+      message:    form.value.message,
+    });
 
-  form.value = { link: '', message: '' };
-  submitSuccess.value = true;
-  setTimeout(() => { submitSuccess.value = false; }, 3500);
-  
-  // Rafraîchir les données pour montrer que c'est soumis
-  loadPreviousSubmissions();
-  isSubmitting.value = false;
+    form.value = { link: '', message: '' };
+    submitSuccess.value = true;
+    setTimeout(() => { submitSuccess.value = false; }, 3500);
+    
+    // Rafraîchir les données pour montrer que c'est soumis
+    await loadPreviousSubmissions();
+  } catch (err) {
+    console.error("Erreur Soumission:", err);
+    alert(err.response?.data?.error || "Impossible d'envoyer le livrable.");
+  } finally {
+    isSubmitting.value = false;
+  }
 };
 
 // 6. Lancer le quiz AI
 const startQuiz = async (briefId) => {
-  const res = await api.get(`/quizzes/briefs/${briefId}/session`);
-  const session = res.data?.data;
-  
-  if (session?.id) {
-    router.push(`/student/quiz/${session.id}?briefId=${briefId}`);
-  } else {
-    alert('Impossible de lancer le quiz pour le moment.');
+  try {
+    const res = await api.get(`/quizzes/briefs/${briefId}/session`);
+    const session = res.data?.data;
+    
+    if (session?.id) {
+      router.push(`/student/quiz/${session.id}?briefId=${briefId}`);
+    } else {
+      alert('Évaluation non disponible pour le moment.');
+    }
+  } catch (err) {
+    console.error("Erreur Quiz:", err);
+    alert('Impossible de lancer l\'évaluation AI.');
   }
 };
 

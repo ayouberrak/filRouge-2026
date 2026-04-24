@@ -26,7 +26,7 @@ class SubmitLivrableRequest extends FormRequest
     {
         return new \App\Modules\Livrable\Application\DTO\SubmitLivrableDTO(
             $this->validated('brief_id'),
-            $this->validated('student_id'),
+            $this->validated('student_id') ?? auth()->id(),
             $this->validated('squad_id'),
             $this->validated('link'),
             $this->validated('message')
