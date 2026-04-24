@@ -51,7 +51,7 @@
                     <span class="conv-time">{{ formatTime(chat.updated_at) }}</span>
                   </div>
                   <div class="conv-foot">
-                    <p class="conv-preview">{{ chat.messages?.[0]?.content || 'Nouvelle conversation' }}</p>
+                    <p class="conv-preview">{{ chat.last_message?.content || 'Nouvelle conversation' }}</p>
                     <div v-if="unreadChats.has(chat.id)" class="unread-pulse"></div>
                   </div>
                 </div>
@@ -212,6 +212,7 @@ const unreadChats         = ref(new Set());
 const categories = [
   { id: 'all', label: 'Toutes' },
   { id: 'classroom', label: 'Classe' },
+  { id: 'squad', label: 'Squad' },
   { id: 'individual', label: 'Privées' },
 ];
 
@@ -246,9 +247,15 @@ watch(userSearchQuery, async (newVal) => {
 
 // ─── Methods ──────────────────────────────────────────────────────────────────
 const fetchConversations = async () => {
-  const res = await ChatService.getConversations();
-  conversations.value = res.data || [];
-  return res.data || [];
+  try {
+    const res = await ChatService.getConversations();
+    conversations.value = res.data || [];
+    console.log('Conversations fetched:', conversations.value.length);
+    return conversations.value;
+  } catch (err) {
+    console.error('Error fetching conversations:', err);
+    return [];
+  }
 };
 
 const selectChat = async (chat) => {
@@ -271,7 +278,7 @@ const subscribeToChannel = (id) => {
   echo.private(`chat.${id}`)
     .listen('.MessageSent', (e) => {
       if (selectedChatId.value === id) {
-        const exists = currentMessages.value.some(m => m.id === e.message.id);
+        const exists = currentMessages.value.some(m => Number(m.id) === Number(e.message.id));
         if (!exists) {
           currentMessages.value.push(e.message);
           scrollToBottom();
@@ -297,17 +304,52 @@ const handleSendMessage = async () => {
 };
 
 const startPrivateChat = async (u) => {
-  const res = await ChatService.startConversation(u.id);
-  await fetchConversations();
-  selectChat(res.data);
-  showNewChatModal.value = false;
-  userSearchQuery.value = '';
+  try {
+    showNewChatModal.value = false;
+    userSearchQuery.value = '';
+    
+    console.log('Starting chat with user:', u.id);
+    const res = await ChatService.startConversation(u.id);
+    const newConv = res.data;
+    
+    selectedCategory.value = 'all';
+    await fetchConversations();
+    
+    // Ensure the new conversation is in our local list
+    const found = conversations.value.find(c => c.id === newConv.id);
+    if (!found) {
+      console.log('New conversation missing from fetch, adding manually');
+      conversations.value.unshift(newConv);
+    }
+
+    const targetChat = conversations.value.find(c => c.id === newConv.id) || newConv;
+    await selectChat(targetChat);
+  } catch (err) {
+    console.error('Failed to start chat:', err);
+  }
 };
 
 const getConversationName = (chat) => {
+  if (!chat) return 'Discussion';
+
   if (chat.type === 'individual') {
-    const other = chat.users?.find(u => u.id !== user.value?.id);
-    return other ? `${other.first_name} ${other.last_name}` : (chat.name || 'Inconnu');
+    const users = chat.users || [];
+    const meId = Number(user.value?.id);
+    
+    if (!isNaN(meId)) {
+      const other = users.find(u => Number(u.id) !== meId);
+      if (other) return `${other.first_name} ${other.last_name}`;
+    }
+    
+    if (users.length > 0) {
+      // Fallback: Si on n'arrive pas à filtrer par ID, on évite d'afficher le nom du formateur par défaut
+      const notMe = users.find(u => u.first_name !== 'John' || u.last_name !== 'Doe');
+      if (notMe) return `${notMe.first_name} ${notMe.last_name}`;
+      
+      return `${users[0].first_name} ${users[0].last_name}`;
+    }
+    
+    return chat.name || 'Inconnu';
   }
   return chat.name || 'Groupe';
 };

@@ -27,4 +27,9 @@ class SquadModel extends Model
     {
         return $this->hasMany(UserModel::class, 'squad_id');
     }
+
+    public function briefs()
+    {
+        return $this->belongsToMany(\App\Modules\Brief\Infrastructure\Models\BriefModel::class, 'brief_squad', 'squad_id', 'brief_id');
+    }
 }

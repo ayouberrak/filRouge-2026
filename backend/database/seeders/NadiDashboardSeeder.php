@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Modules\User\Infrastructure\Models\UserModel;
 use App\Modules\Classroom\Infrastructure\Models\ClassroomModel;
+use App\Modules\Squad\Infrastructure\Models\SquadModel;
 use App\Modules\Brief\Infrastructure\Models\BriefModel;
 use App\Modules\Activity\Infrastructure\Models\ActivityModel;
 use App\Modules\Chat\Infrastructure\Models\ConversationModel;
@@ -89,13 +90,16 @@ class NadiDashboardSeeder extends Seeder
             $allStudentIds[] = $st->id;
         }
 
-        // 5. Create Briefs
+        // 5. Create Squads
+        $this->seedSquads($classroom, $allStudentIds);
+
+        // 6. Create Briefs
         $this->seedBriefs($formateur, $classroom);
 
-        // 6. Create Chat Conversations
+        // 7. Create Chat Conversations
         $this->seedChatData($ayoub, $formateur, $classroom);
 
-        // 7. Create Activities (Linked to ALL students)
+        // 8. Create Activities (Linked to ALL students)
         $this->seedActivities($formateur, $classroom, $allStudentIds);
     }
 
@@ -134,6 +138,31 @@ class NadiDashboardSeeder extends Seeder
             ]
         );
         $brief2->classrooms()->sync([$classroom->id]);
+    }
+
+    private function seedSquads($classroom, $studentIds)
+    {
+        $squadNames = ['Alpha Squad', 'Beta Squad'];
+        
+        foreach ($squadNames as $index => $name) {
+            $squad = SquadModel::updateOrCreate(
+                ['name' => $name, 'classroom_id' => $classroom->id]
+            );
+
+            // Assign half students to each squad
+            $slice = array_slice($studentIds, $index * 2, 2);
+            UserModel::whereIn('id', $slice)->update(['squad_id' => $squad->id]);
+
+            // Create Squad Chat
+            $squadChat = ConversationModel::updateOrCreate(
+                ['type' => 'squad', 'related_id' => $squad->id],
+                ['name' => 'Squad: ' . $name]
+            );
+            
+            // Add students and formateur to squad chat
+            $participants = array_merge($slice, [$classroom->formateur_id]);
+            $squadChat->users()->syncWithoutDetaching($participants);
+        }
     }
 
     private function seedActivities($formateur, $classroom, $studentIds)

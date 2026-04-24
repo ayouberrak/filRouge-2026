@@ -69,10 +69,16 @@ class ChatController
     public function start(Request $request): JsonResponse
     {
         $request->validate([
-            'user_id' => 'required|exists:users,id'
+            'user_id' => 'required|exists:users,id',
+            'type' => 'sometimes|string|in:individual,squad,classroom',
+            'name' => 'sometimes|string|nullable'
         ]);
 
-        $conversation = $this->startConversation->execute( $request->user()->id, $request->input('user_id')
+        $conversation = $this->startConversation->execute(
+            $request->user()->id,
+            $request->input('user_id'),
+            $request->input('type', 'individual'),
+            $request->input('name')
         );
 
         return response()->json($conversation);

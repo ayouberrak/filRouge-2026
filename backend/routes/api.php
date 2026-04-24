@@ -92,6 +92,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/', [BriefController::class, 'store']);
             Route::put('/{id}', [BriefController::class, 'update']);
             Route::post('/{id}/assign-classrooms', [BriefController::class, 'assignClassrooms']);
+            Route::post('/{id}/assign-squads', [BriefController::class, 'assignSquads']);
         });
         // Formateur's own classrooms
         Route::get('/classrooms/my', [ClassroomController::class, 'myClassrooms']);

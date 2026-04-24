@@ -29,6 +29,14 @@ class CreateSquad
             }
         }
 
+        // Create Chat Conversation for the squad
+        if ($squad) {
+            \App\Modules\Chat\Infrastructure\Models\ConversationModel::firstOrCreate(
+                ['type' => 'squad', 'related_id' => $squad->getId()],
+                ['name' => 'Squad: ' . $squad->getName()->getValue()]
+            );
+        }
+
         // Return a fresh copy with members loaded
         return $squad ? $this->squadRepository->findById($squad->getId()) : null;
     }

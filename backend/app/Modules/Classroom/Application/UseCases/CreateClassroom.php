@@ -13,9 +13,16 @@ class CreateClassroom
 
     public function execute(CreateClassroomDTO $classroomDTO): void
     {
-        $this->classroomRepository->create([
+        $classroom = $this->classroomRepository->create([
             'name' => $classroomDTO->name,
             'formateur_id' => $classroomDTO->formateur_id
         ]);
+
+        if ($classroom) {
+            \App\Modules\Chat\Infrastructure\Models\ConversationModel::firstOrCreate(
+                ['type' => 'classroom', 'related_id' => $classroom->getId()],
+                ['name' => 'Classe: ' . $classroom->getName()->getValue()]
+            );
+        }
     }
 }

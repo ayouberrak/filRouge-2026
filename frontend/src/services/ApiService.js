@@ -55,6 +55,12 @@ export const BriefService = {
       classroom_ids: classroomIds
     });
     return response.data;
+  },
+  async assignSquads(id, squadIds) {
+    const response = await api.post(`/briefs/${id}/assign-squads`, {
+      squad_ids: squadIds
+    });
+    return response.data;
   }
 };
 

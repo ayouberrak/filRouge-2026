@@ -211,6 +211,7 @@ const unreadChats         = ref(new Set());
 const categories = [
   { id: 'all', label: 'Toutes' },
   { id: 'classroom', label: 'Classe' },
+  { id: 'squad', label: 'Squad' },
   { id: 'individual', label: 'Privées' },
 ];
 
@@ -257,9 +258,15 @@ watch(() => route.params.id, (newId) => {
 
 // ─── Methods ──────────────────────────────────────────────────────────────────
 const fetchConversations = async () => {
-  const res = await ChatService.getConversations();
-  conversations.value = res.data;
-  return res.data;
+  try {
+    const res = await ChatService.getConversations();
+    conversations.value = res.data || [];
+    console.log('Teacher: Conversations fetched:', conversations.value.length);
+    return conversations.value;
+  } catch (err) {
+    console.error('Teacher: Error fetching conversations:', err);
+    return [];
+  }
 };
 
 const selectChat = async (chat, updateRoute = true) => {
@@ -287,7 +294,7 @@ const subscribeToChannel = (id) => {
     .listen('.MessageSent', (e) => {
       if (selectedChatId.value === id) {
         // Éviter les doublons
-        const exists = currentMessages.value.some(m => m.id === e.message.id);
+        const exists = currentMessages.value.some(m => Number(m.id) === Number(e.message.id));
         if (!exists) {
           currentMessages.value.push(e.message);
           scrollToBottom();
@@ -313,18 +320,55 @@ const handleSendMessage = async () => {
 };
 
 const startPrivateChat = async (u) => {
-  const res = await ChatService.startConversation(u.id);
-  await fetchConversations();
-  selectChat(res.data);
-  showNewChatModal.value = false;
-  userSearchQuery.value = '';
+  try {
+    showNewChatModal.value = false;
+    userSearchQuery.value = '';
+
+    console.log('Teacher: Starting chat with user:', u.id);
+    const res = await ChatService.startConversation(u.id);
+    const newConv = res.data;
+    
+    selectedCategory.value = 'all';
+    await fetchConversations();
+    
+    // Safeguard
+    const found = conversations.value.find(c => c.id === newConv.id);
+    if (!found) {
+      console.log('Teacher: New conversation missing from fetch, adding manually');
+      conversations.value.unshift(newConv);
+    }
+
+    const targetChat = conversations.value.find(c => c.id === newConv.id) || newConv;
+    await selectChat(targetChat);
+  } catch (err) {
+    console.error('Teacher: Failed to start chat:', err);
+  }
 };
 
 const getConversationName = (chat) => {
   if (!chat) return 'Discussion';
+  
   if (chat.type === 'individual') {
-    const other = (chat.users || []).find(u => u.id !== user.value?.id);
-    return other ? `${other.first_name} ${other.last_name}` : (chat.name || 'Inconnu');
+    const users = chat.users || [];
+    const meId = Number(user.value?.id);
+    
+    // Si on a l'ID de l'utilisateur actuel, on cherche l'autre
+    if (!isNaN(meId)) {
+      const other = users.find(u => Number(u.id) !== meId);
+      if (other) return `${other.first_name} ${other.last_name}`;
+    }
+    
+    // Si on n'a pas pu identifier "l'autre" par l'ID, mais qu'on a des participants
+    if (users.length > 0) {
+      // On cherche quelqu'un qui n'est PAS John Doe (le formateur par défaut)
+      const notMe = users.find(u => u.first_name !== 'John' || u.last_name !== 'Doe');
+      if (notMe) return `${notMe.first_name} ${notMe.last_name}`;
+      
+      // Si tout le monde s'appelle John Doe ou s'il n'y a qu'un user
+      return `${users[0].first_name} ${users[0].last_name}`;
+    }
+    
+    return chat.name || 'Inconnu';
   }
   return chat.name || 'Groupe';
 };
@@ -470,6 +514,7 @@ onUnmounted(() => {
 .avatar-placeholder { width: 52px; height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: white; }
 .avatar-placeholder.individual { background: linear-gradient(135deg, #388bfd, #1d4ed8); }
 .avatar-placeholder.classroom  { background: linear-gradient(135deg, #10b981, #059669); }
+.avatar-placeholder.squad      { background: linear-gradient(135deg, #f59e0b, #d97706); }
 
 .status-indicator { position: absolute; bottom: -2px; right: -2px; width: 14px; height: 14px; border-radius: 50%; border: 3px solid #0d1117; }
 .status-indicator.online { background: #10b981; }
