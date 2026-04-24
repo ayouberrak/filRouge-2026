@@ -8,6 +8,7 @@ use App\Modules\Brief\Application\UseCases\UpdateBrief;
 use App\Modules\Brief\Application\UseCases\GetBrief;
 use App\Modules\Brief\Application\UseCases\GetAllBriefs;
 use App\Modules\Brief\Application\UseCases\AssignBriefToClassrooms;
+use App\Modules\Brief\Application\UseCases\AssignBriefToSquads;
 use App\Modules\Brief\Domain\Repositories\BriefRepositoryInterface;
 use App\Modules\Brief\Domain\ValueObjects\BriefDatePeriod;
 use App\Modules\Brief\Domain\ValueObjects\BriefModality;
@@ -26,6 +27,7 @@ class BriefController
         private GetBrief $getBrief,
         private GetAllBriefs $getAllBriefs,
         private AssignBriefToClassrooms $assignBriefToClassrooms,
+        private AssignBriefToSquads $assignBriefToSquads,
         private BriefRepositoryInterface $repository
     ) {}
 
@@ -36,7 +38,7 @@ class BriefController
         $explorer = $request->query('all') === 'true' || $request->query('all') === '1';
 
         if ($user && $user->role === 'student' && !$explorer) {
-            $briefs = $this->repository->findByClassroomId($user->classroom_id);
+            $briefs = $this->repository->findByClassroomId($user->classroom_id, $user->squad_id);
         } else {
             $briefs = $this->getAllBriefs->execute();
         }
@@ -45,17 +47,24 @@ class BriefController
 
         foreach ($briefs as $brief) {
 
-            $model = BriefModel::with('classrooms:id,name')
+            $model = BriefModel::with(['classrooms:id,name', 'squads:id,name'])
                                 ->find($brief->getId());
             $item = $brief->toArray();
 
             $item['classrooms'] = [];
+            $item['squads'] = [];
 
             if ($model) {
                 foreach ($model->classrooms as $classroom) {
                     $item['classrooms'][] = [
                         'id' => $classroom->id,
                         'name' => $classroom->name
+                    ];
+                }
+                foreach ($model->squads as $squad) {
+                    $item['squads'][] = [
+                        'id' => $squad->id,
+                        'name' => $squad->name
                     ];
                 }
             }
@@ -112,7 +121,6 @@ class BriefController
                 date_end: $request->input('date_end'),
                 modality: $request->input('modality', 'INDIVIDUAL'),
                 status: $request->input('status', 'DRAFT'),
-                points: $request->input('points', 0),
                 tags: $request->input('tags', []),
                 file: null,
                 formateur_id: auth()->id()
@@ -150,7 +158,6 @@ class BriefController
                 date_end: $request->input('date_end'),
                 modality: $request->input('modality', 'INDIVIDUAL'),
                 status: $request->input('status', 'DRAFT'),
-                points: $request->input('points', 0),
                 tags: $request->input('tags', []),
                 file: null,
                 formateur_id: auth()->id()
@@ -184,6 +191,16 @@ class BriefController
             
             return response()->json([
                 'message' => 'Classrooms assigned successfully'
+            ]);
+    }
+
+    public function assignSquads(Request $request, int $id): JsonResponse
+    {
+            $squadIds = $request->input('squad_ids');
+            $this->assignBriefToSquads->execute($id, $squadIds);
+            
+            return response()->json([
+                'message' => 'Squads assigned successfully'
             ]);
     }
 }

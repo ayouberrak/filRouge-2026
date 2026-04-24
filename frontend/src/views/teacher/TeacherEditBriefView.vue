@@ -427,35 +427,46 @@ const handleSave = async () => {
   const payload = { ...briefForm.value };
 
   let savedBrief;
-  if (isNew.value) {
-    const resp = await BriefService.create(payload);
-    savedBrief = resp.data;
-  } else {
-    const resp = await BriefService.update(route.params.id, payload);
-    savedBrief = resp.data;
-  }
+  try {
+    if (isNew.value) {
+      const resp = await BriefService.create(payload);
+      savedBrief = resp.data.data; // Note the .data.data depending on your API structure
+    } else {
+      const resp = await BriefService.update(route.params.id, payload);
+      savedBrief = resp.data.data;
+    }
 
-  const validQuestions = briefForm.value.questions.filter(q => q.content.trim() !== '');
-  if (validQuestions.length > 0) {
-    await QuizService.createSession({
-      brief_id: savedBrief.id,
-      timer_minutes: Number(briefForm.value.quiz_duration_minutes || 30),
-      start_at: briefForm.value.quiz_start_at ? briefForm.value.quiz_start_at.replace('T', ' ') + ':00' : null,
-      passing_score: 50,
-      questions: validQuestions.map(q => ({
-        content: q.content,
-        type: q.type || 'multiple_choice',
-        points: 1,
-        correct_answer: q.type === 'open_ended' ? '' : (q.options[q.correct] || ''),
-        context_data: q.type === 'open_ended'
-          ? JSON.stringify({ scenario: q.scenario || q.content })
-          : JSON.stringify({ options: q.options })
-      }))
-    });
-  }
+    const validQuestions = briefForm.value.questions.filter(q => q.content.trim() !== '');
+    if (validQuestions.length > 0 && savedBrief?.id) {
+      await QuizService.createSession({
+        brief_id: savedBrief.id,
+        timer_minutes: Number(briefForm.value.quiz_duration_minutes || 30),
+        start_at: briefForm.value.quiz_start_at ? briefForm.value.quiz_start_at.replace('T', ' ') + ':00' : null,
+        passing_score: 50,
+        questions: validQuestions.map(q => ({
+          content: q.content,
+          type: q.type || 'multiple_choice',
+          points: 1,
+          correct_answer: q.type === 'open_ended' ? '' : (q.options[q.correct] || ''),
+          context_data: q.type === 'open_ended'
+            ? JSON.stringify({ scenario: q.scenario || q.content })
+            : JSON.stringify({ options: q.options })
+        }))
+      });
+    }
 
-  router.push('/teacher/briefs');
-  isSaving.value = false;
+    router.push('/teacher/briefs');
+  } catch (err) {
+    console.error("Erreur Sauvegarde:", err);
+    if (err.response?.data?.errors) {
+      console.table(err.response.data.errors);
+      alert("Erreur de validation: " + Object.values(err.response.data.errors).flat().join('\n'));
+    } else {
+      alert("Une erreur est survenue lors de la sauvegarde.");
+    }
+  } finally {
+    isSaving.value = false;
+  }
 };
 
 const goBack = () => router.push('/teacher/briefs');

@@ -14,7 +14,7 @@ class CreateBriefRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title' => 'required|string|min:5|max:255',
+            'title' => 'required|string|min:3|max:255',
             'image_url' => 'nullable|string',
             'description' => 'required|string',
             'context' => 'nullable|string',
@@ -23,6 +23,9 @@ class CreateBriefRequest extends FormRequest
             'modality' => 'nullable|in:INDIVIDUAL,GROUP',
             'status' => 'nullable|in:DRAFT,PUBLISHED,IN_PROGRESS,COMPLETED',
             'tags' => 'nullable|array',
+            'questions' => 'nullable|array',
+            'quiz_start_at' => 'nullable|string',
+            'quiz_duration_minutes' => 'nullable|integer',
         ];
     }
 }

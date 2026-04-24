@@ -10,11 +10,13 @@ interface BriefRepositoryInterface
 
     public function findById(int $id): ?BriefEntity;
     
-    public function findByClassroomId(int $classroomId): array;
+    public function findByClassroomId(int $classroomId, ?int $squadId = null): array;
 
     public function findAll(): array;
     
     public function delete(int $id): bool;
 
     public function assignClassrooms(int $briefId, array $classroomIds): void;
+    
+    public function assignSquads(int $briefId, array $squadIds): void;
 }

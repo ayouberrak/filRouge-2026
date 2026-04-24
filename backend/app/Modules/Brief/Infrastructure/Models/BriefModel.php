@@ -4,6 +4,7 @@ namespace App\Modules\Brief\Infrastructure\Models;
 
 use App\Modules\User\Infrastructure\Models\UserModel;
 use App\Modules\Classroom\Infrastructure\Models\ClassroomModel;
+use App\Modules\Squad\Infrastructure\Models\SquadModel;
 use App\Modules\Livrable\Infrastructure\Models\LivrableModel;
 use App\Modules\Quiz\Infrastructure\Models\QuizSessionModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -42,6 +43,11 @@ class BriefModel extends Model
     public function classrooms()
     {
         return $this->belongsToMany(ClassroomModel::class, 'brief_classroom', 'brief_id', 'classroom_id');
+    }
+
+    public function squads()
+    {
+        return $this->belongsToMany(SquadModel::class, 'brief_squad', 'brief_id', 'squad_id');
     }
 
     public function livrables()

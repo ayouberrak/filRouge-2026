@@ -114,7 +114,7 @@
 
                 <!-- Assign button: ONLY if NOT already assigned -->
                 <button
-                  v-if="!brief.classrooms || brief.classrooms.length === 0"
+                  v-if="(!brief.classrooms || brief.classrooms.length === 0) && (!brief.squads || brief.squads.length === 0)"
                   class="btn-action btn-action--primary"
                   @click="openAssignModal(brief)"
                 >
@@ -125,7 +125,12 @@
                 <!-- Already assigned state -->
                 <div v-else class="btn-action btn-action--assigned">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>
-                  Assigné · {{ brief.classrooms.length }} classe{{ brief.classrooms.length > 1 ? 's' : '' }}
+                  <span v-if="brief.classrooms?.length > 0">
+                    Assigné · {{ brief.classrooms.length }} classe{{ brief.classrooms.length > 1 ? 's' : '' }}
+                  </span>
+                  <span v-else>
+                    Assigné · {{ brief.squads?.length }} squad{{ brief.squads?.length > 1 ? 's' : '' }}
+                  </span>
                 </div>
               </div>
             </div>
@@ -160,8 +165,26 @@
                   </div>
                 </div>
 
+                <!-- Assignment Type Tabs -->
+                <div class="assign-tabs">
+                  <button 
+                    class="assign-tab" 
+                    :class="{ 'assign-tab--active': assignType === 'classroom' }"
+                    @click="assignType = 'classroom'; selectedSquadIds = []"
+                  >
+                    Par Classes
+                  </button>
+                  <button 
+                    class="assign-tab" 
+                    :class="{ 'assign-tab--active': assignType === 'squad' }"
+                    @click="assignType = 'squad'; selectedClassroomIds = []"
+                  >
+                    Par Squads
+                  </button>
+                </div>
+
                 <!-- Classrooms Selector -->
-                <div class="classrooms-section">
+                <div v-if="assignType === 'classroom'" class="classrooms-section">
                   <div class="classrooms-label">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
                     Vos classes
@@ -204,6 +227,48 @@
                     </label>
                   </div>
                 </div>
+
+                <!-- Squads Selector -->
+                <div v-else class="classrooms-section">
+                  <div class="classrooms-label">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+                    Vos squads
+                    <span class="classrooms-count">{{ selectedSquadIds.length }} sélectionnée{{ selectedSquadIds.length > 1 ? 's' : '' }}</span>
+                  </div>
+
+                  <div v-if="isClassroomsLoading" class="classrooms-loading">
+                    <div class="btn-spinner" style="border-color: rgba(56,139,253,0.3); border-top-color: #388bfd;"></div>
+                    <span>Chargement en cours...</span>
+                  </div>
+
+                  <div v-else-if="allMySquads.length === 0" class="classrooms-empty">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                    Aucune squad disponible.
+                  </div>
+
+                  <div v-else class="classrooms-list">
+                    <label
+                      v-for="sq in allMySquads"
+                      :key="sq.id"
+                      class="classroom-row"
+                      :class="{ 'classroom-row--selected': selectedSquadIds.includes(sq.id) }"
+                    >
+                      <input
+                        type="checkbox"
+                        :value="sq.id"
+                        v-model="selectedSquadIds"
+                        class="classroom-checkbox"
+                      />
+                      <div class="classroom-check-icon" :class="{ 'check-active': selectedSquadIds.includes(sq.id) }">
+                        <svg v-if="selectedSquadIds.includes(sq.id)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+                      </div>
+                      <div class="classroom-info">
+                        <span class="classroom-name">{{ sq.name }}</span>
+                        <span class="classroom-students">{{ myClassrooms.find(c => c.id === sq.classroom_id)?.name || 'Classe inconnue' }}</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
               </div>
 
               <div class="modal-footer">
@@ -211,11 +276,11 @@
                 <button
                   class="btn-modal-confirm"
                   @click="confirmAssign"
-                  :disabled="isAssigning || selectedClassroomIds.length === 0"
+                  :disabled="isAssigning || (assignType === 'classroom' ? selectedClassroomIds.length === 0 : selectedSquadIds.length === 0)"
                 >
                   <svg v-if="!isAssigning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>
                   <div v-else class="btn-spinner"></div>
-                  {{ isAssigning ? 'Déploiement...' : `Assigner à ${selectedClassroomIds.length} classe${selectedClassroomIds.length > 1 ? 's' : ''}` }}
+                  {{ isAssigning ? 'Déploiement...' : 'Confirmer la publication' }}
                 </button>
               </div>
             </div>
@@ -244,6 +309,9 @@ const showModal = ref(false);
 const selectedBrief = ref(null);
 const myClassrooms = ref([]);
 const selectedClassroomIds = ref([]);
+const assignType = ref('classroom'); // 'classroom' or 'squad'
+const allMySquads = ref([]);
+const selectedSquadIds = ref([]);
 const activeFilter = ref('all');
 const defaultImg = 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=800';
 
@@ -256,14 +324,14 @@ const filters = [
 
 const filterCount = (key) => {
   if (key === 'all') return briefs.value.length;
-  if (key === 'assigned') return briefs.value.filter(b => b.classrooms?.length > 0).length;
+  if (key === 'assigned') return briefs.value.filter(b => (b.classrooms?.length > 0 || b.squads?.length > 0)).length;
   if (key === 'published') return briefs.value.filter(b => b.status === 'PUBLISHED').length;
   if (key === 'draft') return briefs.value.filter(b => b.status === 'DRAFT').length;
   return 0;
 };
 
 const filteredBriefs = computed(() => {
-  if (activeFilter.value === 'assigned') return briefs.value.filter(b => b.classrooms?.length > 0);
+  if (activeFilter.value === 'assigned') return briefs.value.filter(b => (b.classrooms?.length > 0 || b.squads?.length > 0));
   if (activeFilter.value === 'published') return briefs.value.filter(b => b.status === 'PUBLISHED');
   if (activeFilter.value === 'draft') return briefs.value.filter(b => b.status === 'DRAFT');
   return briefs.value;
@@ -296,6 +364,8 @@ onMounted(async () => {
 const openAssignModal = async (brief) => {
   selectedBrief.value = brief;
   selectedClassroomIds.value = [];
+  selectedSquadIds.value = [];
+  assignType.value = 'classroom';
   showModal.value = true;
   
   // Cache for classrooms
@@ -304,44 +374,56 @@ const openAssignModal = async (brief) => {
     myClassrooms.value = JSON.parse(cachedClassrooms);
   }
 
-  // Charger les classes s'il n'y en a pas encore (ou rafraîchir en fond)
-  if (myClassrooms.value.length === 0) {
-    isClassroomsLoading.value = true;
-  }
-
+  // Charger les classes et squads
+  isClassroomsLoading.value = true;
   try {
-    const res = await api.get('/classrooms/my');
-    myClassrooms.value = res.data?.data || [];
+    const [resCls, resSq] = await Promise.all([
+      api.get('/classrooms/my'),
+      api.get('/squads')
+    ]);
+    myClassrooms.value = resCls.data?.data || [];
+    const squadsData = resSq.data?.squads;
+    allMySquads.value = Array.isArray(squadsData) ? squadsData : (squadsData?.data || []);
     localStorage.setItem('teacher_briefs_my_classrooms_cache', JSON.stringify(myClassrooms.value));
   } catch (err) {
-    console.error("Erreur Classrooms:", err);
+    console.error("Erreur Chargement:", err);
   }
-  
   isClassroomsLoading.value = false;
 };
 
 const confirmAssign = async () => {
-  if (selectedClassroomIds.value.length === 0) return;
+  if (assignType.value === 'classroom' && selectedClassroomIds.value.length === 0) return;
+  if (assignType.value === 'squad' && selectedSquadIds.value.length === 0) return;
 
   isAssigning.value = true;
-  await BriefService.assignClassrooms(selectedBrief.value.id, selectedClassroomIds.value);
+  try {
+    if (assignType.value === 'classroom') {
+      await BriefService.assignClassrooms(selectedBrief.value.id, selectedClassroomIds.value);
+    } else {
+      await BriefService.assignSquads(selectedBrief.value.id, selectedSquadIds.value);
+    }
 
-  // Mise à jour locale (optimiste)
-  const idx = briefs.value.findIndex(b => b.id === selectedBrief.value.id);
-  if (idx !== -1) {
-    const assignedClassrooms = myClassrooms.value.filter(c => selectedClassroomIds.value.includes(c.id));
-    briefs.value[idx] = {
-      ...briefs.value[idx],
-      status: 'PUBLISHED',
-      classrooms: [
-        ...(briefs.value[idx].classrooms || []),
-        ...assignedClassrooms.filter(c => !(briefs.value[idx].classrooms || []).some(ex => ex.id === c.id))
-      ]
-    };
+    // Mise à jour locale (optimiste)
+    const idx = briefs.value.findIndex(b => b.id === selectedBrief.value.id);
+    if (idx !== -1) {
+      briefs.value[idx] = {
+        ...briefs.value[idx],
+        status: 'PUBLISHED',
+        classrooms: assignType.value === 'classroom' 
+          ? myClassrooms.value.filter(c => selectedClassroomIds.value.includes(c.id))
+          : (briefs.value[idx].classrooms || []),
+        squads: assignType.value === 'squad'
+          ? allMySquads.value.filter(s => selectedSquadIds.value.includes(s.id))
+          : (briefs.value[idx].squads || [])
+      };
+    }
+    showModal.value = false;
+  } catch (err) {
+    console.error("Erreur assignation:", err);
   }
-
-  showModal.value = false;
+  
   selectedClassroomIds.value = [];
+  selectedSquadIds.value = [];
   isAssigning.value = false;
 };
 
@@ -444,6 +526,12 @@ const handleLogout = () => router.push('/login');
 .btn-action--primary:hover { background: rgba(56,139,253,0.15); border-color: rgba(56,139,253,0.5); transform: translateY(-1px); }
 
 .btn-action--assigned { background: rgba(63,185,80,0.05); border: 1px solid rgba(63,185,80,0.2); color: #3fb950; cursor: default; flex: 2; font-size: 11px; }
+
+/* Assign Tabs */
+.assign-tabs { display: flex; gap: 4px; padding: 4px; background: rgba(13,17,23,0.5); border: 1px solid rgba(48,54,61,0.4); border-radius: 12px; margin-bottom: 8px; }
+.assign-tab { flex: 1; padding: 8px; border-radius: 9px; border: none; background: transparent; color: #8b949e; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+.assign-tab--active { background: rgba(56,139,253,0.1); color: #388bfd; }
+.assign-tab:hover:not(.assign-tab--active) { color: #f0f6fc; }
 
 /* Modal */
 .modal-overlay { position: fixed; inset: 0; background: rgba(1,4,9,0.85); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 1000; }

@@ -42,12 +42,21 @@ class BriefRepository implements BriefRepositoryInterface
         return $model ? $this->toEntity($model) : null;
     }
 
-    public function findByClassroomId(int $classroomId): array
+    public function findByClassroomId(int $classroomId, ?int $squadId = null): array
     {
         $models = BriefModel::withCount('quizSessions')
-            ->whereHas('classrooms', function($query) use ($classroomId) {
-                $query->where('classroom_id', $classroomId);
+            ->where(function($query) use ($classroomId, $squadId) {
+                $query->whereHas('classrooms', function($q) use ($classroomId) {
+                    $q->where('classroom_id', $classroomId);
+                });
+                
+                if ($squadId) {
+                    $query->orWhereHas('squads', function($q) use ($squadId) {
+                        $q->where('squad_id', $squadId);
+                    });
+                }
             })->get();
+            
         return $models->map(fn(BriefModel $model) => $this->toEntity($model))->toArray();
     }
     
@@ -75,6 +84,18 @@ class BriefRepository implements BriefRepositoryInterface
         $model = BriefModel::find($briefId);
         if ($model) {
             $model->classrooms()->sync($classroomIds);
+
+            $model->update([
+                'status' => 'PUBLISHED'
+            ]);
+        }
+    }
+
+    public function assignSquads(int $briefId, array $squadIds): void
+    {
+        $model = BriefModel::find($briefId);
+        if ($model) {
+            $model->squads()->sync($squadIds);
 
             $model->update([
                 'status' => 'PUBLISHED'
