@@ -39,6 +39,9 @@ class BriefController
 
         if ($user && $user->role === 'student' && !$explorer) {
             $briefs = $this->repository->findByClassroomId($user->classroom_id, $user->squad_id);
+        } else if ($user && $user->role === 'formateur' && !$explorer) {
+            // Uniquement les briefs créés par ce formateur
+            $briefs = $this->repository->findByFormateurId($user->id);
         } else {
             $briefs = $this->getAllBriefs->execute();
         }
