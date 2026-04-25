@@ -45,6 +45,16 @@ class ActivityRepository implements ActivityRepositoryInterface
         return $models->map(fn(ActivityModel $m) => $this->mapToEntity($m))->toArray();
     }
 
+    public function getByFormateur(int $formateurId): array
+    {
+        $models = ActivityModel::with('students')
+            ->where('formateur_id', $formateurId)
+            ->orderBy('scheduled_at', 'desc')
+            ->get();
+
+        return $models->map(fn(ActivityModel $m) => $this->mapToEntity($m))->toArray();
+    }
+
     public function getByStudent(int $studentId): array
     {
         $models = ActivityModel::with('students')
