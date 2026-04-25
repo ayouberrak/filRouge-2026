@@ -12,6 +12,10 @@ interface BriefRepositoryInterface
     
     public function findByClassroomId(int $classroomId, ?int $squadId = null): array;
 
+    public function findByClassroomIds(array $classroomIds): array;
+
+    public function findByFormateurId(int $formateurId): array;
+
     public function findAll(): array;
     
     public function delete(int $id): bool;
