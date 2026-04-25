@@ -152,7 +152,6 @@ const user = ref(JSON.parse(localStorage.getItem('user')) || { first_name: 'Form
 const searchQuery = ref('');
 const students = ref([]);
 const isLoading = ref(true);
-const classroomId = ref(1); // Promotion 2026
 
 const fetchStudents = async () => {
   // Cache
@@ -165,9 +164,7 @@ const fetchStudents = async () => {
   }
 
   try {
-    const response = await api.get('/analytics/students', {
-      params: { classroom_id: classroomId.value }
-    });
+    const response = await api.get('/analytics/students');
     students.value = response.data.data;
     localStorage.setItem('teacher_students_cache', JSON.stringify(students.value));
   } catch (err) {

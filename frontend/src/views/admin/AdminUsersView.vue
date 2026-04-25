@@ -269,14 +269,28 @@ const closeUserModal = () => showUserModal.value = false;
 // 4. Enregistrer (Créer ou Modifier)
 const saveUser = async () => {
   isSaving.value = true;
-  if (isEdit.value) {
-    await api.put(`/users/update/${editingUserId.value}`, userForm.value);
-  } else {
-    await api.post('/users/create', userForm.value);
+  try {
+    if (isEdit.value) {
+      await api.put(`/users/update/${editingUserId.value}`, userForm.value);
+    } else {
+      await api.post('/users/create', userForm.value);
+    }
+    showUserModal.value = false;
+    fetchData();
+  } catch (err) {
+    console.error("Erreur Save User:", err);
+    const msg = err.response?.data?.message || "Une erreur est survenue lors de l'enregistrement.";
+    const errors = err.response?.data?.errors;
+    
+    if (errors) {
+      const firstError = Object.values(errors)[0][0];
+      alert(`Erreur de validation : ${firstError}`);
+    } else {
+      alert(msg);
+    }
+  } finally {
+    isSaving.value = false;
   }
-  showUserModal.value = false;
-  fetchData();
-  isSaving.value = false;
 };
 
 // 5. Bannir ou Débloquer un utilisateur

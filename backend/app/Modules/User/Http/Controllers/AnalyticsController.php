@@ -75,6 +75,13 @@ class AnalyticsController
         $role = $request->get('role', 'student');
         $query = UserModel::where('role', $role);
 
+        // Si l'utilisateur est un formateur, on limite aux étudiants de ses classes
+        $authUser = auth()->user();
+        if ($authUser && $authUser->role === 'formateur' && $role === 'student') {
+            $myClassroomIds = ClassroomModel::where('formateur_id', $authUser->id)->pluck('id');
+            $query->whereIn('classroom_id', $myClassroomIds);
+        }
+
         if ($request->has('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {

@@ -80,19 +80,18 @@ const handleSubmit = async () => {
     loading.value = true;
     error.value = '';
     try {
-        // await api.post('/password/reset', {
-        //     token: route.query.token,
-        //     email: route.query.email,
-        //     password: password.value,
-        //     password_confirmation: passwordConfirmation.value
-        // });
+        await api.post('/password/reset', {
+            token: route.query.token,
+            email: route.query.email,
+            password: password.value,
+            password_confirmation: passwordConfirmation.value
+        });
         
-        setTimeout(() => {
-          alert('Mot de passe mis à jour avec succès !');
-          router.push('/login');
-        }, 1500);
+        alert('Mot de passe mis à jour avec succès !');
+        router.push('/login');
     } catch (err) {
         error.value = err.response?.data?.message || 'Une erreur est survenue.';
+    } finally {
         loading.value = false;
     }
 };

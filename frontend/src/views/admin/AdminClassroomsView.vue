@@ -183,9 +183,13 @@ const studentSearch = ref('');
 // --- LOGIQUE CALCULÉE (COMPUTED) ---
 // Ces fonctions se recalculent toutes seules quand les données changent
 const filteredStudents = computed(() => {
-  if (!studentSearch.value) return allStudents.value;
+  // Filtrer d'abord pour ne garder que ceux qui n'ont pas de classe
+  let list = allStudents.value.filter(st => !st.classroom_id);
+  
+  if (!studentSearch.value) return list;
+  
   const s = studentSearch.value.toLowerCase();
-  return allStudents.value.filter(st => 
+  return list.filter(st => 
     st.first_name.toLowerCase().includes(s) || 
     st.last_name.toLowerCase().includes(s) || 
     st.email.toLowerCase().includes(s)

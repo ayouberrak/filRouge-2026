@@ -37,7 +37,12 @@ class ActivityController
             return response()->json(['error' => 'Accès non autorisé'], 403);
         }
 
-        $activities = $this->repository->getByClassroom($classroomId);
+        // Si c'est un formateur, on ne montre que ses propres activités
+        if ($user->role === 'formateur') {
+            $activities = $this->repository->getByFormateur($user->id);
+        } else {
+            $activities = $this->repository->getByClassroom($classroomId);
+        }
 
         return response()->json([
             'data' => $activities

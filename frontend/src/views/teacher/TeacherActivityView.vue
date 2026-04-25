@@ -379,18 +379,7 @@ const getAvatar = (s) => {
 
 const fetchData = async () => {
   fetchError.value = null;
-  
-  // Cache
-  const cachedAct = localStorage.getItem(`teacher_activities_cache_${classroomId.value}`);
-  const cachedStu = localStorage.getItem(`teacher_classroom_students_cache_${classroomId.value}`);
-  
-  if (cachedAct && cachedStu) {
-    activities.value = JSON.parse(cachedAct);
-    classroomStudents.value = JSON.parse(cachedStu);
-    isLoading.value = false;
-  } else {
-    isLoading.value = true;
-  }
+  isLoading.value = true;
 
   try {
     const [actRes, stuRes] = await Promise.all([
@@ -407,9 +396,9 @@ const fetchData = async () => {
     localStorage.setItem(`teacher_classroom_students_cache_${classroomId.value}`, JSON.stringify(classroomStudents.value));
   } catch (err) {
     console.error("Erreur Activity Data:", err);
+  } finally {
+    isLoading.value = false;
   }
-  
-  isLoading.value = false;
 };
 
 const openEditor = (act) => {

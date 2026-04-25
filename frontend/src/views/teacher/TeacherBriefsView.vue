@@ -341,24 +341,18 @@ const diffLabel = (d) => d === 'EASY' ? '🌱 Débutant' : d === 'MEDIUM' ? '⚡
 const diffClass = (d) => d === 'EASY' ? 'diff-easy' : d === 'MEDIUM' ? 'diff-medium' : 'diff-hard';
 
 onMounted(async () => {
-  // Cache
-  const cached = localStorage.getItem('teacher_briefs_cache');
-  if (cached) {
-    briefs.value = JSON.parse(cached);
-    isLoading.value = false;
-  } else {
-    isLoading.value = true;
-  }
-
+  isLoading.value = true;
+  
   try {
     const response = await BriefService.getAllList();
-    briefs.value = Array.isArray(response.data) ? response.data : (response.data?.data || []);
-    localStorage.setItem('teacher_briefs_cache', JSON.stringify(briefs.value));
+    const data = Array.isArray(response.data) ? response.data : (response.data?.data || []);
+    briefs.value = data;
+    localStorage.setItem('teacher_briefs_cache', JSON.stringify(data));
   } catch (err) {
     console.error("Erreur Briefs:", err);
+  } finally {
+    isLoading.value = false;
   }
-  
-  isLoading.value = false;
 });
 
 const openAssignModal = async (brief) => {

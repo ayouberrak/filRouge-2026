@@ -36,7 +36,7 @@ class AuthController
 
         // Include student-specific fields
         if ($userEntity instanceof \App\Modules\User\Domain\Entities\StudentEntity) {
-            $userData['points']       = $userEntity->getPoints();
+            $userData['points']       = $userEntity->getTotalPoints();
             $userData['classroom_id'] = $userEntity->getClassroomId();
             $userData['squad_id']     = $userEntity->getSquadId();
         }
