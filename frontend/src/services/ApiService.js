@@ -31,7 +31,7 @@ export const ActivityService = {
 
 export const BriefService = {
   async getAllList() {
-    const response = await api.get('/briefs?all=true');
+    const response = await api.get('/briefs');
     return response.data;
   },
   async getById(id) {
