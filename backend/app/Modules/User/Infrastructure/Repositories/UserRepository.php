@@ -44,7 +44,8 @@ class UserRepository implements UserRepositoryInterface
                     $model->role,
                     $model->status,
                     $model->classroom_id,
-                    $model->squad_id
+                    $model->squad_id,
+                    $model->total_points ?? 0
                 );
         }
     }
