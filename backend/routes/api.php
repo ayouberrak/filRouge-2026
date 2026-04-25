@@ -16,7 +16,11 @@ use App\Modules\Activity\Http\Controllers\ActivityController;
 use App\Modules\Quiz\Http\Controllers\QuizController;
 use App\Modules\Chat\Http\Controllers\ChatController;
 
+use App\Modules\User\Http\Controllers\PasswordResetController;
+
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/password/forgot', [PasswordResetController::class, 'sendResetLinkEmail']);
+Route::post('/password/reset', [PasswordResetController::class, 'reset']);
 
 Route::middleware('auth:sanctum')->group(function () {
     // Re-register Broadcast routes for Sanctum

@@ -72,14 +72,11 @@ const handleSubmit = async () => {
     loading.value = true;
     error.value = '';
     try {
-        // Simuler ou appeler l'API de reset
-        // await api.post('/password/forgot', { email: email.value });
-        setTimeout(() => {
-          submitted.value = true;
-          loading.value = false;
-        }, 1500);
+        await api.post('/password/forgot', { email: email.value });
+        submitted.value = true;
     } catch (err) {
         error.value = err.response?.data?.message || 'Une erreur est survenue.';
+    } finally {
         loading.value = false;
     }
 };
