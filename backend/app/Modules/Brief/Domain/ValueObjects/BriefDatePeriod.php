@@ -12,15 +12,13 @@ class BriefDatePeriod
 
     public function __construct(string $startDate, string $endDate)
     {
-        try {
-            $this->startDate = new DateTimeImmutable($startDate);
-            $this->endDate = new DateTimeImmutable($endDate);
-        } catch (\Exception $e) {
-            throw new InvalidArgumentException("Invalid date format.");
-        }
+        
+        $this->startDate = new DateTimeImmutable($startDate);
+        $this->endDate = new DateTimeImmutable($endDate);
+        
 
         if ($this->endDate < $this->startDate) {
-            throw new InvalidArgumentException("End date cannot be before start date.");
+            throw new InvalidArgumentException("date start is after date end");
         }
     }
 

@@ -13,6 +13,9 @@ use App\Modules\Classroom\Http\Requests\CreateClassRequests;
 use App\Modules\Classroom\Http\Requests\AssignFormateurRequest;
 use App\Modules\Classroom\Http\Resources\ClassroomResource;
 use App\Modules\Classroom\Http\Requests\UpdateClassroomRequest;
+use App\Modules\Classroom\Infrastructure\Models\ClassroomModel;
+use App\Modules\User\Infrastructure\Models\UserModel;
+use Request;
 
 
 
@@ -29,9 +32,14 @@ class ClassroomController
 
     public function index()
     {
-        $classrooms = $this->getAllClassroomsUseCase->execute();
-        return ClassroomResource::collection($classrooms);
+        $classrooms = ClassroomModel::with(['formateur'])
+            ->withCount(['students']) // as in sql
+            ->get();
+
+        return response()->json(['data' => $classrooms]);
     }
+
+
 
     public function create(CreateClassRequests $request)
     {
@@ -39,14 +47,18 @@ class ClassroomController
         $this->createClassroomUseCase->execute($classroomDTO);
 
 
-        return response()->json(['message' => 'Classroom created successfully'], 201);
+        return response()->json([
+            'message' => 'Classroom created successfully'
+            ], 201);
     }
 
     public function show(int $id)
     {
         $classroom = $this->getClassroomUseCase->execute($id);
         if (!$classroom) {
-            return response()->json(['message' => 'Classroom not found'], 404);
+            return response()->json([
+                'message' => 'class invalid'
+            ], 404);
         }
         return new ClassroomResource($classroom);
     }
@@ -54,7 +66,9 @@ class ClassroomController
     public function delete(int $id)
     {
         $this->deleteClassroomUseCase->execute($id);
-        return response()->json(['message' => 'Classroom deleted successfully']);
+        return response()->json([
+            'message' => 'Classroom deleted successfully'
+        ]);
     }
 
     public function assignFormateur(AssignFormateurRequest $request, int $id)
@@ -62,13 +76,47 @@ class ClassroomController
         $dto = $request->toDTO($id);
 
         $this->assignFormateurUseCase->execute($dto);
-        return response()->json(['message' => 'Formateur assigned successfully']);
+        return response()->json(['
+            message' => 'Formateur assigned successfully'
+        ]);
     }
 
     public function update(int $id, UpdateClassroomRequest $request)
     {
         $classroomDTO = $request->toDTO();
         $this->updateClassroomUseCase->execute($id, $classroomDTO);
-        return response()->json(['message' => 'Classroom updated successfully']);
+        return response()->json([
+            'message' => 'Classroom updated successfully'
+        ]);
+    }
+
+    public function assignStudents(Request $request, int $id)
+    {
+        $request->validate([
+            'student_ids' => 'required|array',
+            'student_ids.*' => 'exists:users,id'
+        ]);
+
+        UserModel::whereIn('id', $request->student_ids)
+            ->update(['classroom_id' => $id]);
+
+        return response()->json([
+            'message' => 'Students assigned successfully'
+        ]);
+    }
+
+    public function myClassrooms()
+    {
+        $formateurId = auth()->id();
+        $classrooms = ClassroomModel::where('formateur_id', $formateurId)
+            ->withCount('students')
+            ->get()
+            ->map(fn($c) => [ // resource
+                'id'             => $c->id,
+                'name'           => $c->name,
+                'students_count' => $c->students_count,
+            ]);
+
+        return response()->json(['data' => $classrooms]);
     }
 }

@@ -11,6 +11,8 @@ use App\Modules\User\Application\UseCases\GetUser;
 use App\Modules\User\Http\Requests\CreateUserRequest;
 use App\Modules\User\Http\Requests\UpdateUserRequest;
 use App\Modules\User\Http\Resources\UserResource;
+use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class UserController 
 {
@@ -75,6 +77,27 @@ class UserController
         return response()->json([
             'message' => 'User banned successfully',
             'user' => new UserResource($user)
+        ]);
+    }
+
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $user = auth()->user();
+        
+        $validated = $request->validate([
+            'phone'        => 'nullable|string|max:20',
+            'bio'          => 'nullable|string|max:1000',
+            'skills'       => 'nullable|array',
+            'github_url'   => 'nullable|url|max:255',
+            'linkedin_url' => 'nullable|url|max:255',
+        ]);
+
+        /** @var \App\Modules\User\Infrastructure\Models\UserModel $user */
+        $user->update($validated);
+
+        return response()->json([
+            'message' => 'Profile updated successfully',
+            'data'    => $user
         ]);
     }
 }

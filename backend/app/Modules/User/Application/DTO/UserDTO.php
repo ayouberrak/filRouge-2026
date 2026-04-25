@@ -10,7 +10,6 @@ class UserDTO
         public string $email,
         public string $role,
         public string $status,
-        public ?string $speciality = null,
         public int $points = 0,
         public ?int $classroom_id = null,
         public ?int $squad_id = null

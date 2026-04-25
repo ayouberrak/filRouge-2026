@@ -4,6 +4,7 @@ namespace App\Modules\Brief\Application\UseCases;
 
 use App\Modules\Brief\Domain\Repositories\BriefRepositoryInterface;
 use App\Modules\Brief\Domain\Entities\BriefEntity;
+use App\Modules\Brief\Domain\Events\BriefAssignedToClassrooms;
 use Exception;
 
 class AssignBriefToClassrooms
@@ -21,5 +22,7 @@ class AssignBriefToClassrooms
         }
 
         $this->briefRepository->assignClassrooms($briefId, $classroomIds);
+
+        event(new BriefAssignedToClassrooms($briefId, $classroomIds));
     }
 }

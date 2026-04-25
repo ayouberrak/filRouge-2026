@@ -15,7 +15,7 @@ class JustifyAbsenceRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'justification_file' => 'required|file|mimes:pdf,jpg,png|max:5120', // Max 5MB
+            'justification_file' => 'required|file|mimes:pdf,jpg,png|max:5120',
         ];
     }
 

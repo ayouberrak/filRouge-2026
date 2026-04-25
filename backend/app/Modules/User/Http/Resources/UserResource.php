@@ -21,22 +21,20 @@ class UserResource extends JsonResource
         $entity = $this->resource;
 
         $data = [
-            'id' => $entity->id,
-            'first_name' => $entity->first_name,
-            'last_name' => $entity->last_name,
-            'email' => $entity->email,
-            'role' => $entity->role,
-            'status' => $entity->status,
+            'id' => $entity->getId(),
+            'first_name' => $entity->getFirstName(),
+            'last_name' => $entity->getLastName(),
+            'email' => $entity->getEmail(),
+            'role' => $entity->getRole(),
+            'status' => $entity->getStatus(),
         ];
 
         if ($entity instanceof FormateurEntity) {
-            $data['speciality'] = $entity->speciality;
         }
 
         if ($entity instanceof StudentEntity) {
-            $data['points'] = $entity->points;
-            $data['classroom_id'] = $entity->classroom_id;
-            $data['squad_id'] = $entity->squad_id;
+            $data['classroom_id'] = $entity->getClassroomId();
+            $data['squad_id'] = $entity->getSquadId();
         }
 
         return $data;

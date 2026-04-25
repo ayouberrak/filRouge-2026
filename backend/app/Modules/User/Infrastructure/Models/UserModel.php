@@ -5,7 +5,7 @@ namespace App\Modules\User\Infrastructure\Models;
 use App\Modules\Classroom\Infrastructure\Models\ClassroomModel;
 use App\Modules\Squad\Infrastructure\Models\SquadModel;
 use App\Modules\Brief\Infrastructure\Models\BriefModel;
-use App\Modules\Deliverable\Infrastructure\Models\DeliverableModel;
+use App\Modules\Livrable\Infrastructure\Models\LivrableModel;
 use App\Modules\Absence\Infrastructure\Models\AbsenceModel;
 use App\Modules\Activity\Infrastructure\Models\ActivityModel;
 use App\Modules\Report\Infrastructure\Models\DailyReportModel;
@@ -28,10 +28,10 @@ class UserModel extends Authenticatable
         'password',
         'role',
         'status',
-        'speciality',
-        'points',
         'classroom_id',
         'squad_id',
+        'github_url',
+        'linkedin_url',
     ];
 
     protected $hidden = [
@@ -49,7 +49,7 @@ class UserModel extends Authenticatable
 
     public function classroom()
     {
-        return $this->belongsTo(ClassroomModel::class);
+        return $this->belongsTo(ClassroomModel::class, 'classroom_id');
     }
 
     public function managedClassrooms()
@@ -67,9 +67,9 @@ class UserModel extends Authenticatable
         return $this->hasMany(BriefModel::class, 'formateur_id');
     }
 
-    public function deliverables()
+    public function livrables()
     {
-        return $this->hasMany(DeliverableModel::class, 'student_id');
+        return $this->hasMany(LivrableModel::class, 'student_id');
     }
 
     public function absences()
@@ -79,7 +79,7 @@ class UserModel extends Authenticatable
 
     public function activities()
     {
-        return $this->belongsToMany(ActivityModel::class, 'activity_user');
+        return $this->belongsToMany(ActivityModel::class, 'activity_student', 'student_id', 'activity_id');
     }
 
     public function dailyReports()

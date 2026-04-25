@@ -21,7 +21,6 @@ class CreateUserRequest extends FormRequest
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6',
             'role' => ['required', Rule::in(['admin', 'formateur', 'student'])],
-            'speciality' => 'nullable|string|max:255',
         ];
     }
 
@@ -32,8 +31,7 @@ class CreateUserRequest extends FormRequest
             last_name: $this->input('last_name'),
             email: $this->input('email'),
             password: $this->input('password'),
-            role: $this->input('role'),
-            speciality: $this->input('speciality')
+            role: $this->input('role')
         );
     }
 }

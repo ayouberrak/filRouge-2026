@@ -10,8 +10,8 @@ class GetAbsencesByClassroom
         private AbsenceRepositoryInterface $absenceRepository
     ) {}
 
-    public function execute(int $classroomId): array
+    public function execute(int $classroomId, ?string $month = null): array
     {
-        return $this->absenceRepository->findByClassroomId($classroomId);
+        return $this->absenceRepository->findByClassroomId($classroomId, $month);
     }
 }

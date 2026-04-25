@@ -18,6 +18,7 @@ class SubmitLivrableRequest extends FormRequest
             'student_id' => 'nullable|exists:users,id',
             'squad_id' => 'nullable|exists:squads,id',
             'link' => 'required|string|max:255',
+            'message' => 'nullable|string',
         ];
     }
 
@@ -25,9 +26,10 @@ class SubmitLivrableRequest extends FormRequest
     {
         return new \App\Modules\Livrable\Application\DTO\SubmitLivrableDTO(
             $this->validated('brief_id'),
-            $this->validated('student_id'),
+            $this->validated('student_id') ?? auth()->id(),
             $this->validated('squad_id'),
-            $this->validated('link')
+            $this->validated('link'),
+            $this->validated('message')
         );
     }
 }

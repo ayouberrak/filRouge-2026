@@ -15,7 +15,12 @@ class CheckActiveStatus
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->user() || $request->user()->status !== 'active') {
+        $user = $request->user();
+        $status = $user ? strtolower($user->status) : null;
+
+        $allowedStatuses = ['active', 'activer'];
+
+        if (!$user || !in_array($status, $allowedStatuses)) {
             return response()->json(['message' => 'Account is inactive or banned.'], 403);
         }
 

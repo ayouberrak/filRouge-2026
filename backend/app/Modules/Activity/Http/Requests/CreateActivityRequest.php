@@ -18,8 +18,9 @@ class CreateActivityRequest extends FormRequest
             'title' => 'required|string',
             'description' => 'required|string',
             'type' => 'required|string|in:live_coding,veille,workshop,quiz',
-            'duration' => 'required|integer|min:1',
-            'points' => 'required|integer|min:1',
+            'duration' => 'required|string',
+            'duration_minutes' => 'required|integer|min:1',
+            'scheduled_at' => 'nullable|date',
             'classroom_id' => 'required|exists:classrooms,id',
             'student_ids' => 'nullable|array',
             'student_ids.*' => 'exists:users,id',
@@ -33,10 +34,11 @@ class CreateActivityRequest extends FormRequest
             $this->validated('description'),
             $this->validated('type'),
             $this->validated('duration'),
-            $this->validated('points'),
+            (int)$this->validated('duration_minutes'),
             $this->user()->id,
             $this->validated('classroom_id'),
-            $this->validated('student_ids') ?? []
+            $this->validated('student_ids') ?? [],
+            $this->validated('scheduled_at')
         );
     }
 }

@@ -4,10 +4,10 @@ namespace App\Modules\Livrable\Application\DTO;
 
 class AddLivrableReponseDTO
 {
-    public readonly int $livrableId;
-    public readonly int $formateurId;
-    public readonly string $status;
-    public readonly string $message;
+    public int $livrableId;
+    public int $formateurId;
+    public string $status;
+    public string $message;
 
     public function __construct(
         int $livrableId,

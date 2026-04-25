@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('livrable_id')->constrained('livrables')->cascadeOnDelete();
             $table->foreignId('formateur_id')->constrained('users')->cascadeOnDelete();
-            $table->enum('status', ['validé', 'invalidé']);
+            $table->enum('status', ['VALIDATED', 'REJECTED']);
             $table->text('message');
             $table->timestamps();
         });

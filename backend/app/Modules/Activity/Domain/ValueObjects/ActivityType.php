@@ -13,7 +13,7 @@ class ActivityType
     public function __construct(string $value)
     {
         if (!in_array($value, self::VALID_TYPES)) {
-            throw new InvalidArgumentException("Invalid activity type: {$value}");
+            throw new InvalidArgumentException("invalid activity type");
         }
         $this->value = $value;
     }

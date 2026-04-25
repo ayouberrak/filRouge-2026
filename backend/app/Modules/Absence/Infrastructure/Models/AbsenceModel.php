@@ -11,6 +11,8 @@ class AbsenceModel extends Model
 {
     use HasFactory;
 
+    protected $table = 'absences';
+
     protected $fillable = [
         'student_id',
         'date',

@@ -17,16 +17,21 @@ return new class extends Migration
             $table->string('first_name');
             $table->string('email')->unique();
             $table->string('password');
-            $table->enum('role', ['admin', 'formateur', 'student']);
+            $table->string('role')->default('student'); // admin, formateur, student
             $table->string('status')->default('active'); // active, inactive, banned
             
             $table->string('speciality')->nullable();
-
-            // total points of student
             $table->integer('total_points')->default(0)->nullable();
             
             $table->unsignedBigInteger('classroom_id')->nullable();
             $table->unsignedBigInteger('squad_id')->nullable();
+
+            $table->string('avatar_url')->nullable();
+            $table->string('location')->nullable();
+            $table->text('bio')->nullable();
+            $table->json('skills')->nullable();
+            $table->string('github_url')->nullable();
+            $table->string('linkedin_url')->nullable();
 
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();

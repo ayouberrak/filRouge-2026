@@ -24,17 +24,27 @@ class AuthController
         $loginDTO = $request->toDTO();
         $result = $this->loginUser->execute($loginDTO);
 
+        $userEntity = $result['user'];
+        $userData = [
+            'id'         => $userEntity->getId(),
+            'first_name' => $userEntity->getFirstName(),
+            'last_name'  => $userEntity->getLastName(),
+            'email'      => $userEntity->getEmail(),
+            'role'       => $userEntity->getRole(),
+            'status'     => $userEntity->getStatus(),
+        ];
+
+        // Include student-specific fields
+        if ($userEntity instanceof \App\Modules\User\Domain\Entities\StudentEntity) {
+            $userData['points']       = $userEntity->getPoints();
+            $userData['classroom_id'] = $userEntity->getClassroomId();
+            $userData['squad_id']     = $userEntity->getSquadId();
+        }
+
         return response()->json([
             'access_token' => $result['token'],
-            'token_type' => 'Bearer',
-            'user' => [
-                'id' => $result['user']->getId(),
-                'first_name' => $result['user']->getFirstName(),
-                'last_name' => $result['user']->getLastName(),
-                'email' => $result['user']->getEmail(),
-                'role' => $result['user']->getRole(),
-                'status' => $result['user']->getStatus()
-            ]
+            'token_type'   => 'Bearer',
+            'user'         => $userData,
         ]);
     }
 

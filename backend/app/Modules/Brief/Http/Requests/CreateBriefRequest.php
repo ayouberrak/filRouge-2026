@@ -8,22 +8,24 @@ class CreateBriefRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true; // Autorisaton gérée par le middleware
+        return true; 
     }
 
     public function rules(): array
     {
         return [
-            'title' => 'required|string|min:5|max:255',
+            'title' => 'required|string|min:3|max:255',
+            'image_url' => 'nullable|string',
             'description' => 'required|string',
-            'objectives' => 'nullable|string',
+            'context' => 'nullable|string',
             'date_start' => 'required|date',
             'date_end' => 'required|date|after_or_equal:date_start',
-            'difficulty' => 'nullable|in:EASY,MEDIUM,HARD',
             'modality' => 'nullable|in:INDIVIDUAL,GROUP',
-            'status' => 'nullable|in:DRAFT,PUBLISHED,IN_PROGRESS,COMPLETED,ARCHIVED',
+            'status' => 'nullable|in:DRAFT,PUBLISHED,IN_PROGRESS,COMPLETED',
             'tags' => 'nullable|array',
-            'resources' => 'nullable|array',
+            'questions' => 'nullable|array',
+            'quiz_start_at' => 'nullable|string',
+            'quiz_duration_minutes' => 'nullable|integer',
         ];
     }
 }

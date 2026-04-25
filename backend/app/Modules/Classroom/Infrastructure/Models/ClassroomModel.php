@@ -32,7 +32,7 @@ class ClassroomModel extends Model
 
     public function students()
     {
-        return $this->hasMany(UserModel::class);
+        return $this->hasMany(UserModel::class, 'classroom_id');
     }
 
     public function briefs()

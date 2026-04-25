@@ -4,8 +4,9 @@ namespace App\Modules\Brief\Infrastructure\Models;
 
 use App\Modules\User\Infrastructure\Models\UserModel;
 use App\Modules\Classroom\Infrastructure\Models\ClassroomModel;
-use App\Modules\Deliverable\Infrastructure\Models\DeliverableModel;
-
+use App\Modules\Squad\Infrastructure\Models\SquadModel;
+use App\Modules\Livrable\Infrastructure\Models\LivrableModel;
+use App\Modules\Quiz\Infrastructure\Models\QuizSessionModel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -16,22 +17,20 @@ class BriefModel extends Model
 
     protected $fillable = [
         'title',
+        'image_url',
         'description',
-        'objectives',
+        'context',
         'date_start',
         'date_end',
-        'difficulty',
         'modality',
         'status',
         'tags',
-        'resources',
         'file',
         'formateur_id'
     ];
 
     protected $casts = [
         'tags' => 'array',
-        'resources' => 'array',
         'date_start' => 'datetime',
         'date_end' => 'datetime',
     ];
@@ -46,8 +45,18 @@ class BriefModel extends Model
         return $this->belongsToMany(ClassroomModel::class, 'brief_classroom', 'brief_id', 'classroom_id');
     }
 
-    public function deliverables()
+    public function squads()
     {
-        return $this->hasMany(DeliverableModel::class);
+        return $this->belongsToMany(SquadModel::class, 'brief_squad', 'brief_id', 'squad_id');
+    }
+
+    public function livrables()
+    {
+        return $this->hasMany(LivrableModel::class, 'brief_id');
+    }
+
+    public function quizSessions()
+    {
+        return $this->hasMany(QuizSessionModel::class, 'brief_id');
     }
 }

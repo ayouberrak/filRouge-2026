@@ -10,8 +10,11 @@ class GetAllSquads
         private SquadRepositoryInterface $squadRepository
     ) {}
 
-    public function execute(): array
+    public function execute(?int $classroomId = null): array
     {
+        if ($classroomId) {
+            return $this->squadRepository->findByClassroom($classroomId);
+        }
         return $this->squadRepository->findAll();
     }
 }

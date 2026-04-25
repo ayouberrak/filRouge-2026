@@ -7,29 +7,32 @@ class CreateActivityDTO
     public readonly string $title;
     public readonly string $description;
     public readonly string $type;
-    public readonly int $duration;
-    public readonly int $points;
+    public readonly string $duration;
+    public readonly int $durationMinutes;
     public readonly ?int $formateurId;
     public readonly int $classroomId;
+    public readonly ?string $scheduledAt;
     public readonly array $studentIds;
 
     public function __construct(
         string $title,
         string $description,
         string $type,
-        int $duration,
-        int $points,
+        string $duration,
+        int $durationMinutes,
         ?int $formateurId,
         int $classroomId,
-        array $studentIds = []
+        array $studentIds = [],
+        ?string $scheduledAt = null
     ) {
         $this->title = $title;
         $this->description = $description;
         $this->type = $type;
         $this->duration = $duration;
-        $this->points = $points;
+        $this->durationMinutes = $durationMinutes;
         $this->formateurId = $formateurId;
         $this->classroomId = $classroomId;
         $this->studentIds = $studentIds;
+        $this->scheduledAt = $scheduledAt;
     }
 }

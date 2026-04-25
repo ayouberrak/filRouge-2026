@@ -23,7 +23,6 @@ class UpdateUserRequest extends FormRequest
             'email' => ['sometimes', 'email', 'max:255', Rule::unique('users')->ignore($userId)],
             'password' => 'sometimes|string|min:6',
             'role' => ['sometimes', Rule::in(['admin', 'formateur', 'student'])],
-            'speciality' => 'nullable|string|max:255',
         ];
     }
 
@@ -34,8 +33,7 @@ class UpdateUserRequest extends FormRequest
             last_name: $this->input('last_name'),
             email: $this->input('email'),
             password: $this->input('password'),
-            role: $this->input('role'),
-            speciality: $this->input('speciality')
+            role: $this->input('role')
         );
     }
 }

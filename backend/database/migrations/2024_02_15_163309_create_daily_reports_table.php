@@ -13,10 +13,17 @@ return new class extends Migration
     {
         Schema::create('daily_reports', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade'); 
-            $table->dateTime('date');
-            $table->integer('absences_count');
-            $table->string('brief_status');
+            $table->foreignId('formateur_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('classroom_id')->constrained('classrooms')->cascadeOnDelete();
+            $table->date('date');
+            $table->integer('absences_count')->default(0);
+            $table->integer('tardies_count')->default(0);
+            $table->string('brief_status')->nullable();
+            $table->text('technical_topics')->nullable();
+            $table->text('workshops_done')->nullable();
+            $table->string('class_mood')->nullable();
+            $table->boolean('objectives_met')->default(true);
+            $table->text('note')->nullable();
             $table->timestamps();
         });
     }

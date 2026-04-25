@@ -24,10 +24,6 @@ class CreateUser
             'status' => 'active', 
         ];
 
-        if ($dto->role === 'formateur' && $dto->speciality) {
-            $userData['speciality'] = $dto->speciality;
-        }
-
         return $this->userRepository->create($userData);
     }
 }

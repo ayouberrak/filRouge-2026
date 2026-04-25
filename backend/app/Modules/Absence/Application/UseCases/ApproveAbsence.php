@@ -16,7 +16,7 @@ class ApproveAbsence
         $absence = $this->absenceRepository->findById($absenceId);
 
         if (!$absence) {
-            throw new InvalidArgumentException("Absence not found.");
+            throw new InvalidArgumentException("absence not found.");
         }
 
         $absence->approve();

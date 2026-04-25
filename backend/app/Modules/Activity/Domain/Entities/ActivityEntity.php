@@ -3,46 +3,79 @@
 namespace App\Modules\Activity\Domain\Entities;
 
 use App\Modules\Activity\Domain\ValueObjects\ActivityType;
+use JsonSerializable;
 
-class ActivityEntity
+class ActivityEntity implements JsonSerializable
 {
     private ?int $id;
-    private string $title;
-    private string $description;
-    private ActivityType $type;
-    private int $duration;
-    private int $points;
-    private ?int $formateurId;
-    private ?int $classroomId;
+    private string $title; // nom activite
+    private string $description; // description activite
+    private ActivityType $type; // type activite
+    private string $duration; // duree activite
+    private ?int $formateurId; // formateur activite
+    private ?int $classroomId; // classe activite
+    private ?string $scheduledAt; // date activite
+    private int $durationMinutes; // duree activite en minutes
+    private array $students; // etudiant activite
 
     public function __construct(
         ?int $id,
         string $title,
         string $description,
         ActivityType $type,
-        int $duration,
-        int $points,
+        string $duration,
+        int $durationMinutes,
         ?int $formateurId,
-        ?int $classroomId = null
+        ?int $classroomId = null,
+        ?string $scheduledAt = null,
+        array $students = []
     ) {
         $this->id = $id;
         $this->title = $title;
         $this->description = $description;
         $this->type = $type;
         $this->duration = $duration;
-        $this->points = $points;
+        $this->durationMinutes = $durationMinutes;
         $this->formateurId = $formateurId;
         $this->classroomId = $classroomId;
+        $this->scheduledAt = $scheduledAt;
+        $this->students = $students;
     }
 
     public function getId(): ?int { return $this->id; }
     public function getTitle(): string { return $this->title; }
     public function getDescription(): string { return $this->description; }
     public function getType(): ActivityType { return $this->type; }
-    public function getDuration(): int { return $this->duration; }
-    public function getPoints(): int { return $this->points; }
+    public function getDuration(): string { return $this->duration; }
+    public function getDurationMinutes(): int { return $this->durationMinutes; }
     public function getFormateurId(): ?int { return $this->formateurId; }
     public function getClassroomId(): ?int { return $this->classroomId; }
+    public function getScheduledAt(): ?string { return $this->scheduledAt; }
+    public function getStudents(): array { return $this->students; }
+
+    public function getStatus(): string
+    {
+        if (!$this->scheduledAt){
+            return 'scheduled';
+        }
+        
+        $scheduled = new \DateTime($this->scheduledAt);
+        $now = new \DateTime();
+        $end = (clone $scheduled)->modify("+{$this->durationMinutes} minutes");
+
+        if ($now > $end) {
+            return 'completed';
+        }
+        if ($now < $scheduled) {
+            return 'scheduled';
+        }
+        return 'active';
+    }
+
+    public function jsonSerialize(): array
+    {
+        return $this->toArray();
+    }
 
     public function toArray(): array
     {
@@ -51,10 +84,14 @@ class ActivityEntity
             'title' => $this->title,
             'description' => $this->description,
             'activity_type' => $this->type->getValue(),
+            'type' => $this->type->getValue(), 
             'duration' => $this->duration,
-            'points' => $this->points,
+            'duration_minutes' => $this->durationMinutes,
             'formateur_id' => $this->formateurId,
             'classroom_id' => $this->classroomId,
+            'scheduled_at' => $this->scheduledAt,
+            'status' => $this->getStatus(),
+            'students' => $this->students,
         ];
     }
 }

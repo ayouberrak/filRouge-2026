@@ -11,11 +11,11 @@ class ClassroomName
     public function __construct(string $value)
     {
         if (empty($value)) {
-            throw new InvalidArgumentException("Classroom name cannot be empty.");
+            throw new InvalidArgumentException("name de class est invalide.");
         }
 
         if (strlen($value) < 3) {
-            throw new InvalidArgumentException("Classroom name must be at least 3 characters long.");
+            throw new InvalidArgumentException("name de class doit contenir 3 cara.");
         }
 
         $this->value = $value;

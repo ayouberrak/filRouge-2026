@@ -16,8 +16,10 @@ class AssignFormateur
         $classroom = $this->classroomRepository->findById($dto->classroom_id);
         
         if ($classroom) {
+            // entity update
             $classroom->assignFormateur($dto->formateur_id);
-            
+
+            // model update
             $this->classroomRepository->assignFormateur($dto->classroom_id, $dto->formateur_id);
         }
     }

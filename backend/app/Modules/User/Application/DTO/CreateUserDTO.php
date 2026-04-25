@@ -9,7 +9,6 @@ class CreateUserDTO
         public string $last_name,
         public string $email,
         public string $password,
-        public string $role,
-        public ?string $speciality = null
+        public string $role
     ) {}
 }

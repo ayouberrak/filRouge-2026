@@ -2,11 +2,13 @@
 
 namespace App\Modules\Report\Domain\Repositories;
 
+use App\Modules\Report\Domain\Entities\DailyReportEntity;
+
 interface DailyReportRepositoryInterface
 {
-    public function findById(int $id);
-    public function findAll();
-    public function create(array $data);
-    public function update(int $id, array $data);
-    public function delete(int $id): bool;
+    public function save(DailyReportEntity $report): DailyReportEntity;
+    public function findAll(): array;
+    public function getByClassroom(int $classroomId): array;
+    public function findById(int $id): ?DailyReportEntity;
+    public function getStats(int $classroomId): array;
 }

@@ -36,9 +36,4 @@ class ClassroomEntity
     {
         $this->formateurId = $formateurId;
     }
-
-    public function rename(ClassroomName $newName): void
-    {
-        $this->name = $newName;
-    }
 }

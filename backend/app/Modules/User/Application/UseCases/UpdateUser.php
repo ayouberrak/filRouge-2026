@@ -32,9 +32,7 @@ class UpdateUser
         if ($dto->role !== null) {
             $updateData['role'] = $dto->role;
         }
-        if ($dto->speciality !== null) {
-            $updateData['speciality'] = $dto->speciality;
-        }
+
 
         if (empty($updateData)) {
             return $this->userRepository->findById($userId);

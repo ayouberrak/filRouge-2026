@@ -28,6 +28,15 @@ use App\Modules\Absence\Infrastructure\Repositories\AbsenceRepository;
 use App\Modules\Report\Domain\Repositories\DailyReportRepositoryInterface;
 use App\Modules\Report\Infrastructure\Repositories\DailyReportRepository;
 
+use App\Modules\Marketplace\Domain\Repositories\MarketplaceRepositoryInterface;
+use App\Modules\Marketplace\Infrastructure\Repositories\MarketplaceRepository;
+
+use App\Modules\Quiz\Domain\Repositories\QuizRepositoryInterface;
+use App\Modules\Quiz\Infrastructure\Repositories\QuizRepository;
+
+use App\Modules\Chat\Domain\Repositories\ChatRepositoryInterface;
+use App\Modules\Chat\Infrastructure\Repositories\ChatRepository;
+
 
 class RepositoryServiceProvider extends ServiceProvider
 {
@@ -44,6 +53,9 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(AbsenceRepositoryInterface::class, AbsenceRepository::class);
         $this->app->bind(DailyReportRepositoryInterface::class, DailyReportRepository::class);
         $this->app->bind(ActivityRepositoryInterface::class, ActivityRepository::class);
+        $this->app->bind(MarketplaceRepositoryInterface::class, MarketplaceRepository::class);
+        $this->app->bind(QuizRepositoryInterface::class, QuizRepository::class);
+        $this->app->bind(ChatRepositoryInterface::class, ChatRepository::class);
     }
 
     /**

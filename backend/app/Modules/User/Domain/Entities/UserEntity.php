@@ -11,14 +11,7 @@ abstract class UserEntity
     protected string $role;
     protected string $status;
 
-    public function __construct(
-        ?int $id,
-        string $firstName,
-        string $lastName,
-        string $email,
-        string $role,
-        string $status
-    ) {
+    public function __construct(?int $id, string $firstName, string $lastName, string $email, string $role, string $status) {
         $this->id = $id;
         $this->firstName = $firstName;
         $this->lastName = $lastName;
@@ -27,10 +20,22 @@ abstract class UserEntity
         $this->status = $status;
     }
 
-    public function getId(): ?int { return $this->id; }
-    public function getFirstName(): string { return $this->firstName; }
-    public function getLastName(): string { return $this->lastName; }
-    public function getEmail(): string { return $this->email; }
-    public function getRole(): string { return $this->role; }
-    public function getStatus(): string { return $this->status; }
+    public function getId(): ?int { 
+        return $this->id; 
+    }
+    public function getFirstName(): string { 
+        return $this->firstName; 
+    }
+    public function getLastName(): string { 
+        return $this->lastName; 
+    }
+    public function getEmail(): string { 
+        return $this->email; 
+    }
+    public function getRole(): string { 
+        return $this->role; 
+    }
+    public function getStatus(): string { 
+        return $this->status; 
+    }
 }

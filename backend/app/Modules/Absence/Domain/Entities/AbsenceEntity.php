@@ -9,11 +9,13 @@ class AbsenceEntity
 {
     public function __construct(
         private ?int $id,
-        private int $studentId, // New required property based on DB structure
+        private int $studentId, 
         private string $date,
-        private int $duration, // renamed duree to duration for consistency
+        private int $duration, 
         private AbsenceStatus $status,
-        private ?string $justificationFile = null
+        private ?string $justificationFile = null,
+        private ?string $studentName = null,
+        private ?string $classroomName = null
     ) {}
 
     public function getId(): ?int
@@ -46,12 +48,22 @@ class AbsenceEntity
         return $this->justificationFile;
     }
 
-    // Behavioral Methods
+    public function getStudentName(): ?string
+    {
+        return $this->studentName;
+    }
+
+    public function getClassroomName(): ?string
+    {
+        return $this->classroomName;
+    }
+
+
 
     public function submitJustification(string $fileName): void
     {
         if ($this->status->getValue() !== AbsenceStatus::PENDING) {
-            throw new InvalidArgumentException("Can only submit justification for pending absences.");
+            throw new InvalidArgumentException("error in justification submission.");
         }
         
         $this->justificationFile = $fileName;
@@ -60,7 +72,7 @@ class AbsenceEntity
     public function approve(): void
     {
         if ($this->justificationFile === null) {
-            throw new InvalidArgumentException("Cannot approve an absence without a justification file.");
+            throw new InvalidArgumentException("error in approved absence.");
         }
 
         $this->status = new AbsenceStatus(AbsenceStatus::JUSTIFIED);
@@ -69,7 +81,7 @@ class AbsenceEntity
     public function reject(): void
     {
         if ($this->justificationFile === null) {
-            throw new InvalidArgumentException("Cannot reject an absence without a justification file.");
+            throw new InvalidArgumentException("error in rejected absence.");
         }
 
         $this->status = new AbsenceStatus(AbsenceStatus::REJECTED);

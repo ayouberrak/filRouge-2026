@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('absences', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('student_id')->constrained('users')->onDelete('cascade');
-            $table->dateTime('date');
+            $table->foreignId('student_id')->constrained('users')->cascadeOnDelete();
+                $table->dateTime('date');
             $table->integer('duration'); 
             $table->string('status')->default('unjustified'); 
             $table->string('justification_file')->nullable();

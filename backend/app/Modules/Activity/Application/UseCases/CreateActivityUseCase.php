@@ -6,6 +6,7 @@ use App\Modules\Activity\Domain\Entities\ActivityEntity;
 use App\Modules\Activity\Domain\Repositories\ActivityRepositoryInterface;
 use App\Modules\Activity\Domain\ValueObjects\ActivityType;
 use App\Modules\Activity\Application\DTO\CreateActivityDTO;
+use App\Modules\Activity\Domain\Events\ActivityAssignedToStudents;
 
 class CreateActivityUseCase
 {
@@ -24,15 +25,18 @@ class CreateActivityUseCase
             $dto->description,
             new ActivityType($dto->type),
             $dto->duration,
-            $dto->points,
+            $dto->durationMinutes,
             $dto->formateurId,
-            $dto->classroomId
+            $dto->classroomId,
+            $dto->scheduledAt
         );
 
         $savedActivity = $this->repository->save($activity);
 
         if (!empty($dto->studentIds)) {
             $this->repository->assignToStudents($savedActivity->getId(), $dto->studentIds);
+            
+            event(new ActivityAssignedToStudents($savedActivity->getId(), $dto->studentIds)); 
         }
 
         return $savedActivity;

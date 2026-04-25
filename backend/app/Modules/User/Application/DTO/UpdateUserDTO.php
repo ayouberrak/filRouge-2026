@@ -9,7 +9,6 @@ class UpdateUserDTO
         public ?string $last_name = null,
         public ?string $email = null,
         public ?string $password = null,
-        public ?string $role = null,
-        public ?string $speciality = null
+        public ?string $role = null
     ) {}
 }

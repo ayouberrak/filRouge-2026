@@ -11,8 +11,12 @@ class LivrableEntity
     private ?int $studentId;
     private ?int $squadId;
     private string $link;
+    private ?string $message;
     private LivrableStatus $status;
-    private array $responses; // Array of ReponseLivrableEntity
+    private ?int $formateurId;
+    private ?string $formateurMessage;
+    private ?\DateTimeInterface $updatedAt;
+    private ?\DateTimeInterface $createdAt;
 
     public function __construct(
         ?int $id,
@@ -21,15 +25,23 @@ class LivrableEntity
         ?int $squadId,
         string $link,
         LivrableStatus $status,
-        array $responses = []
+        ?int $formateurId = null,
+        ?string $formateurMessage = null,
+        ?\DateTimeInterface $updatedAt = null,
+        ?string $message = null,
+        ?\DateTimeInterface $createdAt = null
     ) {
         $this->id = $id;
         $this->briefId = $briefId;
         $this->studentId = $studentId;
         $this->squadId = $squadId;
         $this->link = $link;
+        $this->message = $message;
         $this->status = $status;
-        $this->responses = $responses;
+        $this->formateurId = $formateurId;
+        $this->formateurMessage = $formateurMessage;
+        $this->updatedAt = $updatedAt;
+        $this->createdAt = $createdAt;
     }
 
     public function getId(): ?int { return $this->id; }
@@ -37,8 +49,16 @@ class LivrableEntity
     public function getStudentId(): ?int { return $this->studentId; }
     public function getSquadId(): ?int { return $this->squadId; }
     public function getLink(): string { return $this->link; }
+    public function getMessage(): ?string { return $this->message; }
     public function getStatus(): LivrableStatus { return $this->status; }
-    public function getResponses(): array { return $this->responses; }
+    public function getFormateurId(): ?int { return $this->formateurId; }
+    public function getFormateurMessage(): ?string { return $this->formateurMessage; }
+    public function getUpdatedAt(): ?\DateTimeInterface { return $this->updatedAt; }
+    public function getCreatedAt(): ?\DateTimeInterface { return $this->createdAt; }
+    
+    public function setStatus(LivrableStatus $status): void { $this->status = $status; }
+    public function setFormateurId(?int $formateurId): void { $this->formateurId = $formateurId; }
+    public function setFormateurMessage(?string $formateurMessage): void { $this->formateurMessage = $formateurMessage; }
 
     public function toArray(): array
     {
@@ -48,8 +68,12 @@ class LivrableEntity
             'student_id' => $this->studentId,
             'squad_id' => $this->squadId,
             'link' => $this->link,
+            'message' => $this->message,
             'status' => $this->status->getValue(),
-            'responses' => array_map(fn($resp) => $resp->toArray(), $this->responses),
+            'formateur_id' => $this->formateurId,
+            'formateur_message' => $this->formateurMessage,
+            'updated_at' => $this->updatedAt?->format('Y-m-d H:i:s'),
+            'created_at' => $this->createdAt?->format('Y-m-d H:i:s'),
         ];
     }
 }
