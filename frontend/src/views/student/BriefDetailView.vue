@@ -128,7 +128,7 @@
             <div class="sidebar-card coach-card animate-in" style="animation-delay: 0.5s">
               <span class="sidebar-label">Encadrant</span>
               <div class="coach-flex">
-                <img :src="brief.formateur_avatar || 'https://i.pravatar.cc/100?img=12'" class="avatar" />
+                <div class="avatar initials">{{ (brief.formateur_name || 'Coach YouCode').slice(0, 2).toUpperCase() }}</div>
                 <div class="coach-info">
                   <span class="coach-name">{{ brief.formateur_name || 'Coach YouCode' }}</span>
                   <span class="coach-role">Formateur Référent</span>
@@ -322,6 +322,7 @@ onMounted(() => {
 .sidebar-label { font-size: 11px; text-transform: uppercase; color: #484f58; font-weight: 700; display: block; margin-bottom: 16px; }
 .coach-flex { display: flex; align-items: center; gap: 14px; }
 .avatar { width: 44px; height: 44px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); }
+.avatar.initials { display: flex; align-items: center; justify-content: center; background: rgba(56, 139, 253, 0.15); color: #79c0ff; font-weight: 700; font-size: 15px; letter-spacing: 0.05em; }
 .coach-name { font-size: 14px; font-weight: 700; color: #fff; display: block; }
 .coach-role { font-size: 12px; color: #8b949e; }
 
