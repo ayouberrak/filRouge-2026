@@ -16,7 +16,7 @@ class QuizStatus
     {
         $upperValue = strtoupper($value);
         if (!in_array($upperValue, self::ALLOWED_STATUSES, true)) {
-            throw new InvalidArgumentException("Invalid quiz status. Allowed values: " . implode(', ', self::ALLOWED_STATUSES));
+            throw new InvalidArgumentException("error dans le status");
         }
 
         $this->value = $upperValue;

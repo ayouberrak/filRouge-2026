@@ -2,13 +2,20 @@
 
 namespace App\Modules\Quiz\Application\UseCases;
 
+use App\Modules\Quiz\Application\DTO\CreateQuizSessionDTO;
+use App\Modules\Quiz\Domain\Entities\QuestionEntity;
+use App\Modules\Quiz\Domain\Entities\QuizSessionEntity;
+use App\Modules\Quiz\Domain\Repositories\QuizRepositoryInterface;
+use App\Modules\Quiz\Domain\ValueObjects\QuestionType;
+use App\Modules\Quiz\Domain\ValueObjects\QuizStatus;
+
 class CreateQuizSessionUseCase
 {
     public function __construct(
-        private \App\Modules\Quiz\Domain\Repositories\QuizRepositoryInterface $repository
+        private QuizRepositoryInterface $repository
     ) {}
 
-    public function execute(\App\Modules\Quiz\Application\DTO\CreateQuizSessionDTO $dto): \App\Modules\Quiz\Domain\Entities\QuizSessionEntity
+    public function execute(CreateQuizSessionDTO $dto): QuizSessionEntity
     {
         $questions = [];
         foreach ($dto->getQuestions() as $qData) {
@@ -17,22 +24,23 @@ class CreateQuizSessionUseCase
                 $contextData = json_decode($contextData, true);
             }
 
-            $questions[] = new \App\Modules\Quiz\Domain\Entities\QuestionEntity(
+            $questions[] = new QuestionEntity(
                 null,
-                null, // L'ID de session sera défini lors du save()
-                new \App\Modules\Quiz\Domain\ValueObjects\QuestionType($qData['type']),
+                null,
+                new QuestionType($qData['type']),
                 $qData['content'],
                 $qData['correct_answer'] ?? null,
-                $contextData,
-                $qData['points'] ?? 10
+                $contextData
             );
         }
 
-        $session = new \App\Modules\Quiz\Domain\Entities\QuizSessionEntity(
+        $session = new QuizSessionEntity(
             null,
-            $dto->getBriefId(),
             $dto->getFormateurId(),
-            new \App\Modules\Quiz\Domain\ValueObjects\QuizStatus('PENDING'),
+            $dto->getTitle(),
+            $dto->getDescription(),
+            $dto->getClassroomId(),
+            new QuizStatus('PENDING'),
             $dto->getTimerMinutes(),
             $dto->getPassingScore(),
             $questions

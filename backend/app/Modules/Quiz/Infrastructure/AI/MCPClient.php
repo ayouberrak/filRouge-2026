@@ -7,12 +7,10 @@ use Illuminate\Support\Facades\Http;
 class MCPClient
 {
     private string $apiKey;
-    private string $provider;
 
     public function __construct()
     {
         $this->apiKey = env('GROQ_API_KEY', '');
-        $this->provider = !empty($this->apiKey) ? 'groq' : 'gemini';
     }
 
     public function evaluateCode(string $consigne, string $code): array
@@ -76,7 +74,7 @@ class MCPClient
         return [
             "score" => 0,
             "is_correct" => false,
-            "feedback" => "Erreur : " . $message
+            "feedback" => "error ". $message
         ];
     }
 }

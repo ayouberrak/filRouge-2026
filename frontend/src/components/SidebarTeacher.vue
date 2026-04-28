@@ -39,20 +39,7 @@
         </router-link>
       </div>
 
-      <div class="nav-section">
-        <span class="nav-section-label">Pilotage</span>
-        <router-link
-          v-for="item in pilotageItems"
-          :key="item.path"
-          :to="item.path"
-          class="nav-item"
-          :class="{ 'nav-item--active': isActive(item.path) }"
-        >
-          <span class="nav-icon" v-html="item.icon"></span>
-          <span class="nav-label">{{ item.label }}</span>
-          <span v-if="item.badge" class="nav-badge">{{ item.badge }}</span>
-        </router-link>
-      </div>
+
 
     </nav>
 
@@ -150,15 +137,14 @@ const pedagogyItems = [
     label: 'Activités',
     icon:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
   },
-];
-
-const pilotageItems = [
   {
-    path:  '/teacher/reports',
-    label: 'Rapports',
-    icon:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 118 2.83M22 12A10 10 0 0012 2v10z"/></svg>',
+    path:  '/teacher/quizzes',
+    label: 'Quiz',
+    icon:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4m-2 6v10a2 2 0 01-2 2H4a2 2 0 01-2-2V4a2 2 0 012-2h10"/></svg>',
   },
 ];
+
+
 </script>
 
 <style scoped>

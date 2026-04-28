@@ -12,7 +12,6 @@ class QuestionEntity
     private string $content;
     private ?string $correctAnswer;
     private ?array $contextData;
-    private int $points;
 
     public function __construct(
         ?int $id,
@@ -20,8 +19,7 @@ class QuestionEntity
         QuestionType $type,
         string $content,
         ?string $correctAnswer,
-        ?array $contextData,
-        int $points = 10
+        ?array $contextData
     ) {
         $this->id = $id;
         $this->quizSessionId = $quizSessionId;
@@ -29,7 +27,6 @@ class QuestionEntity
         $this->content = $content;
         $this->correctAnswer = $correctAnswer;
         $this->contextData = $contextData;
-        $this->points = $points;
     }
 
     public function getId(): ?int { return $this->id; }
@@ -38,7 +35,6 @@ class QuestionEntity
     public function getContent(): string { return $this->content; }
     public function getCorrectAnswer(): ?string { return $this->correctAnswer; }
     public function getContextData(): ?array { return $this->contextData; }
-    public function getPoints(): int { return $this->points; }
 
     public function toArray(): array
     {
@@ -49,7 +45,6 @@ class QuestionEntity
             'content' => $this->content,
             'correct_answer' => $this->correctAnswer,
             'context_data' => $this->contextData,
-            'points' => $this->points,
         ];
     }
 }

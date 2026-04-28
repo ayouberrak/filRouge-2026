@@ -4,6 +4,7 @@ namespace App\Modules\Absence\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
 class AbsenceResource extends JsonResource
 {
@@ -25,7 +26,7 @@ class AbsenceResource extends JsonResource
             'duration' => $entity->getDuration(),
             'status' => $entity->getStatus()->getValue(),
             'justification_file' => $entity->getJustificationFile()
-                                ? asset('storage/' . $entity->getJustificationFile()) 
+                                ? Storage::disk('public')->url($entity->getJustificationFile()) 
                                 : null,
         ];
     }

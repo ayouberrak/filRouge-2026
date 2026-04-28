@@ -25,12 +25,6 @@ use App\Modules\Activity\Infrastructure\Repositories\ActivityRepository;
 use App\Modules\Absence\Domain\Repositories\AbsenceRepositoryInterface;
 use App\Modules\Absence\Infrastructure\Repositories\AbsenceRepository;
 
-use App\Modules\Report\Domain\Repositories\DailyReportRepositoryInterface;
-use App\Modules\Report\Infrastructure\Repositories\DailyReportRepository;
-
-use App\Modules\Marketplace\Domain\Repositories\MarketplaceRepositoryInterface;
-use App\Modules\Marketplace\Infrastructure\Repositories\MarketplaceRepository;
-
 use App\Modules\Quiz\Domain\Repositories\QuizRepositoryInterface;
 use App\Modules\Quiz\Infrastructure\Repositories\QuizRepository;
 
@@ -51,9 +45,7 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(BriefRepositoryInterface::class, BriefRepository::class);
         $this->app->bind(LivrableRepositoryInterface::class, LivrableRepository::class);
         $this->app->bind(AbsenceRepositoryInterface::class, AbsenceRepository::class);
-        $this->app->bind(DailyReportRepositoryInterface::class, DailyReportRepository::class);
         $this->app->bind(ActivityRepositoryInterface::class, ActivityRepository::class);
-        $this->app->bind(MarketplaceRepositoryInterface::class, MarketplaceRepository::class);
         $this->app->bind(QuizRepositoryInterface::class, QuizRepository::class);
         $this->app->bind(ChatRepositoryInterface::class, ChatRepository::class);
     }

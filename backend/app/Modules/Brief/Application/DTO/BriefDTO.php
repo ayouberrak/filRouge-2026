@@ -5,17 +5,17 @@ namespace App\Modules\Brief\Application\DTO;
 class BriefDTO
 {
     public function __construct(
-        public readonly string $title,
-        public readonly ?string $image_url,
-        public readonly string $description,
-        public readonly ?string $context,
-        public readonly string $date_start,
-        public readonly string $date_end,
-        public readonly string $modality,
-        public readonly string $status,
-        public readonly ?array $tags = [],
-        public readonly ?string $file = null,
-        public readonly ?int $formateur_id = null
+        public string $title,
+        public ?string $image_url,
+        public string $description,
+        public ?string $context,
+        public string $date_start,
+        public string $date_end,
+        public string $modality,
+        public string $status,
+        public ?array $tags = [],
+        public ?string $file = null,
+        public ?int $formateur_id = null
     ) {}
 
     public function toArray(): array

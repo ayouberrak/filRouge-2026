@@ -127,14 +127,6 @@
                     </div>
                   </div>
 
-                  <!-- Quiz Column -->
-                  <div class="d-col">
-                    <span class="d-label">Quiz IA</span>
-                    <div class="d-status" :class="getQuizStatusClass(selectedStudent)">
-                      {{ getQuizStatusLabel(selectedStudent) }}
-                    </div>
-                  </div>
-
                   <!-- Final Verdict Column -->
                   <div class="d-col">
                     <span class="d-label">Verdict Global</span>
@@ -144,21 +136,10 @@
                   </div>
                 </div>
               </div>
-              <!-- Tab Navigation -->
-              <div class="tab-nav">
-                <button class="tab-btn" :class="{ 'tab-btn--active': activeTab === 'project' }" @click="switchTab('project')">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
-                  Rendu Projet
-                </button>
-                <button class="tab-btn" :class="{ 'tab-btn--active': activeTab === 'quiz' }" @click="switchTab('quiz')">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                  Quiz Analytics
-                  <span v-if="quizLoading" class="tab-spinner"></span>
-                </button>
-              </div>
+
 
               <!-- ======= TAB CONTENT ======= -->
-              <div v-if="activeTab === 'project'" class="tab-content">
+              <div class="tab-content">
 
                 <!-- GitHub Repository -->
                 <div class="review-section">
@@ -239,90 +220,7 @@
 
               </div>
 
-              <!-- ======= TAB: QUIZ ANALYTICS ======= -->
-              <div v-if="activeTab === 'quiz'" class="tab-content">
 
-                <!-- Loading -->
-                <div v-if="quizLoading" class="quiz-loading">
-                  <div class="pulse-sm"></div>
-                  <span>Chargement des réponses...</span>
-                </div>
-
-                <!-- No Data -->
-                <div v-else-if="!quizData.length" class="quiz-empty">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                  <p>Aucune réponse de quiz trouvée pour cet étudiant.</p>
-                </div>
-
-                <template v-else>
-                  <!-- Score Overview -->
-                  <div class="score-card">
-                    <div class="score-ring-container">
-                      <svg class="score-ring" viewBox="0 0 120 120">
-                        <circle class="ring-bg" cx="60" cy="60" r="50" />
-                        <circle class="ring-fill" cx="60" cy="60" r="50"
-                          :stroke-dasharray="`${quizScorePercent * 3.14} 314`"
-                          :class="quizScorePercent >= 70 ? 'ring-green' : quizScorePercent >= 50 ? 'ring-amber' : 'ring-red'"
-                        />
-                      </svg>
-                      <div class="score-center">
-                        <span class="score-pct">{{ quizScorePercent }}%</span>
-                        <span class="score-label">Score</span>
-                      </div>
-                    </div>
-                    <div class="score-details">
-                      <h3 class="score-title">Résultat du Quiz</h3>
-                      <div class="score-stat-row">
-                        <span class="score-stat-label">Réponses correctes</span>
-                        <span class="score-stat-val c-green">{{ correctCount }} / {{ quizData.length }}</span>
-                      </div>
-
-                      <div class="score-verdict" :class="quizScorePercent >= 70 ? 'verdict-pass' : 'verdict-fail'">
-                        {{ quizScorePercent >= 70 ? '✓ Niveau Validé' : '✗ Niveau Insuffisant' }}
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Questions List -->
-                  <div class="questions-list">
-                    <div v-for="(item, idx) in quizData" :key="item.id" class="question-card" :class="item.is_correct ? 'qcard-correct' : (item.question_type === 'open_ended' ? 'qcard-open' : 'qcard-wrong')">
-                      <div class="qcard-header">
-                        <div class="q-number">Q{{ idx + 1 }}</div>
-                        <div class="q-content">{{ item.question_content }}</div>
-                        <div class="q-verdict" :class="item.question_type === 'open_ended' ? 'verdict-open' : (item.is_correct ? 'verdict-correct' : 'verdict-wrong')">
-                          <span v-if="item.question_type === 'open_ended'" class="q-type-badge q-type-badge--open">⚡ Mise en situation</span>
-                          <span v-else class="q-type-badge q-type-badge--mcq">✓ QCM</span>
-                          <span>{{ item.question_type === 'open_ended' ? `${item.score}%` : (item.is_correct ? '✓ Correct' : '✗ Incorrect') }}</span>
-                        </div>
-                      </div>
-                      <div class="qcard-body">
-                        <div class="answer-block">
-                          <span class="answer-label">Réponse de l'étudiant</span>
-                          <p class="answer-text">{{ item.response_text }}</p>
-                        </div>
-                        <div v-if="item.ai_feedback" class="ai-feedback-block">
-                          <div class="ai-feedback-header">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                            <span>Analyse IA</span>
-                            <span v-if="item.question_type === 'open_ended'" class="ai-full-label">— Évaluation complète</span>
-                          </div>
-                          
-                          <p class="ai-feedback-text" :class="{ 'ai-feedback-text--full': item.question_type === 'open_ended' }">
-                            {{ item.ai_feedback }}
-                          </p>
-                        </div>
-                        <div v-else-if="item.question_type === 'open_ended'" class="ai-feedback-block ai-feedback-pending">
-                          <div class="ai-feedback-header">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-                            <span>Analyse IA en attente</span>
-                          </div>
-                          <p class="ai-feedback-text">L'évaluation IA sera disponible après la soumission complète du quiz.</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </template>
-              </div>
 
             </div> <!-- Closes review-content -->
           </div> <!-- Closes review-scroller -->
@@ -347,7 +245,6 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import SidebarTeacher from '../../components/SidebarTeacher.vue';
 import { BriefService, SubmissionService } from '../../services/ApiService';
-import api from '../../services/api';
 
 const router = useRouter();
 const user = ref(JSON.parse(localStorage.getItem('user')) || { id: 1, first_name: 'Coach', last_name: 'Elite' });
@@ -356,37 +253,15 @@ const students = ref([]);
 const selectedBriefId = ref(null);
 const selectedStudentId = ref(null);
 const feedback = ref('');
-const activeTab = ref('project');
-const quizData = ref([]);
-const quizLoading = ref(false);
 const isSaving = ref(false);
 const isBriefsLoading = ref(true);
 const isSubmissionsLoading = ref(false);
-const isValidationLoading = ref(false);
-const validationError = ref(null);
-const briefValidationStatus = ref(null);
 
 
 const pendingCount = computed(() => students.value.filter(s => s.submission && (s.submission.status === 'SUBMITTED' || s.submission.status === 'PENDING')).length);
 const validatedCount = computed(() => students.value.filter(s => s.submission && (s.submission.status === 'VALIDE' || s.submission.status === 'VALIDATED')).length);
 const selectedBriefTitle = computed(() => briefs.value.find(b => b.id === selectedBriefId.value)?.title);
 const selectedStudent = computed(() => students.value.find(s => s.id === selectedStudentId.value));
-
-const quizScorePercent = computed(() => {
-  if (!quizData.value.length) return 0;
-  const totalPossible = quizData.value.reduce((acc, q) => acc + (q.max_points || 10), 0);
-  const totalEarned = quizData.value.reduce((acc, q) => {
-    if (q.question_type === 'multiple_choice') {
-      return acc + (q.is_correct ? (q.max_points || 10) : 0);
-    }
-    const basePoints = q.max_points || 10;
-    return acc + (basePoints * (q.score / 100));
-  }, 0);
-  if (totalPossible === 0) return 0;
-  return Math.round((totalEarned / totalPossible) * 100);
-});
-
-const correctCount = computed(() => quizData.value.filter(q => q.is_correct).length);
 
 
 onMounted(async () => {
@@ -413,8 +288,6 @@ onMounted(async () => {
 const handleSelectBrief = async (id) => {
   selectedBriefId.value = id;
   selectedStudentId.value = null;
-  quizData.value = [];
-  activeTab.value = 'project';
 
   // Cache per brief
   const cacheKey = `teacher_submissions_students_${id}`;
@@ -440,44 +313,6 @@ const handleSelectBrief = async (id) => {
 const selectStudent = async (student) => {
   selectedStudentId.value = student.id;
   feedback.value = '';
-  activeTab.value = 'project';
-  quizData.value = [];
-  briefValidationStatus.value = null;
-  validationError.value = null;
-  
-  // Appeler l'API de validation globale (Git + Quiz)
-  isValidationLoading.value = true;
-  const validationRes = await api.get(`/quizzes/briefs/${selectedBriefId.value}/validate?student_id=${student.id}`);
-  briefValidationStatus.value = validationRes.data?.status;
-  isValidationLoading.value = false;
-};
-
-const switchTab = async (tab) => {
-  activeTab.value = tab;
-  if (tab === 'quiz' && !quizData.value.length && selectedStudent.value) {
-    await loadQuizData();
-  }
-};
-
-const loadQuizData = async () => {
-  if (!selectedStudent.value) return;
-  quizLoading.value = true;
-  quizData.value = [];
-
-  let sessionId = selectedStudent.value.quiz_session_id;
-  if (!sessionId) {
-    const sessionRes = await api.get(`/quizzes/briefs/${selectedBriefId.value}/session`);
-    sessionId = sessionRes.data?.data?.id;
-  }
-  
-  if (sessionId) {
-    const res = await api.get(`/quizzes/sessions/${sessionId}/students/${selectedStudent.value.id}/responses`);
-    if (res.data?.data) {
-      quizData.value = res.data.data;
-    }
-  }
-  
-  quizLoading.value = false;
 };
 
 
@@ -514,9 +349,6 @@ const formatDate = (dateStr) => {
 
 
 const getProjectStatusLabel = (student) => {
-  if (isValidationLoading.value) return '⏳...';
-  if (validationError.value) return 'Erreur';
-  if (briefValidationStatus.value) return briefValidationStatus.value.livrable_status;
   const s = student.submission?.status;
   if (s === 'VALIDE' || s === 'VALIDATED') return 'Validé';
   if (s === 'INVALID' || s === 'REJECTED') return 'À refaire';
@@ -530,54 +362,12 @@ const getProjectStatusClass = (student) => {
   return 'd-status--gray';
 };
 
-const getQuizStatusLabel = (student) => {
-  if (isValidationLoading.value) return 'Chargement en cours...';
-  if (validationError.value) return 'N/A';
-  if (briefValidationStatus.value) {
-    const score = briefValidationStatus.value.quiz_score ?? 0;
-    const status = briefValidationStatus.value.quiz_status ?? 'EN ATTENTE';
-    return `${score}% - ${status}`;
-  }
-  return 'Attente Quiz';
-};
-
-const getQuizStatusClass = (student) => {
-  if (!briefValidationStatus.value) return 'd-status--gray';
-  const status = briefValidationStatus.value.quiz_status;
-  if (status === 'RÉUSSI' || status === 'PASSED' || status === 'AUTO-VALIDÉ') return 'd-status--green';
-  if (status === 'ÉCHOUÉ' || status === 'FAILED') return 'd-status--red';
-  if (status === 'EN ATTENTE' || status === 'PENDING') return 'd-status--amber';
-  return 'd-status--gray';
-};
-
 const getOverallStatusLabel = (student) => {
-  if (isValidationLoading.value) return '⌛...';
-  if (validationError.value) return 'Inconnu';
-  if (briefValidationStatus.value) {
-    const s = briefValidationStatus.value.status;
-    if (s === 'VALIDATED') return 'Validé';
-    if (s === 'REJECTED_LIVRABLE') return 'Livrable Rejeté';
-    if (s === 'REJECTED_QUIZ') return 'Quiz Échoué';
-    if (s === 'PENDING_QUIZ') return 'Quiz en attente';
-    return 'Retravail';
-  }
   return statusLabel(student);
 };
 
 const getOverallStatusClass = (student) => {
-  if (briefValidationStatus.value) {
-    const s = briefValidationStatus.value.status;
-    if (s === 'VALIDATED') return 'badge-green';
-    return 'badge-amber';
-  }
   return (student.submission?.status === 'VALIDATED' || student.submission?.status === 'VALIDE') ? 'badge-green' : 'badge-amber';
-};
-
-const getOverallStatusIcon = (student) => {
-  if (briefValidationStatus.value) {
-    return briefValidationStatus.value.status === 'VALIDATED' ? '✓' : '⚠️';
-  }
-  return (student.submission?.status === 'VALIDATED' || student.submission?.status === 'VALIDE') ? '✓' : '⏳';
 };
 
 const saveReview = async (verdict) => {

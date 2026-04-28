@@ -2,6 +2,8 @@
 
 namespace App\Modules\Livrable\Http\Requests;
 
+use App\Modules\Livrable\Application\DTO\AddLivrableReponseDTO;
+use Auth;
 use Illuminate\Foundation\Http\FormRequest;
 
 class AddLivrableReponseRequest extends FormRequest
@@ -20,7 +22,7 @@ class AddLivrableReponseRequest extends FormRequest
         ];
     }
 
-    public function toDTO(int $livrableId): \App\Modules\Livrable\Application\DTO\AddLivrableReponseDTO
+    public function toDTO(int $livrableId): AddLivrableReponseDTO
     {
         $statusMap = [
             'VALIDE' => 'VALIDATED',
@@ -31,9 +33,9 @@ class AddLivrableReponseRequest extends FormRequest
 
         $status = $statusMap[strtoupper($this->status)] ?? 'REJECTED';
 
-        return new \App\Modules\Livrable\Application\DTO\AddLivrableReponseDTO(
+        return new AddLivrableReponseDTO(
             $livrableId,
-            $this->formateur_id ?? \Illuminate\Support\Facades\Auth::id(),
+            $this->formateur_id ?? Auth::id(),
             $status,
             $this->message
         );

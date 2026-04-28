@@ -4,15 +4,15 @@ namespace App\Modules\Activity\Application\DTO;
 
 class CreateActivityDTO
 {
-    public readonly string $title;
-    public readonly string $description;
-    public readonly string $type;
-    public readonly string $duration;
-    public readonly int $durationMinutes;
-    public readonly ?int $formateurId;
-    public readonly int $classroomId;
-    public readonly ?string $scheduledAt;
-    public readonly array $studentIds;
+    public string $title;
+    public string $description;
+    public string $type;
+    public string $duration;
+    public int $durationMinutes;
+    public ?int $formateurId;
+    public int $classroomId;
+    public ?string $scheduledAt;
+    public array $studentIds;
 
     public function __construct(
         string $title,

@@ -11,7 +11,14 @@ abstract class UserEntity
     protected string $role;
     protected string $status;
 
-    public function __construct(?int $id, string $firstName, string $lastName, string $email, string $role, string $status) {
+    public function __construct(
+        ?int $id,
+        string $firstName,
+        string $lastName,
+        string $email,
+        string $role,
+        string $status
+    ) {
         $this->id = $id;
         $this->firstName = $firstName;
         $this->lastName = $lastName;

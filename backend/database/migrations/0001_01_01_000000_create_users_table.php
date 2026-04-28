@@ -20,9 +20,6 @@ return new class extends Migration
             $table->string('role')->default('student'); // admin, formateur, student
             $table->string('status')->default('active'); // active, inactive, banned
             
-            $table->string('speciality')->nullable();
-            $table->integer('total_points')->default(0)->nullable();
-            
             $table->unsignedBigInteger('classroom_id')->nullable();
             $table->unsignedBigInteger('squad_id')->nullable();
 

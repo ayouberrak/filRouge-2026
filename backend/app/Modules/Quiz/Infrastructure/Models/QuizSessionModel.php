@@ -6,8 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\User;
-use App\Modules\Brief\Infrastructure\Models\BriefModel;
+use App\Modules\User\Infrastructure\Models\UserModel;
 
 class QuizSessionModel extends Model
 {
@@ -16,8 +15,10 @@ class QuizSessionModel extends Model
     protected $table = 'quiz_sessions';
 
     protected $fillable = [
-        'brief_id',
         'formateur_id',
+        'title',
+        'description',
+        'classroom_id',
         'status',
         'timer_minutes',
         'passing_score',
@@ -28,14 +29,14 @@ class QuizSessionModel extends Model
         'passing_score' => 'integer',
     ];
 
-    public function brief(): BelongsTo
+    public function classroom(): BelongsTo
     {
-        return $this->belongsTo(BriefModel::class, 'brief_id');
+        return $this->belongsTo(\App\Modules\Classroom\Infrastructure\Models\ClassroomModel::class, 'classroom_id');
     }
 
     public function formateur(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'formateur_id');
+        return $this->belongsTo(UserModel::class, 'formateur_id');
     }
 
     public function questions(): HasMany

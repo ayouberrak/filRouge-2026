@@ -15,22 +15,13 @@ class GetEvaluatedResponsesUseCase
 
     public function execute(int $sessionId, int $studentId): Collection
     {
-        $responses = StudentResponseModel::whereHas('question', function($q) use ($sessionId) {
-            $q->where('quiz_session_id', $sessionId);
-        })
-        ->where('student_id', $studentId)
-        ->with('question')
-        ->get();
-
-        \Log::info("GetEvaluatedResponsesUseCase: Found " . $responses->count() . " responses for Session {$sessionId} and Student {$studentId}");
+        $responses = StudentResponseModel::whereRelation('question','quiz_session_id', $sessionId)//charge la relation aussi
+        ->where('student_id', $studentId)->get();
 
         foreach ($responses as $response) {
-            // Évaluation IA pour les questions ouvertes sans feedback
-            $needsAI = in_array($response->question->type, ['code_simulation', 'open_ended'])
-                && ($response->ai_feedback === null || str_contains($response->ai_feedback ?? '', 'attente'));
+            $needsAI = in_array($response->question->type, ['code_simulation', 'open_ended'])&& ($response->ai_feedback === null);
 
             if ($needsAI) {
-                try {
                     $contextData = json_decode($response->question->context_data, true) ?? [];
                     $scenario = $contextData['scenario'] ?? $response->question->content;
 
@@ -44,13 +35,9 @@ class GetEvaluatedResponsesUseCase
                         'is_correct' => $aiResult['is_correct'],
                         'ai_feedback' => $aiResult['feedback']
                     ]);
-                } catch (\Exception $e) {
-                    \Log::error("IA Evaluation failed for response {$response->id}: " . $e->getMessage());
-                }
             }
         }
 
-        // Retourner les données formatées avec le type de question
         return $responses->map(function($response) {
             return [
                 'id' => $response->id,

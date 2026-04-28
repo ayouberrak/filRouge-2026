@@ -7,6 +7,7 @@ use App\Modules\Classroom\Infrastructure\Models\ClassroomModel;
 use App\Modules\Livrable\Infrastructure\Models\LivrableModel;
 use App\Modules\Absence\Infrastructure\Models\AbsenceModel;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class AnalyticsController
 {
@@ -20,7 +21,7 @@ class AnalyticsController
             'absences_today' => AbsenceModel::whereDate('date', now()->toDateString())->count(),
         ];
 
-        return response()->json(['data' => $stats], 200, [], JSON_INVALID_UTF8_SUBSTITUTE);
+        return response()->json(['data' => $stats], 200);
     }
 
     public function getAdminStats(): JsonResponse
@@ -35,14 +36,14 @@ class AnalyticsController
             'recent_activity' => $this->getGlobalRecentActivity()
         ];
 
-        return response()->json(['data' => $stats], 200, [], JSON_INVALID_UTF8_SUBSTITUTE);
+        return response()->json(['data' => $stats], 200);
     }
 
     private function getGlobalRecentActivity()
     {
         $absences = AbsenceModel::with('student')->latest()->take(3)->get()->map(fn($a) => [
             'type' => 'absence',
-            'user' => ($a->student->first_name ?? 'N/A') . ' ' . ($a->student->last_name ?? ''),
+            'user' => ($a->student->first_name) . ' ' . ($a->student->last_name),
             'time' => $a->created_at->diffForHumans(),
             'label' => 'Signalement d\'absence'
         ]);
@@ -67,35 +68,29 @@ class AnalyticsController
             ->take(8)
             ->get(['id', 'first_name', 'last_name', 'avatar_url', 'location']);
 
-        return response()->json(['data' => $leaderboard], 200, [], JSON_INVALID_UTF8_SUBSTITUTE);
+        return response()->json(['data' => $leaderboard], 200);
     }
 
-    public function getStudents(\Illuminate\Http\Request $request): JsonResponse
+    public function getStudents(Request $request): JsonResponse
     {
         $role = $request->get('role', 'student');
         $query = UserModel::where('role', $role);
-
-        // Si l'utilisateur est un formateur, on limite aux étudiants de ses classes
+        
         $authUser = auth()->user();
         if ($authUser && $authUser->role === 'formateur' && $role === 'student') {
-            $myClassroomIds = ClassroomModel::where('formateur_id', $authUser->id)->pluck('id');
-            $query->whereIn('classroom_id', $myClassroomIds);
+            $myClassrooms = ClassroomModel::where('formateur_id', $authUser->id)->pluck('id');
+            $query->whereIn('classroom_id', $myClassrooms);
         }
 
-        if ($request->has('search')) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                  ->orWhere('last_name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+        if ($request->filled('search')) {
+            $query->where(function($q) use ($request) {
+                $q->where('first_name', 'like', '%' . $request->search . '%')
+                  ->orWhere('last_name', 'like', '%' . $request->search . '%')
+                  ->orWhere('email', 'like', '%' . $request->search . '%');
             });
         }
 
-        if ($request->has('speciality') && $request->speciality !== 'ALL') {
-            $query->where('speciality', $request->speciality);
-        }
-
-        if ($request->has('classroom_id')) {
+        if ($request->filled('classroom_id')) {
             $query->where('classroom_id', $request->classroom_id);
         }
 
@@ -103,29 +98,31 @@ class AnalyticsController
                 $q->whereIn('status', ['VALIDATED', 'VALIDE']);
             }])
             ->orderBy('first_name', 'asc')
-            ->get([
-                'id', 'first_name', 'last_name', 'email', 
-                'avatar_url', 'location', 'status', 'squad_id', 'speciality',
-                'bio', 'skills', 'github_url', 'linkedin_url'
-            ]);
+            ->get();
 
-        return response()->json(['data' => $students], 200, [], JSON_INVALID_UTF8_SUBSTITUTE);
+        return response()->json(['data' => $students], 200);
     }
 
     public function getStudentProfile($id): JsonResponse
     {
         $user = UserModel::with(['squad.members'])->findOrFail($id);
         
-        $validatedCount = LivrableModel::where('student_id', $user->id)->whereIn('status', ['VALIDATED', 'VALIDE'])->count();
+        $validatedCount = LivrableModel::where('student_id', $user->id)
+            ->whereIn('status', ['VALIDATED', 'VALIDE'])
+            ->count();
+
+        $allStudents = UserModel::where('role', 'student')
+            ->withCount(['livrables as validated_count' => function($q) {
+                $q->whereIn('status', ['VALIDATED', 'VALIDE']);
+            }])
+            ->get();
+
+        $rank = $allStudents->where('validated_count', '>', $validatedCount)->count() + 1;
 
         $stats = [
             'absences_count' => AbsenceModel::where('student_id', $user->id)->count(),
             'validated_briefs' => $validatedCount,
-            'rank' => UserModel::where('role', 'student')
-                ->whereHas('livrables', function($q) {
-                    $q->whereIn('status', ['VALIDATED', 'VALIDE']);
-                }, '>', $validatedCount)
-                ->count() + 1,
+            'rank' => $rank,
         ];
 
         return response()->json([
@@ -134,19 +131,26 @@ class AnalyticsController
         ]);
     }
 
-    public function getStudentStats(\Illuminate\Http\Request $request): JsonResponse
+    public function getStudentStats(Request $request): JsonResponse
     {
         $user = $request->user();
-        $validatedCount = LivrableModel::where('student_id', $user->id)->whereIn('status', ['VALIDATED', 'VALIDE'])->count();
+        
+        $validatedCount = LivrableModel::where('student_id', $user->id)
+            ->whereIn('status', ['VALIDATED', 'VALIDE'])
+            ->count();
+
+        $allStudents = UserModel::where('role', 'student')
+            ->withCount(['livrables as validated_count' => function($q) {
+                $q->whereIn('status', ['VALIDATED', 'VALIDE']);
+            }])
+            ->get();
+
+        $rank = $allStudents->where('validated_count', '>', $validatedCount)->count() + 1;
 
         $stats = [
             'absences_count' => AbsenceModel::where('student_id', $user->id)->count(),
             'validated_briefs' => $validatedCount,
-            'rank' => UserModel::where('role', 'student')
-                ->whereHas('livrables', function($q) {
-                    $q->whereIn('status', ['VALIDATED', 'VALIDE']);
-                }, '>', $validatedCount)
-                ->count() + 1,
+            'rank' => $rank,
         ];
 
         return response()->json(['stats' => $stats]);

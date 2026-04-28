@@ -11,6 +11,7 @@ use App\Modules\Squad\Application\UseCases\GetAllSquads;
 use App\Modules\Squad\Http\Requests\CreateSquadRequest;
 use App\Modules\Squad\Http\Requests\AssignMemberRequest;
 use App\Modules\Squad\Http\Resources\SquadResource;
+use Illuminate\Http\Request;
 
 class SquadController
 {
@@ -23,7 +24,7 @@ class SquadController
         private DeleteSquad $deleteSquadUseCase
     ) {}
 
-    public function index(\Illuminate\Http\Request $request)
+    public function index(Request $request)
     {
         $classroomId = $request->query('classroom_id');
         $squads = $this->getAllSquadsUseCase->execute($classroomId ? (int)$classroomId : null);
@@ -74,7 +75,7 @@ class SquadController
         ]);
     }
 
-    public function mySquad(\Illuminate\Http\Request $request)
+    public function mySquad(Request $request)
     {
         $user = $request->user();
         if (!$user->squad_id) {

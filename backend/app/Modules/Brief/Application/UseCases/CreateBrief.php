@@ -18,7 +18,7 @@ class CreateBrief
     public function execute(BriefDTO $dto): BriefEntity
     {
         $entity = new BriefEntity(
-            null, // ID is null on creation
+            null,
             $dto->title,
             $dto->image_url,
             $dto->description,

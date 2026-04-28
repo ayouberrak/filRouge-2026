@@ -15,22 +15,14 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->text('description');
-            $table->string('activity_type'); // veille, workshop, etc.
+            $table->string('type'); // veille, workshop, live_coding, quiz
             
             $table->dateTime('scheduled_at')->nullable();
             $table->string('duration')->nullable(); // For display e.g. "30 min"
             $table->integer('duration_minutes')->default(0); 
 
-            $table->integer('points')->default(0);
             $table->foreignId('formateur_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('classroom_id')->constrained('classrooms')->cascadeOnDelete();
-
-            $table->text('objectives')->nullable();
-            $table->text('context')->nullable();
-            $table->text('exploration_points')->nullable();
-            $table->string('work_rule')->default('Solo');
-            $table->text('resources')->nullable();
-            $table->boolean('is_points_distributed')->default(false);
 
             $table->timestamps();
         });

@@ -3,7 +3,6 @@
 namespace App\Modules\User\Application\UseCases;
 
 use App\Modules\User\Domain\Services\AuthService;
-use Illuminate\Support\Facades\Hash;
 use App\Modules\User\Application\DTO\LoginDTO;
 
 class LoginUser

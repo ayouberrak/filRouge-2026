@@ -6,6 +6,7 @@ use App\Modules\Squad\Domain\Repositories\SquadRepositoryInterface;
 use App\Modules\Squad\Infrastructure\Models\SquadModel;
 use App\Modules\Squad\Domain\Entities\SquadEntity;
 use App\Modules\Squad\Domain\ValueObjects\SquadName;
+use App\Modules\User\Infrastructure\Models\UserModel;
 
 class SquadRepository implements SquadRepositoryInterface
 {
@@ -13,7 +14,6 @@ class SquadRepository implements SquadRepositoryInterface
     {
         if (!$model) return null;
 
-        // On récupère les membres sous forme d'objets (noms, avatars) pour le dashboard
         $members = $model->members->map(function($user) {
             return [
                 'id' => $user->id,
@@ -22,6 +22,8 @@ class SquadRepository implements SquadRepositoryInterface
                 'avatar_url' => $user->avatar_url,
             ];
         })->toArray();
+
+        
 
         return new SquadEntity(
             $model->id,
@@ -82,14 +84,11 @@ class SquadRepository implements SquadRepositoryInterface
         return $model ? $model->delete() : false;
     }
 
-    // Specific repository methods for members
     public function assignMember(int $squadId, int $userId): void
     {
         $model = SquadModel::find($squadId);
         if ($model) {
-            // Because relationships are on UserModel, we might have to update the UserModel's squad_id
-            // Equivalent to finding user and updating squad_id
-            \App\Modules\User\Infrastructure\Models\UserModel::where('id', $userId)
+            UserModel::where('id', $userId)
                 ->update(['squad_id' => $squadId]);
         }
     }
@@ -98,7 +97,7 @@ class SquadRepository implements SquadRepositoryInterface
     {
         $model = SquadModel::find($squadId);
         if ($model) {
-            \App\Modules\User\Infrastructure\Models\UserModel::where('id', $userId)
+            UserModel::where('id', $userId)
                 ->where('squad_id', $squadId)
                 ->update(['squad_id' => null]);
         }

@@ -8,15 +8,15 @@ use JsonSerializable;
 class ActivityEntity implements JsonSerializable
 {
     private ?int $id;
-    private string $title; // nom activite
-    private string $description; // description activite
-    private ActivityType $type; // type activite
-    private string $duration; // duree activite
-    private ?int $formateurId; // formateur activite
-    private ?int $classroomId; // classe activite
-    private ?string $scheduledAt; // date activite
-    private int $durationMinutes; // duree activite en minutes
-    private array $students; // etudiant activite
+    private string $title; 
+    private string $description; 
+    private ActivityType $type; 
+    private string $duration; 
+    private ?int $formateurId; 
+    private ?int $classroomId; 
+    private ?string $scheduledAt;
+    private int $durationMinutes; 
+    private array $students; 
 
     public function __construct(
         ?int $id,

@@ -144,120 +144,6 @@
               </div>
             </div>
 
-            <!-- Section 4: Quiz Builder -->
-            <div class="form-section">
-              <div class="section-label">
-                <div class="section-num">04</div>
-                <div>
-                  <div class="section-title">Quiz d'Évaluation</div>
-                  <div class="section-desc">Validation théorique par l'IA</div>
-                </div>
-              </div>
-              <div class="section-fields">
-                <div v-if="briefForm.questions.length === 0" class="quiz-cta" @click="addItem('questions')">
-                  <div class="quiz-cta-icon">⚡</div>
-                  <div class="quiz-cta-text">
-                    <div class="quiz-cta-title">Activer l'Évaluation par Quiz</div>
-                    <div class="quiz-cta-sub">Ajoutez des questions évaluées par l'intelligence artificielle</div>
-                  </div>
-                  <div class="quiz-cta-arrow">→</div>
-                </div>
-
-                <div v-else class="questions-stack">
-                  <div class="field-row">
-                    <div class="field-group">
-                      <label class="field-label">Date & Heure de démarrage du Quiz</label>
-                      <input type="datetime-local" v-model="briefForm.quiz_start_at" class="field-input" />
-                    </div>
-                    <div class="field-group field-group--sm">
-                      <label class="field-label">Durée du Quiz (minutes)</label>
-                      <input type="number" min="1" v-model.number="briefForm.quiz_duration_minutes" class="field-input" />
-                    </div>
-                  </div>
-
-                  <div v-for="(q, idx) in briefForm.questions" :key="idx" class="q-card animate-in">
-                    <div class="q-card-header">
-                      <div class="q-badge">Q{{ idx + 1 }}</div>
-                      <input v-model="q.content" placeholder="Intitulé de la question..." class="q-title-input" />
-                      <!-- Type Toggle -->
-                      <div class="q-type-toggle">
-                        <button
-                          class="q-type-btn"
-                          :class="{ 'q-type-btn--active': q.type === 'multiple_choice' }"
-                          @click="q.type = 'multiple_choice'"
-                          title="Choix Multiple"
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>
-                          QCM
-                        </button>
-                        <button
-                          class="q-type-btn"
-                          :class="{ 'q-type-btn--active': q.type === 'open_ended' }"
-                          @click="q.type = 'open_ended'; q.options = []; q.correct = null"
-                          title="Mise en situation"
-                        >
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V9.5L14.5 3z"/><polyline points="14 3 14 10 21 10"/></svg>
-                          Situation
-                        </button>
-                      </div>
-                      <button class="q-remove-btn" @click="removeItem('questions', idx)">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-                      </button>
-                    </div>
-
-                    <!-- QCM Options -->
-                    <div v-if="q.type === 'multiple_choice'" class="q-options-grid">
-                      <div
-                        v-for="(opt, oidx) in q.options"
-                        :key="oidx"
-                        class="opt-card"
-                        :class="{ 'opt-card--correct': q.correct === oidx }"
-                        @click="q.correct = oidx"
-                      >
-                        <div class="opt-radio" :class="{ 'opt-radio--active': q.correct === oidx }">
-                          <svg v-if="q.correct === oidx" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
-                        </div>
-                        <input
-                          v-model="q.options[oidx]"
-                          :placeholder="`Option ${String.fromCharCode(65 + oidx)}`"
-                          class="opt-input"
-                          @click.stop
-                        />
-                      </div>
-                    </div>
-
-                    <!-- Open-Ended Scenario -->
-                    <div v-else class="q-scenario-area">
-                      <div class="q-scenario-label">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                        Contexte / Énoncé de la situation (optionnel)
-                      </div>
-                      <textarea
-                        v-model="q.scenario"
-                        placeholder="Ex: L'entreprise X souhaite migrer son architecture vers du microservices. Proposez une solution complète avec justifications..."
-                        class="q-scenario-input"
-                        rows="4"
-                      ></textarea>
-                      <div class="q-open-hint">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                        L'IA évaluera automatiquement la réponse de l'étudiant
-                      </div>
-                    </div>
-
-                    <div v-if="q.type === 'multiple_choice'" class="q-hint">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-                      Cliquez sur une option pour la marquer comme correcte
-                    </div>
-
-                  </div>
-
-                  <button class="btn-add-question" @click="addItem('questions')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                    Ajouter une question
-                  </button>
-                </div>
-              </div>
-            </div>
 
           </div>
         </div>
@@ -321,14 +207,6 @@
 
 
 
-                <!-- Quiz Badge -->
-                <div v-if="briefForm.questions.length > 0" class="preview-quiz-badge">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                  <div>
-                    <div class="quiz-badge-title">Quiz d'évaluation activé</div>
-                    <div class="quiz-badge-sub">{{ briefForm.questions.length }} question{{ briefForm.questions.length > 1 ? 's' : '' }} · Corrigé par l'IA</div>
-                  </div>
-                </div>
 
                 <!-- CTA Preview -->
                 <div class="preview-cta">
@@ -348,7 +226,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import SidebarTeacher from '../../components/SidebarTeacher.vue';
-import { BriefService, QuizService } from '../../services/ApiService';
+import { BriefService } from '../../services/ApiService';
 
 const router = useRouter();
 const route  = useRoute();
@@ -368,37 +246,23 @@ const briefForm = ref({
   status: 'DRAFT',
   date_start: new Date().toISOString().split('T')[0],
   date_end: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
-  quiz_start_at: '',
-  quiz_duration_minutes: 30,
-  tags: [],
-  questions: []
+  tags: []
 });
 
 onMounted(async () => {
   if (isNew.value) return;
   isInitialLoading.value = true;
-  const response = await BriefService.getById(route.params.id);
-  Object.assign(briefForm.value, response.data);
-  
-  // Charger le quiz si existant
-  const qResp = await QuizService.getSessionByBrief(response.data.id);
-  if (qResp.data?.data?.id) {
-    briefForm.value.quiz_duration_minutes = qResp.data.data.timer_minutes || 30;
-    briefForm.value.quiz_start_at = qResp.data.data.start_at
-      ? qResp.data.data.start_at.replace(' ', 'T').slice(0, 16)
-      : '';
-
-    const qList = await QuizService.getQuestionsBySession(qResp.data.data.id);
-    briefForm.value.questions = (qList.data?.data || []).map(q => ({
-      type: q.type || 'multiple_choice',
-      content: q.content,
-      options: q.options?.length ? q.options : ['', '', '', ''],
-      correct: 0,
-      scenario: q.type === 'open_ended' ? (q.context_data?.scenario || '') : '',
-      ai_feedback: ''
-    }));
+  try {
+    const response = await BriefService.getById(route.params.id);
+    const briefData = response.data?.data || response.data;
+    Object.assign(briefForm.value, briefData);
+    
+  } catch (err) {
+    console.error("[EditBrief] Erreur critique chargement:", err);
+    alert("Erreur lors du chargement des données du projet.");
+  } finally {
+    isInitialLoading.value = false;
   }
-  isInitialLoading.value = false;
 });
 
 const addItem = (key) => {
@@ -430,39 +294,24 @@ const handleSave = async () => {
   try {
     if (isNew.value) {
       const resp = await BriefService.create(payload);
-      savedBrief = resp.data.data; // Note the .data.data depending on your API structure
+      savedBrief = resp.data || resp; // Support both structures
     } else {
       const resp = await BriefService.update(route.params.id, payload);
-      savedBrief = resp.data.data;
+      savedBrief = resp.data || resp;
     }
 
-    const validQuestions = briefForm.value.questions.filter(q => q.content.trim() !== '');
-    if (validQuestions.length > 0 && savedBrief?.id) {
-      await QuizService.createSession({
-        brief_id: savedBrief.id,
-        timer_minutes: Number(briefForm.value.quiz_duration_minutes || 30),
-        start_at: briefForm.value.quiz_start_at ? briefForm.value.quiz_start_at.replace('T', ' ') + ':00' : null,
-        passing_score: 50,
-        questions: validQuestions.map(q => ({
-          content: q.content,
-          type: q.type || 'multiple_choice',
-          points: 1,
-          correct_answer: q.type === 'open_ended' ? '' : (q.options[q.correct] || ''),
-          context_data: q.type === 'open_ended'
-            ? JSON.stringify({ scenario: q.scenario || q.content })
-            : JSON.stringify({ options: q.options })
-        }))
-      });
-    }
+    const briefId = savedBrief?.id || route.params.id;
 
     router.push('/teacher/briefs');
   } catch (err) {
-    console.error("Erreur Sauvegarde:", err);
+    console.error("Erreur Sauvegarde complète:", err);
+    const apiError = err.response?.data?.message || err.response?.data?.error || err.message;
+    
     if (err.response?.data?.errors) {
       console.table(err.response.data.errors);
       alert("Erreur de validation: " + Object.values(err.response.data.errors).flat().join('\n'));
     } else {
-      alert("Une erreur est survenue lors de la sauvegarde.");
+      alert("Erreur lors de l'enregistrement : " + apiError);
     }
   } finally {
     isSaving.value = false;

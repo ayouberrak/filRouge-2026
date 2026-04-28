@@ -16,7 +16,7 @@ class QuestionType
     {
         $lowerValue = strtolower($value);
         if (!in_array($lowerValue, self::ALLOWED_TYPES, true)) {
-            throw new InvalidArgumentException("Invalid question type. Allowed values: " . implode(', ', self::ALLOWED_TYPES));
+            throw new InvalidArgumentException("type question invalid");
         }
 
         $this->value = $lowerValue;

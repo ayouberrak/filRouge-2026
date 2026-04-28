@@ -8,7 +8,7 @@ class SubmitLivrableRequest extends FormRequest
 {
     public function authorize()
     {
-        return true; // Authorize based on specific roles if needed
+        return true;
     }
 
     public function rules()

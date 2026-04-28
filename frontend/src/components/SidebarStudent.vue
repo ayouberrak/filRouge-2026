@@ -114,6 +114,11 @@ const parcoursItems = [
     label: 'Mon Activité',
     icon:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>',
   },
+  {
+    path:  '/student/quizzes',
+    label: 'Quiz',
+    icon:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4m-2 6v10a2 2 0 01-2 2H4a2 2 0 01-2-2V4a2 2 0 012-2h10"/></svg>',
+  },
 ];
 
 const communityItems = [

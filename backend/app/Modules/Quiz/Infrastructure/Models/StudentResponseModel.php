@@ -5,7 +5,7 @@ namespace App\Modules\Quiz\Infrastructure\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use App\Models\User;
+use App\Modules\User\Infrastructure\Models\UserModel;
 
 class StudentResponseModel extends Model
 {
@@ -34,6 +34,6 @@ class StudentResponseModel extends Model
 
     public function student(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'student_id');
+        return $this->belongsTo(UserModel::class, 'student_id');
     }
 }

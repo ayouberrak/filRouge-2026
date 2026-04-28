@@ -9,7 +9,6 @@ interface QuizRepositoryInterface
 {
     public function saveSession(QuizSessionEntity $session): QuizSessionEntity;
     public function findSessionById(int $id): ?QuizSessionEntity;
-    public function findActiveSessionByBriefId(int $briefId): ?QuizSessionEntity;
     public function saveResponse(ResponseEntity $response): ResponseEntity;
     public function findResponsesBySessionId(int $sessionId): array;
     public function findResponseByQuestionAndStudent(int $questionId, int $studentId): ?ResponseEntity;

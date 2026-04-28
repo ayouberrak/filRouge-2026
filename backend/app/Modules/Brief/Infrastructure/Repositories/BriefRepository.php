@@ -63,11 +63,9 @@ class BriefRepository implements BriefRepositoryInterface
     {
         $models = BriefModel::withCount('quizSessions')
             ->where(function($query) use ($classroomIds) {
-                // Assigné directement à la classe
                 $query->whereHas('classrooms', function($q) use ($classroomIds) {
                     $q->whereIn('classroom_id', $classroomIds);
                 })
-                // OU assigné à une squad qui appartient à l'une de ces classes
                 ->orWhereHas('squads', function($q) use ($classroomIds) {
                     $q->whereIn('classroom_id', $classroomIds);
                 });

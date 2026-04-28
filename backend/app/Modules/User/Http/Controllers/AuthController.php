@@ -7,6 +7,7 @@ use App\Modules\User\Application\UseCases\LogoutUser;
 use App\Modules\User\Http\Requests\LoginRequest;
 use App\Modules\User\Application\DTO\LoginDTO;
 use Illuminate\Http\Request;
+use App\Modules\User\Domain\Entities\StudentEntity;
 
 class AuthController
 {
@@ -34,9 +35,7 @@ class AuthController
             'status'     => $userEntity->getStatus(),
         ];
 
-        // Include student-specific fields
-        if ($userEntity instanceof \App\Modules\User\Domain\Entities\StudentEntity) {
-            $userData['points']       = $userEntity->getTotalPoints();
+        if ($userEntity instanceof StudentEntity) {
             $userData['classroom_id'] = $userEntity->getClassroomId();
             $userData['squad_id']     = $userEntity->getSquadId();
         }

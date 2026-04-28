@@ -89,29 +89,33 @@ export const ChatService = {
   }
 };
 
-export const DailyReportService = {
-  getStats(classroomId) {
-    return api.get(`/reports/stats/${classroomId}`);
-  },
-  getByClassroom(classroomId) {
-    return api.get(`/reports/classroom/${classroomId}`);
-  },
-  submitReport(data) {
-    return api.post('/reports', data);
-  }
-};
-
 export const QuizService = {
+  async getMyQuizzes() {
+    const response = await api.get('/quizzes/my');
+    return response.data;
+  },
+  async getAssignedQuizzes() {
+    const response = await api.get('/quizzes/assigned');
+    return response.data;
+  },
   async createSession(payload) {
     const response = await api.post('/quizzes/sessions', payload);
     return response.data;
   },
-  async getSessionByBrief(briefId) {
-    const response = await api.get(`/quizzes/briefs/${briefId}/session`);
-    return response.data;
-  },
   async getQuestionsBySession(sessionId) {
     const response = await api.get(`/quizzes/sessions/${sessionId}/questions`);
+    return response.data;
+  },
+  async startSession(sessionId) {
+    const response = await api.post(`/quizzes/sessions/${sessionId}/start`);
+    return response.data;
+  },
+  async getSessionSubmissions(sessionId) {
+    const response = await api.get(`/quizzes/sessions/${sessionId}/submissions`);
+    return response.data;
+  },
+  async getStudentResponses(sessionId, studentId) {
+    const response = await api.get(`/quizzes/sessions/${sessionId}/students/${studentId}/responses`);
     return response.data;
   }
 };

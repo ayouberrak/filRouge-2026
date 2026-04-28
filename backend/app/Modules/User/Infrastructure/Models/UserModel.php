@@ -8,7 +8,7 @@ use App\Modules\Brief\Infrastructure\Models\BriefModel;
 use App\Modules\Livrable\Infrastructure\Models\LivrableModel;
 use App\Modules\Absence\Infrastructure\Models\AbsenceModel;
 use App\Modules\Activity\Infrastructure\Models\ActivityModel;
-use App\Modules\Report\Infrastructure\Models\DailyReportModel;
+
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -82,9 +82,5 @@ class UserModel extends Authenticatable
         return $this->belongsToMany(ActivityModel::class, 'activity_student', 'student_id', 'activity_id');
     }
 
-    public function dailyReports()
-    {
-        return $this->hasMany(DailyReportModel::class);
-    }
 
 }

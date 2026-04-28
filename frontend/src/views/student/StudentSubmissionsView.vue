@@ -47,12 +47,6 @@
                   <span class="modality-pill" :class="brief.modality === 'Individuel' ? 'modality-pill--blue' : 'modality-pill--cyan'">
                     {{ brief.modality }}
                   </span>
-                  <span v-if="getSubmissionStatus(brief.id)" class="submitted-pill">✓ Soumis</span>
-                  <span v-if="brief.has_quiz" class="quiz-pill" title="Possède un quiz">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0012 18.75c-1.03 0-1.9-.4-2.59-1.177l-.547-.547z"/>
-                    </svg>
-                  </span>
                 </div>
               </div>
             </div>
@@ -101,69 +95,6 @@
                 </span>
               </div>
             </header>
-
-            <!-- Quiz area -->
-            <div v-if="selectedBrief.has_quiz && currentSubmission" class="quiz-card animate-in">
-              <div class="quiz-visual" :class="{ 'quiz-visual--success': quizResult?.status === 'VALIDATED' || quizResult?.status === 'REJECTED_LIVRABLE', 'quiz-visual--fail': quizResult?.status === 'REJECTED_QUIZ' || quizResult?.status === 'REJECTED' }">
-                <div class="quiz-icon-glow"></div>
-                <svg v-if="!quizResult" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0012 18.75c-1.03 0-1.9-.4-2.59-1.177l-.547-.547z"/>
-                </svg>
-                <svg v-else-if="quizResult.status === 'VALIDATED' || quizResult.status === 'REJECTED_LIVRABLE'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                  <path d="M20 6L9 17l-5-5"/>
-                </svg>
-                <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <path d="M18 6L6 18M6 6l12 12"/>
-                </svg>
-              </div>
-              <div class="quiz-body">
-                <h3>Certification par l'Intelligence Artificielle</h3>
-                
-                <div v-if="isQuizLoading" class="quiz-loading-placeholder">
-                  
-                  
-                </div>
-
-                <div v-else-if="quizResult && ['VALIDATED', 'REJECTED_QUIZ', 'REJECTED', 'REJECTED_LIVRABLE'].includes(quizResult.status)" class="quiz-result-content">
-                  <div class="result-main">
-                    <div class="result-status">
-                      <span class="status-label" :class="{ 
-                        'status-label--pass': quizResult.status === 'VALIDATED' || quizResult.status === 'REJECTED_LIVRABLE', 
-                        'status-label--fail': ['REJECTED_QUIZ', 'REJECTED'].includes(quizResult.status)
-                      }">
-                        {{ (quizResult.status === 'VALIDATED' || quizResult.status === 'REJECTED_LIVRABLE') ? 'Quiz Validé' : 'Tentative insuffisante' }}
-                      </span>
-                      <p class="status-desc">
-                        {{ (quizResult.status === 'VALIDATED' || quizResult.status === 'REJECTED_LIVRABLE') ? 'Vos compétences théoriques ont été certifiées par l\'IA.' : 'Le seuil de réussite n\'a pas été atteint, révisez vos concepts.' }}
-                      </p>
-                    </div>
-                    <div class="result-score">
-                      <span class="score-num">{{ quizResult.score !== null ? quizResult.score : '--' }}</span>
-                      <span class="score-total">/ 20</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div v-else class="quiz-action-area">
-                  <p class="quiz-promo">Votre Github a été rattaché. Vous pouvez maintenant passer l'évaluation théorique AI associée à ce projet.</p>
-                  <button @click="startQuiz(selectedBrief.id)" class="btn-nadi-gold">
-                    Démarrer l'Évaluation
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                      <path d="M5 12h14M12 5l7 7-7 7"/>
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div v-else-if="selectedBrief.has_quiz && !currentSubmission" class="quiz-hint animate-in">
-              <div class="hint-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                </svg>
-              </div>
-              <span>Commencez par soumettre l'URL de votre projet pour déverrouiller le module d'intelligence artificielle.</span>
-            </div>
 
             <!-- Form Section -->
             <div class="form-section animate-in mt-4">
@@ -325,112 +256,65 @@ const selectBrief = (brief) => {
   submitSuccess.value = false;
   quizResult.value    = null;
   
-  // On vérifie si ce projet a déjà été rendu et quel est le statut du quiz
+  // On vérifie si ce projet a déjà été rendu
   loadPreviousSubmissions();
-  checkQuizStatus(brief.id);
 };
 
-// 2. Vérifier si l'IA a validé le quiz pour ce projet
-const checkQuizStatus = async (briefId) => {
-  isQuizLoading.value = true;
-  
-  const res = await api.get(`/quizzes/briefs/${briefId}/validate`);
-  const status = res.data.status;
-  
-  // Si le quiz est terminé (peu importe le score), on récupère le résultat
-  if (status && (status.is_completed || status.status !== 'PENDING_QUIZ')) {
-    quizResult.value = status;
-  } else {
-    quizResult.value = null;
-  }
-  
-  isQuizLoading.value = false;
-};
-
-// 3. Charger la liste des projets
 const loadBriefs = async () => {
-  // Cache
-  const cached = localStorage.getItem('student_submissions_briefs_cache');
-  if (cached) {
-    briefs.value = JSON.parse(cached);
-    if (briefs.value.length > 0 && !selectedBrief.value) selectBrief(briefs.value[0]);
-  }
-
   try {
     const res = await api.get('/briefs');
-    briefs.value = res.data?.data || [];
-    localStorage.setItem('student_submissions_briefs_cache', JSON.stringify(briefs.value));
+    briefs.value = res.data.data || res.data;
     
-    if (briefs.value.length > 0 && !selectedBrief.value) selectBrief(briefs.value[0]);
+    // Auto-select first brief if none selected
+    if (briefs.value.length > 0 && !selectedBrief.value) {
+      selectBrief(briefs.value[0]);
+    }
   } catch (err) {
     console.error("Erreur Briefs:", err);
   }
 };
 
-// 4. Charger l'historique des rendus de l'étudiant
 const loadPreviousSubmissions = async () => {
-  // Cache
-  const cached = localStorage.getItem('student_submissions_list_cache');
-  if (cached) {
-    previousSubmissions.value = JSON.parse(cached);
-  }
-
   try {
     const res = await api.get('/livrables');
-    previousSubmissions.value = res.data?.data || [];
-    localStorage.setItem('student_submissions_list_cache', JSON.stringify(previousSubmissions.value));
+    previousSubmissions.value = res.data.data || res.data;
   } catch (err) {
     console.error("Erreur Submissions:", err);
   }
 };
 
-// 5. Envoyer (Soumettre) un nouveau livrable
 const submitLivrable = async () => {
-  if (!form.value.link || !selectedBrief.value) return;
-
-  const studentId = parseInt(user.value?.id);
-  if (isNaN(studentId)) return alert('Utilisateur non identifié.');
-
-  isSubmitting.value = true;
+  if (!selectedBrief.value) return;
   
+  isSubmitting.value = true;
   try {
-    await api.post('/livrables', {
-      brief_id:   parseInt(selectedBrief.value.id),
-      student_id: studentId,
-      link:       form.value.link,
-      message:    form.value.message,
-    });
-
-    form.value = { link: '', message: '' };
-    submitSuccess.value = true;
-    setTimeout(() => { submitSuccess.value = false; }, 3500);
+    const payload = {
+      brief_id: selectedBrief.value.id,
+      link: form.value.link,
+      message: form.value.message
+    };
     
-    // Rafraîchir les données pour montrer que c'est soumis
+    await api.post('/livrables', payload);
+    
+    submitSuccess.value = true;
+    
+    // Refresh submissions
     await loadPreviousSubmissions();
+    
+    // Auto-hide success message after 3s
+    setTimeout(() => {
+      submitSuccess.value = false;
+    }, 3000);
+    
   } catch (err) {
-    console.error("Erreur Soumission:", err);
-    alert(err.response?.data?.error || "Impossible d'envoyer le livrable.");
+    console.error("Erreur lors de la soumission:", err);
   } finally {
     isSubmitting.value = false;
   }
 };
 
-// 6. Lancer le quiz AI
-const startQuiz = async (briefId) => {
-  try {
-    const res = await api.get(`/quizzes/briefs/${briefId}/session`);
-    const session = res.data?.data;
-    
-    if (session?.id) {
-      router.push(`/student/quiz/${session.id}?briefId=${briefId}`);
-    } else {
-      alert('Évaluation non disponible pour le moment.');
-    }
-  } catch (err) {
-    console.error("Erreur Quiz:", err);
-    alert('Impossible de lancer l\'évaluation AI.');
-  }
-};
+
+
 
 // --- HELPERS ---
 const getSubmissionStatus = (briefId) => previousSubmissions.value.some(s => s.brief_id === briefId);

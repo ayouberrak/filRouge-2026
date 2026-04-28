@@ -4,7 +4,7 @@ use App\Modules\Classroom\Http\Controllers\ClassroomController;
 use App\Modules\User\Http\Controllers\UserController;
 use App\Modules\Squad\Http\Controllers\SquadController;
 use App\Modules\Absence\Http\Controllers\AbsenceController;
-use App\Modules\Report\Http\Controllers\DailyReportController;
+
 
 use App\Modules\User\Http\Controllers\AnalyticsController;
 use Illuminate\Support\Facades\Route;
@@ -58,6 +58,11 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/', [BriefController::class, 'index']);
         Route::get('/{id}', [BriefController::class, 'show']);
         Route::get('/{id}/submissions', [LivrableController::class, 'listByBrief']);
+    });
+
+    // Shared Quiz Routes (Accessible by both Students and Formateurs)
+    Route::prefix('quizzes')->group(function () {
+        Route::get('/sessions/{id}/questions', [QuizController::class, 'getQuestions']);
     });
 
     // Activities Shared Routes
@@ -114,36 +119,26 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/{id}/assign-classroom', [ActivityController::class, 'assignClassroom']);
         });
 
-        // Shared Report Routes (Accessible by Formateurs and Admins)
-        Route::prefix('reports')->group(function () {
-            Route::get('/', [DailyReportController::class, 'index']);
-            Route::get('/classroom/{classroomId}', [DailyReportController::class, 'getByClassroom']);
-            Route::get('/stats/{classroomId}', [DailyReportController::class, 'getStats']);
-            Route::post('/', [DailyReportController::class, 'store'])->middleware('role.formateur');
-        });
+
 
         Route::prefix('quizzes')->group(function () {
+            Route::get('/my', [QuizController::class, 'getMyQuizzes']);
             Route::post('/sessions', [QuizController::class, 'createSession']);
             Route::post('/sessions/{sessionId}/start', [QuizController::class, 'startSession']);
+            Route::get('/sessions/{sessionId}/submissions', [QuizController::class, 'getSessionSubmissions']);
             Route::get('/sessions/{sessionId}/students/{studentId}/responses', [QuizController::class, 'getStudentResponses']);
-            Route::get('/briefs/{briefId}/session', [QuizController::class, 'getSessionByBrief']);
             Route::get('/debug-ping', function () {
                 return response()->json(['ping' => 'pong', 'user' => Auth::id()]); });
         });
     });
 
-    Route::get('/quizzes/briefs/{briefId}/validate', [\App\Modules\Quiz\Http\Controllers\QuizController::class, 'validateBriefCompletion']);
+
 
         Route::middleware(['status.active', 'role.admin'])->group(function () {
         Route::get('/admin/dashboard', [AnalyticsController::class, 'getAdminStats']);
         Route::get('/admin/stats', [AnalyticsController::class, 'getAdminStats']);
 
-        // Daily Reports (read-only for admin)
-        Route::prefix('reports')->group(function () {
-            Route::get('/', [DailyReportController::class, 'index']);
-            Route::get('/classroom/{classroomId}', [DailyReportController::class, 'getByClassroom']);
-            Route::get('/stats/{classroomId}', [DailyReportController::class, 'getStats']);
-        });
+
 
 
 
@@ -197,8 +192,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Quiz Routes for Student
         Route::prefix('quizzes')->group(function () {
-            Route::get('/briefs/{briefId}/session', [QuizController::class, 'getSessionByBrief']);
-            Route::get('/sessions/{id}/questions', [QuizController::class, 'getQuestions']);
+            Route::get('/assigned', [QuizController::class, 'getAssignedQuizzes']);
             Route::post('/responses', [QuizController::class, 'submitResponse']);
         });
     });

@@ -2,6 +2,7 @@
 
 namespace App\Modules\Squad\Infrastructure\Models;
 
+use App\Modules\Brief\Infrastructure\Models\BriefModel;
 use App\Modules\Classroom\Infrastructure\Models\ClassroomModel;
 use App\Modules\User\Infrastructure\Models\UserModel;
 
@@ -30,6 +31,6 @@ class SquadModel extends Model
 
     public function briefs()
     {
-        return $this->belongsToMany(\App\Modules\Brief\Infrastructure\Models\BriefModel::class, 'brief_squad', 'squad_id', 'brief_id');
+        return $this->belongsToMany(BriefModel::class, 'brief_squad', 'squad_id', 'brief_id');
     }
 }

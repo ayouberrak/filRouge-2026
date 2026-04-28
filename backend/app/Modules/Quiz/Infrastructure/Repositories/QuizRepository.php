@@ -11,15 +11,16 @@ use App\Modules\Quiz\Domain\ValueObjects\QuestionType;
 use App\Modules\Quiz\Infrastructure\Models\QuizSessionModel;
 use App\Modules\Quiz\Infrastructure\Models\QuestionModel;
 use App\Modules\Quiz\Infrastructure\Models\StudentResponseModel;
-use DateTime;
 
 class QuizRepository implements QuizRepositoryInterface
 {
     public function saveSession(QuizSessionEntity $session): QuizSessionEntity
     {
         $data = [
-            'brief_id' => $session->getBriefId(),
             'formateur_id' => $session->getFormateurId(),
+            'title' => $session->getTitle(),
+            'description' => $session->getDescription(),
+            'classroom_id' => $session->getClassroomId(),
             'status' => $session->getStatus()->getValue(),
             'timer_minutes' => $session->getTimerMinutes(),
             'passing_score' => $session->getPassingScore(),
@@ -38,6 +39,7 @@ class QuizRepository implements QuizRepositoryInterface
         }
 
         return $this->toSessionEntity($model->fresh(['questions']));
+        //fresh recharge le model de base de donnes 
     }
 
     private function saveQuestion(int $sessionId, QuestionEntity $question): void
@@ -48,7 +50,6 @@ class QuizRepository implements QuizRepositoryInterface
             'content' => $question->getContent(),
             'correct_answer' => $question->getCorrectAnswer(),
             'context_data' => $question->getContextData(),
-            'points' => $question->getPoints(),
         ];
 
         if ($question->getId() && QuestionModel::find($question->getId())) {
@@ -61,17 +62,6 @@ class QuizRepository implements QuizRepositoryInterface
     public function findSessionById(int $id): ?QuizSessionEntity
     {
         $model = QuizSessionModel::with('questions')->find($id);
-        return $model ? $this->toSessionEntity($model) : null;
-    }
-
-    public function findActiveSessionByBriefId(int $briefId): ?QuizSessionEntity
-    {
-        $model = QuizSessionModel::with('questions')
-            ->where('brief_id', $briefId)
-            ->where('status', 'ACTIVE')
-            ->latest()
-            ->first();
-        
         return $model ? $this->toSessionEntity($model) : null;
     }
 
@@ -122,14 +112,15 @@ class QuizRepository implements QuizRepositoryInterface
             new QuestionType($q->type),
             $q->content,
             $q->correct_answer,
-            $q->context_data,
-            $q->points
+            $q->context_data
         ))->toArray();
 
         return new QuizSessionEntity(
             $model->id,
-            $model->brief_id,
             $model->formateur_id,
+            $model->title,
+            $model->description,
+            $model->classroom_id,
             new QuizStatus($model->status),
             $model->timer_minutes,
             $model->passing_score,

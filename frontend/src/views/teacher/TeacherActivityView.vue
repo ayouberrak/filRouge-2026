@@ -241,6 +241,10 @@
             </div>
 
             <div class="student-selector">
+              <div v-if="classroomStudents.length === 0" class="empty-selection">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+                <p>Aucun étudiant trouvé dans cette classe.</p>
+              </div>
               <div 
                 v-for="s in classroomStudents" 
                 :key="s.id" 
@@ -382,20 +386,37 @@ const fetchData = async () => {
   isLoading.value = true;
 
   try {
+    // 1. First, ensure we have the right classroom ID
+    let currentId = user.value.classroom_id;
+    
+    if (!currentId) {
+      const myClassesRes = await api.get('/classrooms/my');
+      const myClasses = myClassesRes.data?.data || myClassesRes.data || [];
+      if (myClasses.length > 0) {
+        currentId = myClasses[0].id;
+        classroomName.value = myClasses[0].name;
+      }
+    }
+
+    if (!currentId) currentId = 1; // Last resort fallback
+
     const [actRes, stuRes] = await Promise.all([
-      ActivityService.getByClassroom(classroomId.value),
-      api.get('/analytics/students', { params: { classroom_id: classroomId.value } })
+      ActivityService.getByClassroom(currentId),
+      api.get('/analytics/students', { params: { classroom_id: currentId } })
     ]);
 
     const fetchedData = actRes.data?.data || actRes.data;
     activities.value = Array.isArray(fetchedData) ? fetchedData : [];
-    classroomStudents.value = stuRes.data?.data || [];
+    
+    // Fix: Backend might return { data: [...] } or [...]
+    classroomStudents.value = stuRes.data?.data || stuRes.data || [];
 
     // Update Cache
-    localStorage.setItem(`teacher_activities_cache_${classroomId.value}`, JSON.stringify(activities.value));
-    localStorage.setItem(`teacher_classroom_students_cache_${classroomId.value}`, JSON.stringify(classroomStudents.value));
+    localStorage.setItem(`teacher_activities_cache_${currentId}`, JSON.stringify(activities.value));
+    localStorage.setItem(`teacher_classroom_students_cache_${currentId}`, JSON.stringify(classroomStudents.value));
   } catch (err) {
     console.error("Erreur Activity Data:", err);
+    fetchError.value = "Impossible de charger les données.";
   } finally {
     isLoading.value = false;
   }
@@ -659,4 +680,7 @@ onMounted(fetchData);
 .empty-icon svg { width: 40px; height: 40px; }
 .empty-state h3 { font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 8px; }
 .empty-state p { font-size: 14px; color: #8b949e; max-width: 320px; }
+.empty-selection { padding: 40px 20px; text-align: center; color: #484f58; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.empty-selection svg { width: 40px; height: 40px; opacity: 0.5; }
+.empty-selection p { font-size: 13px; font-weight: 600; }
 </style>

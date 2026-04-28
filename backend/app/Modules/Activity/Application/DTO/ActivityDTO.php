@@ -5,10 +5,10 @@ namespace App\Modules\Activity\Application\DTO;
 class ActivityDTO
 {
     public function __construct(
-        public readonly string $title,
-        public readonly ?string $description = null,
-        public readonly string $type,
-        public readonly ?string $date_start = null,
-        public readonly ?string $date_end = null
+        public string $title,
+        public ?string $description = null,
+        public string $type,
+        public ?string $date_start = null,
+        public ?string $date_end = null
     ) {}
 }

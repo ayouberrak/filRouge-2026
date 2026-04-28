@@ -21,6 +21,5 @@
  
          $this->briefRepository->assignSquads($briefId, $squadIds);
          
-         // On pourrait déclencher un événement ici aussi si besoin
      }
  }

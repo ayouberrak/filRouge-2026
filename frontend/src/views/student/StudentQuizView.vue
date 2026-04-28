@@ -154,6 +154,10 @@
 </template>
 
 <script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import api from '../../services/api';
+
 // --- VARIABLES D'ÉTAT (REFS) ---
 const route     = useRoute();
 const router    = useRouter();
@@ -234,11 +238,7 @@ const handleNext = async () => {
 
   // 2. Vérifier si c'est fini ou si on continue
   if (isLastQuestion.value) {
-    // C'était la dernière question ! On récupère le score final
-    const briefId = route.query.briefId || 1;
-    const res = await api.get(`/quizzes/briefs/${briefId}/validate`);
-    totalScore.value = res.data.status?.score ?? '--';
-    
+    // Quiz terminé !
     clearInterval(timerInterval.value);
     showResult.value = true;
   } else {

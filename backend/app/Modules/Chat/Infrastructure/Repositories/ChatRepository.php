@@ -134,11 +134,24 @@ class ChatRepository implements ChatRepositoryInterface
             ->orderBy('updated_at', 'desc')
             ->get();
 
+        // Strict filtering for students to prevent seeing other classes/squads
+        if ($user && $user->role === 'student') {
+            $conversations = $conversations->filter(function ($conv) use ($user) {
+                if ($conv->type === 'classroom' && $conv->related_id != $user->classroom_id) {
+                    return false;
+                }
+                if ($conv->type === 'squad' && $conv->related_id != $user->squad_id) {
+                    return false;
+                }
+                return true;
+            })->values();
+        }
+
         // Append last_message for frontend compatibility
         $conversations->each(function ($conv) {
             $conv->last_message = $conv->messages->first();
         });
 
-        return $conversations;
+        return new Collection($conversations);
     }
 }

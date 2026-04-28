@@ -2,6 +2,7 @@
 
 namespace App\Modules\Squad\Application\UseCases;
 
+use App\Modules\Chat\Infrastructure\Models\ConversationModel;
 use App\Modules\Squad\Application\DTO\CreateSquadDTO;
 use App\Modules\Squad\Domain\Repositories\SquadRepositoryInterface;
 use App\Modules\Squad\Domain\Entities\SquadEntity;
@@ -23,21 +24,19 @@ class CreateSquad
 
         if ($squad && !empty($dto->members)) {
             foreach ($dto->members as $memberId) {
-                // Call entity behavioral method conceptually, then persist
+                // pour le entities
                 $squad->addMember($memberId);
+                //base de donnes 
                 $this->squadRepository->assignMember($squad->getId(), $memberId);
             }
         }
-
-        // Create Chat Conversation for the squad
         if ($squad) {
-            \App\Modules\Chat\Infrastructure\Models\ConversationModel::firstOrCreate(
+            ConversationModel::firstOrCreate(
                 ['type' => 'squad', 'related_id' => $squad->getId()],
                 ['name' => 'Squad: ' . $squad->getName()->getValue()]
             );
         }
 
-        // Return a fresh copy with members loaded
         return $squad ? $this->squadRepository->findById($squad->getId()) : null;
     }
 }

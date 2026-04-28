@@ -153,7 +153,9 @@ const menuStyle   = ref({ top: '0px', left: '0px' });
 const attendanceData = reactive({});
 const students = ref([]);
 const isLoadingData = ref(false);
-const classroomId = ref(1);
+
+// Utiliser le classroom_id du formateur connecté
+const classroomId = computed(() => user.value.classroom_id || 1);
 
 // ─── DATE UTILS ───────────────────────────────────────────────────────────────
 
@@ -259,6 +261,9 @@ const setStatus = async (type, duration = '') => {
 const closeMenu = () => { activeMenu.value = null; };
 
 const fetchStudents = async () => {
+  console.log("[Absences] Current User:", user.value);
+  console.log("[Absences] Fetching students for classroom:", classroomId.value);
+  
   // Cache
   const cached = localStorage.getItem('teacher_absences_students_cache');
   if (cached) {
@@ -266,17 +271,30 @@ const fetchStudents = async () => {
   }
 
   try {
-    const response = await api.get('/analytics/students', { params: { classroom_id: classroomId.value } });
-    students.value = response.data.data.map(s => ({
-      id: s.id,
-      name: `${s.first_name} ${s.last_name}`,
-      points: s.total_points || 0,
-      avatar: s.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(s.first_name + ' ' + s.last_name)}&background=161b22&color=388bfd&bold=true`
-    })).sort((a, b) => a.name.localeCompare(b.name));
+    let response = await api.get('/analytics/students', { params: { classroom_id: classroomId.value } });
     
-    localStorage.setItem('teacher_absences_students_cache', JSON.stringify(students.value));
+    // Si la classe est vide, on essaie de charger TOUS les étudiants (Fallback)
+    if (!response.data?.data || response.data.data.length === 0) {
+      console.log("[Absences] Classroom empty, fetching all students...");
+      response = await api.get('/analytics/students');
+    }
+
+    console.log("[Absences] Final Students Data:", response.data);
+    
+    const rawStudents = response.data?.data || response.data || [];
+    
+    if (Array.isArray(rawStudents)) {
+      students.value = rawStudents.map(s => ({
+        id: s.id,
+        name: `${s.first_name || ''} ${s.last_name || ''}`,
+        points: s.total_points || 0,
+        avatar: s.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent((s.first_name || 'U') + ' ' + (s.last_name || ''))}&background=161b22&color=388bfd&bold=true`
+      })).sort((a, b) => a.name.localeCompare(b.name));
+      
+      localStorage.setItem('teacher_absences_students_cache', JSON.stringify(students.value));
+    }
   } catch (err) {
-    console.error("Erreur Students:", err);
+    console.error("[Absences] Erreur critique API Students:", err);
   }
 };
 

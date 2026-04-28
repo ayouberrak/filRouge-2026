@@ -25,7 +25,8 @@ class AbsenceController
         private GetAllAbsences $getAllAbsencesUseCase,
         private GetAbsencesByStudent $getAbsencesByStudentUseCase,
         private GetAbsencesByClassroom $getAbsencesByClassroomUseCase,
-        private DeleteAbsence $deleteAbsenceUseCase
+        private DeleteAbsence $deleteAbsenceUseCase,
+        private \App\Modules\Absence\Domain\Repositories\AbsenceRepositoryInterface $absenceRepository
     ) {}
 
     public function index()

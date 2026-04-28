@@ -2,6 +2,7 @@
 
 namespace App\Modules\Classroom\Application\UseCases;
 
+use App\Modules\Chat\Infrastructure\Models\ConversationModel;
 use App\Modules\Classroom\Application\DTO\CreateClassroomDTO;
 use App\Modules\Classroom\Domain\Repositories\ClassroomRepositoryInterface;
 
@@ -19,7 +20,7 @@ class CreateClassroom
         ]);
 
         if ($classroom) {
-            \App\Modules\Chat\Infrastructure\Models\ConversationModel::firstOrCreate(
+            ConversationModel::firstOrCreate(
                 ['type' => 'classroom', 'related_id' => $classroom->getId()],
                 ['name' => 'Classe: ' . $classroom->getName()->getValue()]
             );

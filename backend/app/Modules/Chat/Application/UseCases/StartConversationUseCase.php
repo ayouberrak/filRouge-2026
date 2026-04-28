@@ -4,6 +4,7 @@ namespace App\Modules\Chat\Application\UseCases;
 
 use App\Modules\Chat\Infrastructure\Models\ConversationModel;
 use App\Modules\Chat\Domain\Repositories\ChatRepositoryInterface;
+use DB;
 
 class StartConversationUseCase
 {
@@ -17,8 +18,7 @@ class StartConversationUseCase
     public function execute(int $currentUserId, int $targetUserId, string $type = 'individual', ?string $name = null): ConversationModel
     {
         if ($type === 'individual') {
-            // Find an individual conversation where BOTH users are present using a direct join
-            $existingId = \Illuminate\Support\Facades\DB::table('conversation_user as cu1')
+            $existingId = DB::table('conversation_user as cu1')
                 ->join('conversation_user as cu2', 'cu1.conversation_id', '=', 'cu2.conversation_id')
                 ->join('conversations as c', 'c.id', '=', 'cu1.conversation_id')
                 ->where('c.type', 'individual')
@@ -27,7 +27,9 @@ class StartConversationUseCase
                 ->value('c.id');
 
             if ($existingId) {
-                return ConversationModel::find($existingId)->load('users');
+                $conversation = ConversationModel::find($existingId);
+                $conversation->load('users');
+                return $conversation;
             }
         }
 
@@ -39,7 +41,7 @@ class StartConversationUseCase
             $this->chatRepository->addUserToConversation($conversation->id, $targetUserId);
         }
 
-        // Touch the conversation to ensure it shows up at the top
+        // mise a jour updated_at
         $conversation->touch();
 
         return $conversation->load('users');

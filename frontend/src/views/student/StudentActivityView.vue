@@ -198,16 +198,6 @@
                   <span class="s-label">DURÉE</span>
                   <span class="s-value">{{ selectedActivity.duration }}</span>
                 </div>
-                
-                <div class="side-item" v-if="selectedActivity.students?.length">
-                  <span class="s-label">VOS COLLÈGUES ({{ selectedActivity.students.length }})</span>
-                  <div class="coworkers-list">
-                    <div v-for="s in selectedActivity.students" :key="s.id" class="coworker">
-                      <img :src="s.avatar_url || 'https://i.pravatar.cc/100'" class="c-avatar" />
-                      <span class="c-name">{{ s.first_name }}</span>
-                    </div>
-                  </div>
-                </div>
               </aside>
             </div>
             
@@ -223,7 +213,10 @@
 </template>
 
 <script setup>
-// --- VARIABLES D'ÉTAT (REFS) ---
+import { ref, onMounted, computed } from 'vue';
+import { useRouter } from 'vue-router';
+import api from '../../services/api';
+import SidebarStudent from '../../components/SidebarStudent.vue';
 const router = useRouter();
 const user = ref(null); // Utilisateur connecté
 const activities = ref([]); // Liste complète des activités récupérées
@@ -481,8 +474,8 @@ onMounted(() => {
 }
 
 .modal-container {
-  width: 100%; max-width: 900px; background: #0d1117; border: 1px solid #30363d;
-  border-radius: 24px; overflow: hidden; display: flex; flex-direction: column; max-height: 90vh;
+  width: 100%; max-width: 650px; background: #0d1117; border: 1px solid #30363d;
+  border-radius: 24px; overflow: hidden; display: flex; flex-direction: column; max-height: 80vh;
 }
 
 .modal-header {
@@ -502,9 +495,9 @@ onMounted(() => {
 .modal-close svg { width: 20px; height: 20px; }
 .modal-close:hover { color: #f0f6fc; }
 
-.modal-body { display: flex; overflow-y: auto; flex: 1; }
-.modal-main { flex: 1; padding: 32px; display: flex; flex-direction: column; gap: 32px; }
-.modal-side { width: 300px; background: #161b22; border-left: 1px solid #21262d; padding: 32px; display: flex; flex-direction: column; gap: 24px; }
+.modal-body { display: flex; flex-direction: column; overflow-y: auto; flex: 1; }
+.modal-main { flex: 1; padding: 32px; display: flex; flex-direction: column; gap: 24px; }
+.modal-side { background: rgba(22, 27, 34, 0.5); border-top: 1px solid #21262d; padding: 24px 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 
 .m-label { font-size: 11px; font-weight: 700; color: #58a6ff; letter-spacing: 0.1em; margin-bottom: 12px; }
 .m-text { font-size: 14px; line-height: 1.7; color: #8b949e; }

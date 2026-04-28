@@ -13,20 +13,21 @@ return new class extends Migration
     {
         Schema::create('quiz_sessions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('brief_id')->constrained('briefs')->cascadeOnDelete();
+            $table->string('title')->nullable();
+            $table->text('description')->nullable();
+            $table->foreignId('brief_id')->nullable()->constrained('briefs')->nullOnDelete();
+            $table->foreignId('classroom_id')->nullable()->constrained('classrooms')->cascadeOnDelete();
             $table->foreignId('formateur_id')->constrained('users')->cascadeOnDelete();
             $table->string('status')->default('pending'); // pending, active, completed
             $table->integer('timer_minutes')->default(20);
             $table->integer('passing_score')->default(75);
-            $table->timestamp('start_at')->nullable();
-            $table->timestamp('end_at')->nullable();
             $table->timestamps();
         });
 
         Schema::create('questions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('quiz_session_id')->constrained('quiz_sessions')->cascadeOnDelete();
-            $table->enum('type', ['multiple_choice', 'code'])->default('multiple_choice');
+            $table->string('type')->default('multiple_choice');
             $table->text('content');
             $table->text('correct_answer')->nullable();
             $table->json('context_data')->nullable();
@@ -36,12 +37,11 @@ return new class extends Migration
 
         Schema::create('student_responses', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('question_id')->constrained('questions')->cascadeOnDelete();
             $table->foreignId('student_id')->constrained('users')->cascadeOnDelete();
-            $table->text('response_text');
-            $table->float('score')->default(0);
-            $table->boolean('is_correct')->default(false);
-            $table->text('ai_feedback')->nullable();
+            $table->foreignId('quiz_session_id')->constrained('quiz_sessions')->cascadeOnDelete();
+            $table->foreignId('question_id')->constrained('questions')->cascadeOnDelete();
+            $table->foreignId('option_id')->nullable(); // Reference to index or ID in context_data
+            $table->integer('points_earned')->default(0);
             $table->timestamps();
         });
     }

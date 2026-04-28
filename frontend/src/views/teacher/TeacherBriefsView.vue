@@ -105,37 +105,34 @@
                 </div>
               </div>
 
-              <!-- Actions Row -->
-              <div class="card-actions">
-                <button class="btn-action btn-action--secondary" @click="router.push(`/teacher/briefs/${brief.id}/edit`)">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                  Éditer
-                </button>
+                <!-- Actions Row -->
+                <div class="card-actions">
+                  <button class="btn-action btn-action--secondary" @click="router.push(`/teacher/briefs/${brief.id}/edit`)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    Éditer
+                  </button>
 
-                <!-- Assign button: ONLY if NOT already assigned -->
-                <button
-                  v-if="(!brief.classrooms || brief.classrooms.length === 0) && (!brief.squads || brief.squads.length === 0)"
-                  class="btn-action btn-action--primary"
-                  @click="openAssignModal(brief)"
-                >
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
-                  Assigner
-                </button>
+                  <button
+                    v-if="(!brief.classrooms || brief.classrooms.length === 0) && (!brief.squads || brief.squads.length === 0)"
+                    class="btn-action btn-action--primary"
+                    @click="openAssignModal(brief)"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+                    Assigner
+                  </button>
 
-                <!-- Already assigned state -->
-                <div v-else class="btn-action btn-action--assigned">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>
-                  <span v-if="brief.classrooms?.length > 0">
-                    Assigné · {{ brief.classrooms.length }} classe{{ brief.classrooms.length > 1 ? 's' : '' }}
-                  </span>
-                  <span v-else>
-                    Assigné · {{ brief.squads?.length }} squad{{ brief.squads?.length > 1 ? 's' : '' }}
-                  </span>
+                  <template v-else>
+                    <!-- Brief Assigned Status -->
+                    <div class="btn-assigned-status">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 13l4 4L19 7"/></svg>
+                      <span v-if="brief.classrooms?.length > 0">Assigné ({{ brief.classrooms.length }} Cls)</span>
+                      <span v-else>Assigné ({{ brief.squads?.length }} Sq)</span>
+                    </div>
+                  </template>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
 
         <!-- Assign Modal -->
         <Transition name="modal">
@@ -422,6 +419,7 @@ const confirmAssign = async () => {
 };
 
 
+
 const handleLogout = () => router.push('/login');
 </script>
 
@@ -519,7 +517,16 @@ const handleLogout = () => router.push('/login');
 .btn-action--primary { background: rgba(56,139,253,0.08); border: 1px solid rgba(56,139,253,0.3); color: #388bfd; }
 .btn-action--primary:hover { background: rgba(56,139,253,0.15); border-color: rgba(56,139,253,0.5); transform: translateY(-1px); }
 
-.btn-action--assigned { background: rgba(63,185,80,0.05); border: 1px solid rgba(63,185,80,0.2); color: #3fb950; cursor: default; flex: 2; font-size: 11px; }
+.btn-action--assigned { background: rgba(63,185,80,0.05); border: 1px solid rgba(63,185,80,0.2); color: #3fb950; cursor: default; flex: 1.5; font-size: 11px; }
+
+.btn-assigned-status { display: flex; align-items: center; gap: 8px; padding: 9px 12px; background: rgba(63,185,80,0.05); border: 1px solid rgba(63,185,80,0.2); border-radius: 9px; color: #3fb950; font-size: 10px; font-weight: 800; flex: 1.5; }
+.btn-assigned-status svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+.btn-action--quiz { background: #388bfd; border: 1px solid #388bfd; color: #fff; flex: 1.2; box-shadow: 0 4px 12px rgba(56,139,253,0.2); }
+.btn-action--quiz:hover:not(:disabled) { background: #1f6feb; border-color: #1f6feb; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(56,139,253,0.3); }
+.btn-action--quiz:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.no-quiz-label { font-size: 10px; font-weight: 700; color: #484f58; padding: 9px 12px; background: rgba(48,54,61,0.2); border: 1px solid rgba(48,54,61,0.3); border-radius: 9px; flex: 1.2; text-align: center; }
 
 /* Assign Tabs */
 .assign-tabs { display: flex; gap: 4px; padding: 4px; background: rgba(13,17,23,0.5); border: 1px solid rgba(48,54,61,0.4); border-radius: 12px; margin-bottom: 8px; }

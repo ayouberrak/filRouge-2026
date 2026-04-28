@@ -13,11 +13,11 @@ class SquadName
         $name = trim($name);
         
         if (empty($name)) {
-            throw new InvalidArgumentException("Squad name cannot be empty.");
+            throw new InvalidArgumentException("error dans le nom du squad");
         }
 
         if (strlen($name) < 3) {
-            throw new InvalidArgumentException("Squad name must be at least 3 characters long.");
+            throw new InvalidArgumentException("error dans le nom du squad");
         }
 
         $this->value = $name;

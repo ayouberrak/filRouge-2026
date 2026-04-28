@@ -40,7 +40,6 @@ class BriefController
         if ($user && $user->role === 'student' && !$explorer) {
             $briefs = $this->repository->findByClassroomId($user->classroom_id, $user->squad_id);
         } else if ($user && $user->role === 'formateur' && !$explorer) {
-            // Uniquement les briefs créés par ce formateur
             $briefs = $this->repository->findByFormateurId($user->id);
         } else {
             $briefs = $this->getAllBriefs->execute();
@@ -58,6 +57,7 @@ class BriefController
             $item['squads'] = [];
 
             if ($model) {
+                $item['has_quiz'] = $model->quizSessions()->exists();
                 foreach ($model->classrooms as $classroom) {
                     $item['classrooms'][] = [
                         'id' => $classroom->id,
@@ -114,7 +114,6 @@ class BriefController
 
     public function store(CreateBriefRequest $request): JsonResponse
     {
-        try {
             $dto = new BriefDTO(
                 title: $request->input('title'),
                 image_url: $request->input('image_url'),
@@ -135,23 +134,10 @@ class BriefController
                 'data' => $brief->toArray()],
                 201
             );
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Brief store error', [
-                'error' => $e->getMessage(),
-                'payload' => $request->all(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'message' => 'Invalid request while creating brief',
-                'error' => $e->getMessage()
-            ], 400);
-        }
     }
 
     public function update(CreateBriefRequest $request, int $id): JsonResponse
     {
-        try {
             $dto = new BriefDTO(
                 title: $request->input('title'),
                 image_url: $request->input('image_url'),
@@ -171,19 +157,6 @@ class BriefController
                 'message' => 'Brief updated successfully',
                 'data' => $brief->toArray()
             ]);
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Brief update error', [
-                'id' => $id,
-                'error' => $e->getMessage(),
-                'payload' => $request->all(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return response()->json([
-                'message' => 'Invalid request while updating brief',
-                'error' => $e->getMessage()
-            ], 400);
-        }
     }
     
 

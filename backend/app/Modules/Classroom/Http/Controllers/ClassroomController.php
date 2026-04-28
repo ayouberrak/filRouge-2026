@@ -16,7 +16,6 @@ use App\Modules\Classroom\Http\Requests\UpdateClassroomRequest;
 use App\Modules\Classroom\Infrastructure\Models\ClassroomModel;
 use App\Modules\User\Infrastructure\Models\UserModel;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
 
 
 

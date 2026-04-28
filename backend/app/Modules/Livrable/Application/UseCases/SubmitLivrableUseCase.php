@@ -25,15 +25,12 @@ class SubmitLivrableUseCase
         $studentId = $dto->studentId;
         $squadId = $dto->squadId;
 
-        // Traitement spécial pour les briefs en groupe
         if ($studentId && !$squadId) {
             $brief = BriefModel::find($dto->briefId);
             if ($brief && $brief->modality === 'GROUP') {
                 $student = UserModel::find($studentId);
                 if ($student && $student->squad_id) {
                     $squadId = $student->squad_id;
-                    // En mode groupe, on peut aussi garder studentId comme l'auteur du rendu
-                    // mais le squadId est ce qui lie tout le groupe au même rendu.
                 }
             }
         }
@@ -41,8 +38,6 @@ class SubmitLivrableUseCase
         if (!$studentId && !$squadId) {
             throw new InvalidArgumentException("Un Livrable doit être soumis par un étudiant ou un squad.");
         }
-
-        // Vérifier si un rendu existe déjà pour ce brief par cet étudiant ou ce squad
         $existing = LivrableModel::where('brief_id', $dto->briefId)
             ->where(function($query) use ($studentId, $squadId) {
                 if ($squadId) {
