@@ -186,19 +186,14 @@ import { useRouter } from 'vue-router';
 import SidebarStudent from '../../components/SidebarStudent.vue';
 import api from '../../services/api';
 
-// --- VARIABLES D'ÉTAT (REFS) ---
-// On utilise 'ref' pour créer des variables réactives que Vue surveille
 const router    = useRouter();
-const user      = ref(null); // Informations de l'étudiant connecté
-const activeBrief  = ref(null); // Le projet actuel sur lequel travailler
-const leaderboard  = ref([]); // Classement des meilleurs étudiants
-const squad        = ref([]); // Membres de la squad (groupe)
-const studentStats = ref(null); // Statistiques (rang, XP, absences...)
-const isLoading    = ref(true); // État de chargement initial
+const user      = ref(null); 
+const activeBrief  = ref(null); 
+const leaderboard  = ref([]); 
+const squad        = ref([]); 
+const studentStats = ref(null); 
+const isLoading    = ref(true); 
 
-// --- LOGIQUE CALCULÉE (COMPUTED) ---
-
-// Formate la date du jour (ex: lundi 23 avril)
 const formattedDate = computed(() => {
   return new Intl.DateTimeFormat('fr-FR', {
     weekday: 'long',
@@ -207,20 +202,14 @@ const formattedDate = computed(() => {
   }).format(new Date());
 });
 
-// --- ACTIONS (MÉTHODES) ---
 
-// --- ACTIONS (MÉTHODES) ---
-
-// Déconnexion de l'utilisateur
 const handleLogout = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
   router.push('/login');
 };
 
-// Récupérer les données du Dashboard (Version très simple sans try/catch)
 const fetchDashboardData = async () => {
-  // 1. Tenter de charger le cache pour un affichage instantané
   const cached = localStorage.getItem('student_dashboard_cache');
   if (cached) {
     const cacheData = JSON.parse(cached);
@@ -229,7 +218,7 @@ const fetchDashboardData = async () => {
     studentStats.value = cacheData.stats;
     squad.value = cacheData.squad;
     activeBrief.value = cacheData.activeBrief;
-    isLoading.value = false; // On cache le loader car on a déjà des données
+    isLoading.value = false; 
   } else {
     isLoading.value = true;
   }
@@ -256,7 +245,6 @@ const fetchDashboardData = async () => {
       .filter(b => new Date(b.date_end) > now)
       .sort((a, b) => new Date(a.date_end) - new Date(b.date_end))[0] || null;
 
-    // 2. Sauvegarder dans le cache pour la prochaine fois
     localStorage.setItem('student_dashboard_cache', JSON.stringify({
       user: user.value,
       leaderboard: leaderboard.value,
@@ -272,8 +260,6 @@ const fetchDashboardData = async () => {
   isLoading.value = false;
 };
 
-// --- CYCLE DE VIE ---
-// Cette fonction s'exécute quand le composant est affiché à l'écran
 onMounted(fetchDashboardData);
 </script>
 
