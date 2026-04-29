@@ -158,70 +158,56 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '../../services/api';
 
-// --- VARIABLES D'ÉTAT (REFS) ---
 const route     = useRoute();
 const router    = useRouter();
-const sessionId = route.params.id; // L'ID de la session de quiz en cours
+const sessionId = route.params.id; 
 
-const questions            = ref([]); // Liste des questions du quiz
-const currentQuestionIndex = ref(0); // Index de la question affichée (0, 1, 2...)
-const selectedOpt          = ref(null); // Option sélectionnée (pour les QCM)
-const openEndedText        = ref(''); // Texte saisi (pour les questions ouvertes)
-const isSubmitting         = ref(false); // État lors de l'envoi de la réponse
-const showResult           = ref(false); // Si vrai, on affiche l'écran de fin
-const timerSeconds         = ref(15 * 60); // Compte à rebours (15 minutes par défaut)
-const timerInterval        = ref(null); // Référence vers l'intervalle du chrono
-const briefTitle           = ref('Certification YouCode'); // Titre du projet
-const totalScore           = ref(0); // Score final calculé par l'IA
+const questions            = ref([]); 
+const currentQuestionIndex = ref(0); 
+const selectedOpt          = ref(null); 
+const openEndedText        = ref(''); 
+const isSubmitting         = ref(false); 
+const showResult           = ref(false); 
+const timerSeconds         = ref(15 * 60); 
+const timerInterval        = ref(null); 
+const briefTitle           = ref('Certification YouCode'); 
+const totalScore           = ref(0); 
 
-// --- LOGIQUE CALCULÉE (COMPUTED) ---
-
-// Récupère l'objet de la question actuelle
 const currentQuestion = computed(() => questions.value[currentQuestionIndex.value]);
 
-// Vérifie si c'est la toute dernière question du quiz
 const isLastQuestion = computed(() => currentQuestionIndex.value === questions.value.length - 1);
 
-// Calcule le pourcentage de progression pour la barre de progression
 const progressPercentage = computed(() => {
   if (!questions.value.length) return 0;
   return ((currentQuestionIndex.value + 1) / questions.value.length) * 100;
 });
 
-// --- CHRONOMÈTRE (TIMER) ---
 
-// Formate les secondes en MM:SS (ex: 05:42)
 const formatTime = (seconds) => {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${s.toString().padStart(2, '0')}`;
 };
 
-// Démarre le compte à rebours
 const startTimer = () => {
   timerInterval.value = setInterval(() => {
     if (timerSeconds.value > 0) {
       timerSeconds.value--;
     } else {
-      // Temps écoulé ! On termine le quiz automatiquement
       clearInterval(timerInterval.value);
       showResult.value = true;
     }
   }, 1000);
 };
 
-// --- ACTIONS (MÉTHODES) ---
 
-// Sélectionner une option dans un QCM
 const selectOption = (idx) => {
   if (!isSubmitting.value) selectedOpt.value = idx;
 };
 
-// Valider la réponse et passer à la question suivante
 const handleNext = async () => {
   const isOpenEnded = currentQuestion.value?.type === 'open_ended';
   
-  // Préparation de la réponse à envoyer
   const responseText = isOpenEnded 
     ? openEndedText.value 
     : currentQuestion.value.options[selectedOpt.value];
@@ -230,28 +216,23 @@ const handleNext = async () => {
 
   isSubmitting.value = true;
   
-  // 1. Envoyer la réponse au serveur
   await api.post('/quizzes/responses', {
     question_id:   currentQuestion.value.id,
     response_text: responseText,
   });
 
-  // 2. Vérifier si c'est fini ou si on continue
   if (isLastQuestion.value) {
-    // Quiz terminé !
     clearInterval(timerInterval.value);
     showResult.value = true;
   } else {
-    // On passe à la question suivante
     currentQuestionIndex.value++;
-    selectedOpt.value = null; // Réinitialise le choix
-    openEndedText.value = ''; // Réinitialise le texte
+    selectedOpt.value = null; 
+    openEndedText.value = ''; 
   }
   
   isSubmitting.value = false;
 };
 
-// Quitter le quiz
 const confirmExit = () => {
   if (confirm('Voulez-vous vraiment abandonner ? Votre progression ne sera pas enregistrée.')) {
     router.push('/submissions');
@@ -260,9 +241,7 @@ const confirmExit = () => {
 
 const finishQuiz = () => router.push('/submissions');
 
-// --- CHARGEMENT DES DONNÉES ---
 const loadQuizData = async () => {
-  // Cache
   const cached = localStorage.getItem(`student_quiz_questions_${sessionId}`);
   if (cached) {
     questions.value = JSON.parse(cached);
@@ -274,17 +253,14 @@ const loadQuizData = async () => {
     questions.value = res.data.data;
     localStorage.setItem(`student_quiz_questions_${sessionId}`, JSON.stringify(questions.value));
     
-    // Si on n'avait pas de cache, on lance le chrono maintenant
     if (!cached) startTimer();
   } catch (err) {
     console.error("Erreur Quiz Data:", err);
   }
 };
 
-// --- CYCLE DE VIE ---
 onMounted(loadQuizData);
 onUnmounted(() => {
-  // Très important : arrêter le chrono si l'utilisateur quitte la page
   if (timerInterval.value) clearInterval(timerInterval.value);
 });
 </script>
