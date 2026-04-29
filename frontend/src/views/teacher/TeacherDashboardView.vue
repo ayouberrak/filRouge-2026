@@ -246,7 +246,6 @@ const getAvatar = (name) =>
   `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'U')}&background=161b22&color=388bfd&bold=true`;
 
 onMounted(async () => {
-  // 1. Charger le cache pour l'instantanéité
   const cached = localStorage.getItem('teacher_dashboard_cache');
   if (cached) {
     const cacheData = JSON.parse(cached);
@@ -277,7 +276,6 @@ onMounted(async () => {
       squads.value = squadsRes.data?.squads?.data || squadsRes.data?.squads || [];
     }
 
-    // 2. Mettre à jour le cache
     localStorage.setItem('teacher_dashboard_cache', JSON.stringify({
       stats: stats.value,
       squads: squads.value,
