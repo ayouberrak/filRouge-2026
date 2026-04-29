@@ -16,7 +16,6 @@ api.interceptors.request.use((config) => {
         config.headers.Authorization = `Bearer ${token}`;
     }
     
-    // Add socket ID for broadcasting (toOthers)
     if (echo && echo.socketId()) {
         config.headers['X-Socket-ID'] = echo.socketId();
     }
