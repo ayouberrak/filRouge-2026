@@ -146,46 +146,35 @@ import { useRouter } from 'vue-router';
 import api from '../../services/api';
 import SidebarStudent from '../../components/SidebarStudent.vue';
 
-// --- VARIABLES D'ÉTAT (REFS) ---
 const router        = useRouter();
-const user          = ref(null); // Utilisateur actuel
-const mode          = ref('promo'); // Mode d'affichage: 'promo' (assignés) ou 'explorer' (catalogue complet)
-const searchQuery   = ref(''); // Texte de recherche pour filtrer
-const modalityFilter = ref('ALL'); // Filtre de modalité: ALL, INDIVIDUAL, COLLECTIVE
-const briefs        = ref([]); // Liste des projets récupérés
-const isLoading     = ref(true); // État de chargement
+const user          = ref(null); 
+const mode          = ref('promo'); 
+const searchQuery   = ref(''); 
+const modalityFilter = ref('ALL'); 
+const briefs        = ref([]); 
+const isLoading     = ref(true); 
 
-// --- OPTIONS DE FILTRAGE ---
 const modalityOptions = [
   { value: 'ALL',        label: 'Tous'       },
   { value: 'INDIVIDUAL', label: 'Individuel' },
   { value: 'COLLECTIVE', label: 'Collectif'  },
 ];
 
-// --- LOGIQUE CALCULÉE (COMPUTED) ---
-
-// Filtre la liste des briefs en fonction de la recherche et de la modalité
 const filteredBriefs = computed(() => {
   const query = searchQuery.value.toLowerCase().trim();
   
   return briefs.value.filter(b => {
-    // 1. Recherche par titre ou par tag
     const matchesSearch = !query || 
       b.title.toLowerCase().includes(query) ||
       (b.tags && b.tags.some(tag => tag.toLowerCase().includes(query)));
 
-    // 2. Filtre par type (Solo / Collectif)
     const matchesModality = modalityFilter.value === 'ALL' || b.modality === modalityFilter.value;
 
     return matchesSearch && matchesModality;
   });
 });
 
-// --- ACTIONS (MÉTHODES) ---
-
-// Récupérer les projets depuis l'API
 const fetchBriefs = async () => {
-  // 1. Tenter de charger le cache
   const cacheKey = `student_briefs_${mode.value}`;
   const cached = localStorage.getItem(cacheKey);
   if (cached) {
@@ -200,7 +189,6 @@ const fetchBriefs = async () => {
     const response = await api.get(`/briefs${params}`);
     briefs.value = response.data.data || response.data;
 
-    // 2. Sauvegarder dans le cache
     localStorage.setItem(cacheKey, JSON.stringify(briefs.value));
   } catch (err) {
     console.error("Erreur Briefs:", err);
@@ -209,20 +197,17 @@ const fetchBriefs = async () => {
   isLoading.value = false;
 };
 
-// Changer de mode (Promotion vs Explorateur)
 const setMode = (newMode) => {
   mode.value = newMode;
-  fetchBriefs(); // On recharge les données selon le nouveau mode
+  fetchBriefs(); 
 };
 
-// Déconnexion
 const handleLogout = () => {
   localStorage.removeItem('auth_token');
   localStorage.removeItem('user');
   router.push('/login');
 };
 
-// Utilitaires pour l'affichage
 const BRIEF_IMAGES = [
   'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=600&auto=format&fit=crop',
   'https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=600&auto=format&fit=crop',
@@ -233,7 +218,6 @@ const BRIEF_IMAGES = [
 
 const getBriefImage = (brief) => BRIEF_IMAGES[brief.id % BRIEF_IMAGES.length];
 
-// --- CYCLE DE VIE ---
 onMounted(() => {
   const cached = localStorage.getItem('user');
   if (cached) user.value = JSON.parse(cached);
