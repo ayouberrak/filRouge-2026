@@ -149,14 +149,12 @@ import { useRoute, useRouter } from 'vue-router';
 import api from '../../services/api';
 import SidebarStudent from '../../components/SidebarStudent.vue';
 
-// --- VARIABLES D'ÉTAT (REFS) ---
 const route = useRoute();
 const router = useRouter();
-const user = ref(null); // Utilisateur actuel
-const isLoading = ref(true); // État de chargement initial
-const hasError = ref(false); // État en cas d'erreur de récupération
+const user = ref(null);
+const isLoading = ref(true);
+const hasError = ref(false);
 
-// Les détails du brief
 const brief = ref({
   title: '',
   description: '',
@@ -168,18 +166,13 @@ const brief = ref({
   file: null,
 });
 
-// --- ACTIONS (MÉTHODES) ---
-
-// Récupérer les détails d'un brief spécifique
 const fetchBrief = async () => {
   isLoading.value = true;
   hasError.value = false;
   
-  // Appel à l'API pour récupérer un brief par son ID
   const res = await api.get(`/briefs/${route.params.id}`);
   const data = res.data.data || res.data;
   
-  // Mise à jour de l'état avec les données formatées
   brief.value = {
     ...data,
     date_end_f: formatDate(data.date_end),
@@ -189,7 +182,6 @@ const fetchBrief = async () => {
   isLoading.value = false;
 };
 
-// Formater une date ISO en texte lisible (ex: 12 avril 2026)
 const formatDate = (dateStr) => {
   if (!dateStr) return '';
   return new Date(dateStr).toLocaleDateString('fr-FR', {
@@ -197,20 +189,16 @@ const formatDate = (dateStr) => {
   });
 };
 
-// Déconnexion
 const handleLogout = () => {
   localStorage.removeItem('auth_token');
   localStorage.removeItem('user');
   router.push('/login');
 };
 
-// --- CYCLE DE VIE ---
 onMounted(() => {
-  // Récupération de l'utilisateur depuis le localStorage
   const cached = localStorage.getItem('user');
   if (cached) user.value = JSON.parse(cached);
   
-  // Lancement de la récupération du brief
   fetchBrief();
 });
 </script>
