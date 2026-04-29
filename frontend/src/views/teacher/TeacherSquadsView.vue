@@ -191,7 +191,6 @@ const fetchData = async (silent = false) => {
     const students = studentsRes.data?.data || [];
     unassignedStudents.value = students.filter(s => !s.squad_id);
 
-    // Update Cache
     localStorage.setItem('teacher_squads_cache', JSON.stringify(squads.value));
     localStorage.setItem('teacher_unassigned_students_cache', JSON.stringify(unassignedStudents.value));
   } catch (err) {
@@ -202,8 +201,6 @@ const fetchData = async (silent = false) => {
 };
 
 onMounted(fetchData);
-
-// ─── DRAG AND DROP ────────────────────────────────────────────────────────────
 
 const onDragStart = (event, student) => {
   event.dataTransfer.setData('studentId', student.id);
@@ -241,7 +238,6 @@ const onDrop = async (event, squadId) => {
   await fetchData(true);
 };
 
-// ─── ACTIONS ──────────────────────────────────────────────────────────────────
 
 const assignToSquad = async (studentId, squadId) => {
   const studentIndex = unassignedStudents.value.findIndex(s => s.id === studentId);
