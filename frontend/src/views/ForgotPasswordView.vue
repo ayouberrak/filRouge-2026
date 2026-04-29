@@ -83,7 +83,6 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
-/* Utiliser les mêmes styles que LoginView ou les globaliser */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
 .login-container {
