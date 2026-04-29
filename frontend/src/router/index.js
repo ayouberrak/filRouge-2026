@@ -1,14 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
-/**
- * --------------------------------------------------------------------------
- * 1. CONFIGURATION DES ROUTES
- * --------------------------------------------------------------------------
- * Nous utilisons le "Lazy Loading" (() => import) pour que chaque page 
- * ne se charge que lorsqu'on clique dessus. C'est plus propre et plus rapide.
- */
 const routes = [
-    // --- AUTHENTIFICATION ---
     {
         path: '/login',
         name: 'login',
@@ -28,7 +20,6 @@ const routes = [
         meta: { guest: true }
     },
 
-    // --- ESPACE APPRENANT (Student) ---
     {
         path: '/student/dashboard',
         name: 'dashboard',
@@ -101,8 +92,6 @@ const routes = [
         component: () => import('../views/student/StudentQuizView.vue'),
         meta: { requiresAuth: true, role: 'student' }
     },
-
-    // --- ESPACE FORMATEUR (Teacher) ---
     {
         path: '/teacher/dashboard',
         name: 'teacher.dashboard',
@@ -181,8 +170,6 @@ const routes = [
         component: () => import('../views/teacher/TeacherChatView.vue'),
         meta: { requiresAuth: true, role: 'formateur' }
     },
-
-    // --- ESPACE ADMIN ---
     {
         path: '/admin/dashboard',
         name: 'admin.dashboard',
@@ -207,8 +194,6 @@ const routes = [
         component: () => import('../views/admin/AdminAbsencesView.vue'),
         meta: { requiresAuth: true, role: 'admin' }
     },
-
-    // --- REDIRECTIONS ET CHAT ---
     {
         path: '/',
         redirect: () => {
@@ -236,42 +221,30 @@ const router = createRouter({
     history: createWebHistory(),
     routes,
 });
-
-/**
- * --------------------------------------------------------------------------
- * 2. GARDIEN DE NAVIGATION (beforeEach)
- * --------------------------------------------------------------------------
- * Ce code vérifie les permissions avant d'afficher la page.
- */
 router.beforeEach((to, from, next) => {
     const token = localStorage.getItem('auth_token');
     const user = JSON.parse(localStorage.getItem('user') || 'null');
 
-    // 1. Rediriger vers login si la page nécessite une auth et que le token est absent
     if (to.meta.requiresAuth && !token) {
         return next('/login');
     }
 
-    // 2. Si déjà connecté et tente d'aller sur Login -> Rediriger vers son Dashboard
     if (to.meta.guest && token) {
         if (user?.role === 'formateur') return next('/teacher/dashboard');
         if (user?.role === 'admin') return next('/admin/dashboard');
         return next('/student/dashboard');
     }
 
-    // 3. Vérification du rôle autorisé
     if (to.meta.role && user && user.role !== to.meta.role) {
-        // Optionnel : On autorise l'admin à voir les pages prof pour le debug
         if (user.role === 'admin' && to.path.startsWith('/teacher/')) {
             return next();
         }
-        // Sinon, retour au dashboard correspondant au rôle de l'utilisateur
         if (user.role === 'formateur') return next('/teacher/dashboard');
         if (user.role === 'admin') return next('/admin/dashboard');
         return next('/student/dashboard');
     }
 
-    next(); // Tout est OK, on affiche la page
+    next();
 });
 
 export default router;
