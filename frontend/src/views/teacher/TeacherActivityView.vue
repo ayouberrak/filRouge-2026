@@ -296,7 +296,6 @@ const isLoading = ref(true);
 const isSaving = ref(false);
 const fetchError = ref(null);
 
-// Dynamic classroomId selection
 const classroomId = computed(() => user.value.classroom_id || 1);
 const classroomName = ref('Promotion 2026');
 
@@ -316,12 +315,9 @@ const form = ref({
   scheduled_at: ''
 });
 
-// Assignment Modal
 const showAssignModal = ref(false);
 const selectedActivity = ref(null);
 const selectedStudentIds = ref([]);
-
-// ─── COMPUTED ────────────────────────────────────────────────────────────────
 
 const filteredActivities = computed(() => {
   return activities.value.filter(act => {
@@ -336,7 +332,7 @@ const maxParticipants = computed(() => {
   if (!selectedActivity.value) return 0;
   const type = selectedActivity.value.type || selectedActivity.value.activity_type;
   if (type === 'live_coding' || type === 'veille') return 2;
-  return 0; // 0 means no limit
+  return 0;
 });
 
 const isSelectionFull = computed(() => {
@@ -347,8 +343,6 @@ const isSelectionInvalid = computed(() => {
   if (maxParticipants.value > 0 && selectedStudentIds.value.length > maxParticipants.value) return true;
   return false;
 });
-
-// ─── METHODS ─────────────────────────────────────────────────────────────────
 
 const formatType = (type) => {
   const map = {
@@ -386,7 +380,6 @@ const fetchData = async () => {
   isLoading.value = true;
 
   try {
-    // 1. First, ensure we have the right classroom ID
     let currentId = user.value.classroom_id;
     
     if (!currentId) {
@@ -398,7 +391,7 @@ const fetchData = async () => {
       }
     }
 
-    if (!currentId) currentId = 1; // Last resort fallback
+    if (!currentId) currentId = 1; 
 
     const [actRes, stuRes] = await Promise.all([
       ActivityService.getByClassroom(currentId),
@@ -408,10 +401,8 @@ const fetchData = async () => {
     const fetchedData = actRes.data?.data || actRes.data;
     activities.value = Array.isArray(fetchedData) ? fetchedData : [];
     
-    // Fix: Backend might return { data: [...] } or [...]
     classroomStudents.value = stuRes.data?.data || stuRes.data || [];
 
-    // Update Cache
     localStorage.setItem(`teacher_activities_cache_${currentId}`, JSON.stringify(activities.value));
     localStorage.setItem(`teacher_classroom_students_cache_${currentId}`, JSON.stringify(classroomStudents.value));
   } catch (err) {
@@ -447,13 +438,12 @@ const saveActivity = async () => {
     ...form.value,
     classroom_id: classroomId.value,
     formateur_id: user.value.id || 1,
-    student_ids: [] // DTO compatibility
+    student_ids: []
   };
 
   const res = await ActivityService.create(payload);
   const newAct = res.data?.data || res.data;
 
-  // Spécial pour Quiz : auto-assignation à tout le monde
   if (newAct.type === 'quiz' || newAct.activity_type === 'quiz') {
     await ActivityService.assignToClassroom(newAct.id, classroomId.value);
   }
