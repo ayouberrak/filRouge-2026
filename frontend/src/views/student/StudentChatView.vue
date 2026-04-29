@@ -192,7 +192,6 @@ import { ChatService } from '../../services/ApiService';
 import echo from '../../services/echo';
 import SidebarStudent from '../../components/SidebarStudent.vue';
 
-// ─── State ────────────────────────────────────────────────────────────────────
 const router              = useRouter();
 const user                = ref(null);
 const conversations       = ref([]);
@@ -216,7 +215,6 @@ const categories = [
   { id: 'individual', label: 'Privées' },
 ];
 
-// ─── Computed ─────────────────────────────────────────────────────────────────
 const filteredConversations = computed(() => {
   let list = conversations.value || [];
   if (!Array.isArray(list)) return [];
@@ -235,7 +233,6 @@ const currentChat = computed(() =>
   conversations.value.find(c => c.id === selectedChatId.value)
 );
 
-// ─── Watchers ─────────────────────────────────────────────────────────────────
 watch(userSearchQuery, async (newVal) => {
   if (newVal.length >= 2) {
     const res = await ChatService.searchUsers(newVal);
@@ -245,7 +242,6 @@ watch(userSearchQuery, async (newVal) => {
   }
 });
 
-// ─── Methods ──────────────────────────────────────────────────────────────────
 const fetchConversations = async () => {
   try {
     const res = await ChatService.getConversations();
@@ -315,7 +311,6 @@ const startPrivateChat = async (u) => {
     selectedCategory.value = 'all';
     await fetchConversations();
     
-    // Ensure the new conversation is in our local list
     const found = conversations.value.find(c => c.id === newConv.id);
     if (!found) {
       console.log('New conversation missing from fetch, adding manually');
@@ -342,7 +337,6 @@ const getConversationName = (chat) => {
     }
     
     if (users.length > 0) {
-      // Fallback: Si on n'arrive pas à filtrer par ID, on évite d'afficher le nom du formateur par défaut
       const notMe = users.find(u => u.first_name !== 'John' || u.last_name !== 'Doe');
       if (notMe) return `${notMe.first_name} ${notMe.last_name}`;
       
@@ -375,7 +369,6 @@ const handleLogout = () => {
   router.push('/login');
 };
 
-// ─── Lifecycle ────────────────────────────────────────────────────────────────
 onMounted(async () => {
   const cachedUser = localStorage.getItem('user');
   if (cachedUser) user.value = JSON.parse(cachedUser);
