@@ -218,30 +218,23 @@ import { useRouter } from 'vue-router';
 import api from '../../services/api';
 import SidebarStudent from '../../components/SidebarStudent.vue';
 const router = useRouter();
-const user = ref(null); // Utilisateur connecté
-const activities = ref([]); // Liste complète des activités récupérées
-const isLoading = ref(true); // État de chargement
-const selectedActivity = ref(null); // Activité sélectionnée pour afficher les détails dans la modale
+const user = ref(null); 
+const activities = ref([]); 
+const isLoading = ref(true); 
+const selectedActivity = ref(null); 
 
-// --- LOGIQUE CALCULÉE (COMPUTED) ---
-
-// Filtrer les activités par type (Live Coding, Veille, Workshop)
 const liveCodingActivities = computed(() => activities.value.filter(a => a.activity_type === 'live_coding'));
 const veilleActivities     = computed(() => activities.value.filter(a => a.activity_type === 'veille'));
 const workshopActivities   = computed(() => activities.value.filter(a => a.activity_type === 'workshop'));
 
-// Trouver la prochaine activité à venir (basé sur la date actuelle)
 const nextActivity = computed(() => {
   const now = new Date();
   const future = activities.value.filter(a => new Date(a.scheduled_at) > now);
-  return future[0] || null; // On prend la première de la liste des futures
+  return future[0] || null; 
 });
 
-// --- ACTIONS (MÉTHODES) ---
 
-// Charger les activités de l'étudiant
 const fetchActivities = async () => {
-  // Cache
   const cached = localStorage.getItem('student_activities_cache');
   if (cached) {
     activities.value = JSON.parse(cached);
@@ -261,12 +254,10 @@ const fetchActivities = async () => {
   isLoading.value = false;
 };
 
-// Ouvrir la modale de détails
 const openDetails = (activity) => {
   selectedActivity.value = activity;
 };
 
-// Formater la date pour l'affichage (ex: lun. 12 avr. 14:30)
 const formatTime = (dateStr) => {
   if (!dateStr) return 'À définir';
   const date = new Date(dateStr);
@@ -279,19 +270,15 @@ const formatTime = (dateStr) => {
   });
 };
 
-// Déconnexion
 const handleLogout = () => {
   localStorage.removeItem('auth_token');
   localStorage.removeItem('user');
   router.push('/login');
 };
 
-// --- CYCLE DE VIE ---
 onMounted(() => {
   const cached = localStorage.getItem('user');
   if (cached) user.value = JSON.parse(cached);
-  
-  // Lancer la récupération des activités au chargement
   fetchActivities();
 });
 </script>
