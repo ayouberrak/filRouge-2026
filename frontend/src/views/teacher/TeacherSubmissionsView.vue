@@ -222,8 +222,8 @@
 
 
 
-            </div> <!-- Closes review-content -->
-          </div> <!-- Closes review-scroller -->
+            </div>
+          </div>
 
           <!-- Empty Desk -->
           <div v-else class="review-empty">
@@ -289,7 +289,6 @@ const handleSelectBrief = async (id) => {
   selectedBriefId.value = id;
   selectedStudentId.value = null;
 
-  // Cache per brief
   const cacheKey = `teacher_submissions_students_${id}`;
   const cached = localStorage.getItem(cacheKey);
   if (cached) {
@@ -381,7 +380,6 @@ const saveReview = async (verdict) => {
     formateur_id: user.value.id
   });
   
-  // Rafraîchir
   handleSelectBrief(selectedBriefId.value);
   feedback.value = '';
   isSaving.value = false;
