@@ -1,12 +1,12 @@
 <template>
   <aside class="sidebar">
 
-    <!-- Brand -->
+    
     <div class="brand">
       <img :src="iconeSidebar" class="brand-banner" alt="Logo" />
     </div>
 
-    <!-- Nav sections -->
+    
     <nav class="nav">
 
       <div class="nav-section">
@@ -43,7 +43,7 @@
 
     </nav>
 
-    <!-- Footer -->
+    
     <div class="sidebar-footer">
       <div class="user-row">
         <img
@@ -71,12 +71,9 @@ import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import iconeSidebar from '../assets/iconeSidebar.jpg';
 
-// ─── Props & Emits ────────────────────────────────────────────────────────────
 
 const props = defineProps(['user']);
 defineEmits(['logout']);
-
-// ─── Route ────────────────────────────────────────────────────────────────────
 
 const route = useRoute();
 
