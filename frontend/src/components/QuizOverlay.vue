@@ -1,13 +1,13 @@
 <template>
   <div ref="quizContainer" class="fixed inset-0 z-[1000] bg-[#0A0F27] flex flex-col font-sans overflow-hidden animate-in zoom-in duration-500">
     
-    <!-- Linear Timer Bar -->
+    
     <div class="fixed top-0 left-0 h-1.5 bg-slate-800 w-full z-[1100]">
         <div class="h-full bg-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.6)] transition-all duration-1000 ease-linear"
              :style="{ width: timerWidth + '%' }"></div>
     </div>
 
-    <!-- Interface Header -->
+    
     <header class="h-24 flex items-center justify-between px-10 relative z-40 shrink-0">
         <div class="flex items-center gap-6">
             <button @click="$emit('close')" class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/10 transition-all border border-white/5">
@@ -35,12 +35,12 @@
         </div>
     </header>
 
-    <!-- Main Workspace -->
+    
     <div class="flex-1 flex flex-col items-center justify-center p-8 lg:p-20 relative min-h-0">
         
         <div v-if="!showResult" class="w-full max-w-6xl relative z-30">
             
-            <!-- Question Content -->
+            
             <div class="text-center space-y-8 mb-12 animate-in slide-in-from-bottom duration-700">
                 <div class="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-white/5 border border-white/10">
                     <span class="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em] italic">{{ questions[currentQuestionIndex].category }}</span>
@@ -50,7 +50,7 @@
                 </h2>
             </div>
             
-            <!-- Type MULTIPLE: Choice Grid -->
+            
             <div v-if="questions[currentQuestionIndex].type === 'multiple'" 
                  class="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-5xl mx-auto"
                  :class="isScanning ? 'opacity-20 blur-md pointer-events-none' : 'opacity-100 transition-all'">
@@ -72,7 +72,7 @@
                 </div>
             </div>
 
-            <!-- Type CODE: Mini Editor UI -->
+            
             <div v-else-if="questions[currentQuestionIndex].type === 'code'" 
                  class="max-w-4xl mx-auto relative animate-in zoom-in duration-500"
                  :class="isScanning ? 'opacity-20 blur-md' : 'opacity-100 transition-all'">
@@ -87,11 +87,11 @@
                          <span class="text-[9px] font-black text-slate-600 uppercase tracking-widest">MasterEditor v1.0.4 - PHP Mode</span>
                     </div>
                     <div class="flex relative min-h-[300px]">
-                        <!-- Line Numbers -->
+                        
                         <div class="w-14 bg-white/[0.01] border-r border-white-5 p-6 text-right select-none">
                             <div v-for="n in 8" :key="n" class="text-xs font-mono text-slate-800 leading-relaxed">{{ n }}</div>
                         </div>
-                        <!-- Textarea Editor -->
+                        
                         <textarea v-model="userCode" 
                                   placeholder="<?php\n\n// Write your solution here..." 
                                   class="flex-1 bg-transparent p-6 text-blue-400 font-mono text-base leading-relaxed outline-none resize-none placeholder-slate-800"
@@ -109,14 +109,14 @@
                 </div>
             </div>
 
-            <!-- Global Scanning Bar -->
+            
             <div v-if="isScanning" class="absolute top-1/2 left-0 w-full h-[3px] bg-gradient-to-r from-transparent via-blue-500 to-transparent shadow-[0_0_20px_rgba(59,130,246,1)] z-50 animate-scan"></div>
 
         </div>
 
     </div>
 
-    <!-- Fullscreen Toggle Button -->
+    
     <button @click="toggleFullscreen" class="fixed bottom-8 right-8 w-14 h-14 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/10 flex items-center justify-center text-slate-500 hover:text-white transition-all z-[1200] group">
         <svg v-if="!isFullscreen" class="w-6 h-6 group-active:scale-95 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
         <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 4v4m0 0H4m4 0L3 3m13-2v4m0 0h4m-4 0l5-5M8 20v-4m0 0H4m4 0l-5 5m13-5v4m0 0h4m-4 0l5-5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
