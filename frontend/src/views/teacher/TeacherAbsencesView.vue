@@ -145,8 +145,8 @@ import SidebarTeacher from '../../components/SidebarTeacher.vue';
 import { AbsenceService } from '../../services/ApiService';
 import api from '../../services/api';
 
-const router      = useRouter();
-const user        = ref(JSON.parse(localStorage.getItem('user')) || { first_name: 'Formateur', last_name: '' });
+const router= useRouter();
+const user = ref(JSON.parse(localStorage.getItem('user')) || { first_name: 'Formateur', last_name: '' });
 const currentDate = ref(new Date());
 const activeMenu  = ref(null);
 const menuStyle   = ref({ top: '0px', left: '0px' });
@@ -154,10 +154,7 @@ const attendanceData = reactive({});
 const students = ref([]);
 const isLoadingData = ref(false);
 
-// Utiliser le classroom_id du formateur connecté
 const classroomId = computed(() => user.value.classroom_id || 1);
-
-// ─── DATE UTILS ───────────────────────────────────────────────────────────────
 
 const currentMonthName = computed(() =>
   new Intl.DateTimeFormat('fr-FR', { month: 'long' })
@@ -191,8 +188,6 @@ const changeMonth = (delta) => {
 
 const monthKey = () => `${currentYear.value}-${String(currentDate.value.getMonth() + 1).padStart(2, '0')}`;
 const entryKey = (studentId, day) => `${studentId}-${monthKey()}-${day}`;
-
-// ─── ATTENDANCE LOGIC ─────────────────────────────────────────────────────────
 
 const cellClass = (studentId, day) => {
   const entry = attendanceData[entryKey(studentId, day)];
@@ -264,7 +259,6 @@ const fetchStudents = async () => {
   console.log("[Absences] Current User:", user.value);
   console.log("[Absences] Fetching students for classroom:", classroomId.value);
   
-  // Cache
   const cached = localStorage.getItem('teacher_absences_students_cache');
   if (cached) {
     students.value = JSON.parse(cached);
@@ -273,7 +267,6 @@ const fetchStudents = async () => {
   try {
     let response = await api.get('/analytics/students', { params: { classroom_id: classroomId.value } });
     
-    // Si la classe est vide, on essaie de charger TOUS les étudiants (Fallback)
     if (!response.data?.data || response.data.data.length === 0) {
       console.log("[Absences] Classroom empty, fetching all students...");
       response = await api.get('/analytics/students');
@@ -301,7 +294,6 @@ const fetchStudents = async () => {
 const fetchAttendance = async () => {
   const mk = monthKey();
   
-  // Cache per month
   const cacheKey = `teacher_absences_data_${mk}`;
   const cached = localStorage.getItem(cacheKey);
   if (cached) {
@@ -325,7 +317,6 @@ const fetchAttendance = async () => {
       newAttendance[`${abs.student_id}-${mk}-${day}`] = { id: abs.id, type, duration: dStr };
     });
     
-    // Merge or Replace
     Object.keys(attendanceData).forEach(k => delete attendanceData[k]);
     Object.assign(attendanceData, newAttendance);
     
