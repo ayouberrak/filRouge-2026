@@ -190,7 +190,6 @@ import { ChatService } from '../../services/ApiService';
 import echo from '../../services/echo';
 import SidebarTeacher from '../../components/SidebarTeacher.vue';
 
-// ─── State ────────────────────────────────────────────────────────────────────
 const route               = useRoute();
 const router              = useRouter();
 const user                = ref({ first_name: 'Formateur' });
@@ -215,7 +214,6 @@ const categories = [
   { id: 'individual', label: 'Privées' },
 ];
 
-// ─── Computed ─────────────────────────────────────────────────────────────────
 const filteredConversations = computed(() => {
   let list = conversations.value;
   if (selectedCategory.value !== 'all') {
@@ -232,7 +230,6 @@ const currentChat = computed(() =>
   conversations.value.find(c => c.id === selectedChatId.value)
 );
 
-// ─── Watchers ─────────────────────────────────────────────────────────────────
 watch(userSearchQuery, async (newVal) => {
   if (newVal.length >= 2) {
     const res = await ChatService.searchUsers(newVal);
@@ -256,12 +253,10 @@ watch(() => route.params.id, (newId) => {
   }
 });
 
-// ─── Methods ──────────────────────────────────────────────────────────────────
 const fetchConversations = async () => {
   try {
     const res = await ChatService.getConversations();
     conversations.value = res.data || [];
-    console.log('Teacher: Conversations fetched:', conversations.value.length);
     return conversations.value;
   } catch (err) {
     console.error('Teacher: Error fetching conversations:', err);
@@ -293,7 +288,6 @@ const subscribeToChannel = (id) => {
   echo.private(`chat.${id}`)
     .listen('.MessageSent', (e) => {
       if (selectedChatId.value === id) {
-        // Éviter les doublons
         const exists = currentMessages.value.some(m => Number(m.id) === Number(e.message.id));
         if (!exists) {
           currentMessages.value.push(e.message);
@@ -324,17 +318,14 @@ const startPrivateChat = async (u) => {
     showNewChatModal.value = false;
     userSearchQuery.value = '';
 
-    console.log('Teacher: Starting chat with user:', u.id);
     const res = await ChatService.startConversation(u.id);
     const newConv = res.data;
     
     selectedCategory.value = 'all';
     await fetchConversations();
     
-    // Safeguard
     const found = conversations.value.find(c => c.id === newConv.id);
     if (!found) {
-      console.log('Teacher: New conversation missing from fetch, adding manually');
       conversations.value.unshift(newConv);
     }
 
@@ -352,19 +343,15 @@ const getConversationName = (chat) => {
     const users = chat.users || [];
     const meId = Number(user.value?.id);
     
-    // Si on a l'ID de l'utilisateur actuel, on cherche l'autre
     if (!isNaN(meId)) {
       const other = users.find(u => Number(u.id) !== meId);
       if (other) return `${other.first_name} ${other.last_name}`;
     }
     
-    // Si on n'a pas pu identifier "l'autre" par l'ID, mais qu'on a des participants
     if (users.length > 0) {
-      // On cherche quelqu'un qui n'est PAS John Doe (le formateur par défaut)
       const notMe = users.find(u => u.first_name !== 'John' || u.last_name !== 'Doe');
       if (notMe) return `${notMe.first_name} ${notMe.last_name}`;
       
-      // Si tout le monde s'appelle John Doe ou s'il n'y a qu'un user
       return `${users[0].first_name} ${users[0].last_name}`;
     }
     
@@ -394,7 +381,6 @@ const handleLogout = () => {
   router.push('/login');
 };
 
-// ─── Lifecycle ────────────────────────────────────────────────────────────────
 onMounted(async () => {
   const cachedUser = localStorage.getItem('user');
   if (cachedUser) user.value = JSON.parse(cachedUser);
