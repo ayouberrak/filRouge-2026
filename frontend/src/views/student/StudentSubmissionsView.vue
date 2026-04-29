@@ -212,25 +212,20 @@ import { useRouter } from 'vue-router';
 import api from '../../services/api';
 import SidebarStudent from '../../components/SidebarStudent.vue';
 
-// --- VARIABLES D'ÉTAT (REFS) ---
 const router              = useRouter();
-const user                = ref(null); // Utilisateur connecté
-const briefs              = ref([]); // Liste des projets assignés
-const selectedBrief       = ref(null); // Le projet actuellement sélectionné dans la barre latérale
-const previousSubmissions = ref([]); // Historique des rendus de l'étudiant
-const isLoading           = ref(true); // Chargement des données au démarrage
-const isSubmitting        = ref(false); // État lors de l'envoi d'un nouveau livrable
-const submitSuccess       = ref(false); // Affichage du message de succès
-const searchBriefs        = ref(''); // Texte de recherche pour les projets
-const quizResult          = ref(null); // Résultat de l'IA pour le quiz
-const isQuizLoading       = ref(false); // Chargement du statut du quiz
+const user                = ref(null); 
+const briefs              = ref([]); 
+const selectedBrief       = ref(null); 
+const previousSubmissions = ref([]); 
+const isLoading           = ref(true); 
+const isSubmitting        = ref(false); 
+const submitSuccess       = ref(false); 
+const searchBriefs        = ref(''); 
+const quizResult          = ref(null); 
+const isQuizLoading       = ref(false); 
 
-// Formulaire de rendu
 const form = ref({ link: '', message: '' });
 
-// --- LOGIQUE CALCULÉE (COMPUTED) ---
-
-// Filtre la liste des projets à gauche selon la recherche
 const filteredBriefs = computed(() => {
   const query = searchBriefs.value.toLowerCase().trim();
   if (!query) return briefs.value;
@@ -240,23 +235,18 @@ const filteredBriefs = computed(() => {
   );
 });
 
-// Trouve si le projet sélectionné a déjà été rendu (soumis)
 const currentSubmission = computed(() =>
   selectedBrief.value
     ? previousSubmissions.value.find(s => s.brief_id === selectedBrief.value.id) ?? null
     : null
 );
 
-// --- ACTIONS (MÉTHODES) ---
-
-// 1. Sélectionner un projet et charger ses infos (soumission + quiz)
 const selectBrief = (brief) => {
   selectedBrief.value = brief;
-  form.value          = { link: '', message: '' }; // Réinitialise le formulaire
+  form.value          = { link: '', message: '' }; 
   submitSuccess.value = false;
   quizResult.value    = null;
   
-  // On vérifie si ce projet a déjà été rendu
   loadPreviousSubmissions();
 };
 
@@ -265,7 +255,6 @@ const loadBriefs = async () => {
     const res = await api.get('/briefs');
     briefs.value = res.data.data || res.data;
     
-    // Auto-select first brief if none selected
     if (briefs.value.length > 0 && !selectedBrief.value) {
       selectBrief(briefs.value[0]);
     }
@@ -295,13 +284,10 @@ const submitLivrable = async () => {
     };
     
     await api.post('/livrables', payload);
-    
     submitSuccess.value = true;
     
-    // Refresh submissions
     await loadPreviousSubmissions();
     
-    // Auto-hide success message after 3s
     setTimeout(() => {
       submitSuccess.value = false;
     }, 3000);
@@ -313,10 +299,6 @@ const submitLivrable = async () => {
   }
 };
 
-
-
-
-// --- HELPERS ---
 const getSubmissionStatus = (briefId) => previousSubmissions.value.some(s => s.brief_id === briefId);
 const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' });
 
@@ -326,13 +308,11 @@ const handleLogout = () => {
   router.push('/login');
 };
 
-// --- CYCLE DE VIE ---
 onMounted(async () => {
   const cached = localStorage.getItem('user');
   if (cached) user.value = JSON.parse(cached);
   
   isLoading.value = true;
-  // On charge les données (plus simple que Promise.all pour un débutant)
   await loadBriefs();
   await loadPreviousSubmissions();
   isLoading.value = false;
