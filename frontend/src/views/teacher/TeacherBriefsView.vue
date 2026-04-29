@@ -306,7 +306,7 @@ const showModal = ref(false);
 const selectedBrief = ref(null);
 const myClassrooms = ref([]);
 const selectedClassroomIds = ref([]);
-const assignType = ref('classroom'); // 'classroom' or 'squad'
+const assignType = ref('classroom'); 
 const allMySquads = ref([]);
 const selectedSquadIds = ref([]);
 const activeFilter = ref('all');
@@ -359,13 +359,10 @@ const openAssignModal = async (brief) => {
   assignType.value = 'classroom';
   showModal.value = true;
   
-  // Cache for classrooms
   const cachedClassrooms = localStorage.getItem('teacher_briefs_my_classrooms_cache');
   if (cachedClassrooms) {
     myClassrooms.value = JSON.parse(cachedClassrooms);
   }
-
-  // Charger les classes et squads
   isClassroomsLoading.value = true;
   try {
     const [resCls, resSq] = await Promise.all([
@@ -394,7 +391,6 @@ const confirmAssign = async () => {
       await BriefService.assignSquads(selectedBrief.value.id, selectedSquadIds.value);
     }
 
-    // Mise à jour locale (optimiste)
     const idx = briefs.value.findIndex(b => b.id === selectedBrief.value.id);
     if (idx !== -1) {
       briefs.value[idx] = {
