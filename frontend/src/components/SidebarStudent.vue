@@ -1,12 +1,12 @@
 <template>
   <aside class="sidebar">
 
-    <!-- Brand -->
+    
     <div class="brand">
       <img :src="iconeSidebar" class="brand-banner" alt="Logo" />
     </div>
 
-    <!-- Nav sections -->
+    
     <nav class="nav">
       <div class="nav-section">
         <span class="nav-section-label">Parcours</span>
@@ -39,7 +39,7 @@
 
     </nav>
 
-    <!-- Footer -->
+    
     <div class="sidebar-footer">
       <router-link to="/profile" class="user-row" :class="{ 'user-row--active': isActive('/profile') }">
         <img
@@ -67,26 +67,21 @@ import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import iconeSidebar from '../assets/iconeSidebar.jpg';
 
-// ─── Props & Emits ────────────────────────────────────────────────────────────
 
 const props = defineProps(['user']);
 defineEmits(['logout']);
-
-// ─── Route ────────────────────────────────────────────────────────────────────
 
 const route = useRoute();
 
 const isActive = (path) =>
   route.path === path || route.path.startsWith(path + '/');
 
-// ─── Avatar fallback ──────────────────────────────────────────────────────────
 
 const avatarFallback = computed(() => {
   const name = `${props.user?.first_name || 'S'} ${props.user?.last_name || 'A'}`;
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=21262d&color=8b949e&size=56`;
 });
 
-// ─── Navigation ───────────────────────────────────────────────────────────────
 
 const parcoursItems = [
   {
