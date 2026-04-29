@@ -5,7 +5,7 @@
     <main class="main">
       <div class="content">
 
-        <!-- ===== TOPBAR ===== -->
+        
         <header class="topbar animate-in">
           <div class="topbar-left">
             <h1 class="topbar-title">Tableau de Bord Admin</h1>
@@ -20,7 +20,7 @@
           </div>
         </header>
 
-        <!-- ===== KPI STATS ===== -->
+        
         <div class="kpi-grid animate-in" style="animation-delay: 0.1s">
           <div class="kpi-card" v-for="(stat, key) in kpiStats" :key="key">
             <div class="kpi-header">
@@ -38,10 +38,10 @@
           </div>
         </div>
 
-        <!-- ===== MAIN CONTENT AREA ===== -->
+        
         <div class="main-grid">
           
-          <!-- Activity Feed -->
+          
           <section class="panel animate-in" style="animation-delay: 0.2s">
             <div class="panel-header">
               <h2 class="panel-title">Flux d'Activité</h2>
@@ -61,7 +61,7 @@
             </div>
           </section>
 
-          <!-- Distribution / Alerts -->
+          
           <section class="panel animate-in" style="animation-delay: 0.3s">
             <div class="panel-header">
               <h2 class="panel-title">Alertes & Maintenance</h2>
@@ -97,22 +97,16 @@ import { useRouter } from 'vue-router';
 import SidebarAdmin from '../../components/SidebarAdmin.vue';
 import api from '../../services/api';
 
-// --- VARIABLES D'ÉTAT (REFS) ---
-// On utilise 'ref' pour créer des variables que Vue peut surveiller et mettre à jour dans l'interface
 const router = useRouter();
 const user = ref(JSON.parse(localStorage.getItem('user')) || {});
-const stats = ref({}); // Contiendra les chiffres du dashboard
+const stats = ref({}); 
 const recentActivity = ref([]);
 const isLoading = ref(true);
 
-// --- LOGIQUE CALCULÉE (COMPUTED) ---
 
-// Formate la date du jour (ex: lundi 23 avril)
 const formattedDate = computed(() => {
   return new Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
 });
-
-// Génère la liste des cartes KPI dynamiquement
 const kpiStats = computed(() => [
   {
     label: 'Étudiants Totaux',
@@ -148,11 +142,8 @@ const kpiStats = computed(() => [
   }
 ]);
 
-// --- ACTIONS (MÉTHODES) ---
 
-// Récupère les statistiques depuis l'API Laravel
 const fetchStats = async () => {
-  // 1. Charger le cache
   const cached = localStorage.getItem('admin_dashboard_cache');
   if (cached) {
     const cacheData = JSON.parse(cached);
@@ -168,7 +159,6 @@ const fetchStats = async () => {
     stats.value = res.data.data;
     recentActivity.value = stats.value.recent_activity || [];
 
-    // 2. Sauvegarder dans le cache
     localStorage.setItem('admin_dashboard_cache', JSON.stringify({
       stats: stats.value,
       activity: recentActivity.value
@@ -186,7 +176,7 @@ const handleLogout = () => {
   router.push('/login');
 };
 
-// --- CYCLE DE VIE ---
+
 onMounted(fetchStats);
 </script>
 
