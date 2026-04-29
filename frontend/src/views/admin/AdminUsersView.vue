@@ -5,7 +5,7 @@
     <main class="main">
       <div class="content">
 
-        <!-- ===== TOPBAR ===== -->
+        
         <header class="topbar animate-in">
           <div class="topbar-left">
             <h1 class="topbar-title">Gestion des Utilisateurs</h1>
@@ -23,7 +23,7 @@
           </div>
         </header>
 
-        <!-- ===== FILTERS ===== -->
+        
         <div class="filters-row animate-in" style="animation-delay: 0.1s">
           <div class="filter-chips">
             <button 
@@ -40,7 +40,7 @@
           </div>
         </div>
 
-        <!-- ===== USERS TABLE ===== -->
+        
         <div class="table-container animate-in" style="animation-delay: 0.2s">
           <table class="nadi-table">
             <thead>
@@ -96,7 +96,7 @@
           </table>
         </div>
 
-        <!-- ===== MODAL CREATE/EDIT ===== -->
+        
         <Transition name="fade">
           <div v-if="showUserModal" class="modal-overlay" @click.self="closeUserModal">
             <div class="modal-content">
@@ -158,25 +158,21 @@ import { useRouter } from 'vue-router';
 import SidebarAdmin from '../../components/SidebarAdmin.vue';
 import api from '../../services/api';
 
-// --- VARIABLES D'ÉTAT (REFS) ---
-// On utilise 'ref' pour créer des variables réactives que Vue surveille
 const router = useRouter();
 const currentUser = ref(JSON.parse(localStorage.getItem('user')) || {});
-const users = ref([]); // Liste complète des utilisateurs
-const classrooms = ref([]); // Liste des classes
-const isLoading = ref(true); // État de chargement initial
-const isSaving = ref(false); // État lors de l'enregistrement
+const users = ref([]);
+const classrooms = ref([]);
+const isLoading = ref(true);
+const isSaving = ref(false); 
 
-// Filtres et Recherche
-const searchQuery = ref(''); // Texte de recherche
-const filterRole = ref('ALL'); // Filtre de rôle actuel (ALL, student, formateur, admin)
+const searchQuery = ref(''); 
+const filterRole = ref('ALL'); 
 
-// États pour la fenêtre Modale (Popup)
-const showUserModal = ref(false); // Afficher ou non la modale
-const isEdit = ref(false); // Si vrai, on modifie, sinon on crée
-const editingUserId = ref(null); // ID de l'utilisateur en cours de modification
+const showUserModal = ref(false); 
+const isEdit = ref(false); 
+const editingUserId = ref(null); 
 
-// Formulaire de l'utilisateur
+
 const userForm = ref({
   first_name: '',
   last_name: '',
@@ -186,7 +182,6 @@ const userForm = ref({
   classroom_id: null
 });
 
-// Options de filtrage disponibles
 const roles = [
   { val: 'ALL', label: 'Tout le monde' },
   { val: 'student', label: 'Étudiants' },
@@ -194,14 +189,10 @@ const roles = [
   { val: 'admin', label: 'Admins' }
 ];
 
-// --- LOGIQUE CALCULÉE (COMPUTED) ---
-
-// Compte le nombre d'étudiants
 const studentsCount = computed(() => users.value.filter(u => u.role === 'student').length);
-// Compte le nombre de formateurs
 const staffCount = computed(() => users.value.filter(u => u.role === 'formateur').length);
 
-// Applique la recherche et le filtre sur la liste des utilisateurs
+
 const filteredUsers = computed(() => {
   return users.value.filter(u => {
     const fullName = (u.first_name + ' ' + u.last_name + ' ' + u.email).toLowerCase();
@@ -210,15 +201,9 @@ const filteredUsers = computed(() => {
     return matchesSearch && matchesRole;
   });
 });
-
-// Génère un avatar automatique à partir du prénom
 const getAvatar = (name) => `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'U')}&background=21262d&color=a371f7&bold=true`;
 
-// --- ACTIONS (MÉTHODES) ---
-
-// 1. Charger les données (Utilisateurs + Classes)
 const fetchData = async () => {
-  // Cache
   const cachedUsers = localStorage.getItem('admin_users_cache');
   const cachedClasses = localStorage.getItem('admin_classrooms_cache');
   if (cachedUsers && cachedClasses) {
@@ -239,7 +224,6 @@ const fetchData = async () => {
     users.value = Array.isArray(rawUsers) ? rawUsers : (rawUsers.data || []);
     classrooms.value = classRes.data.data || classRes.data;
 
-    // Sauvegarder cache
     localStorage.setItem('admin_users_cache', JSON.stringify(users.value));
     localStorage.setItem('admin_classrooms_cache', JSON.stringify(classrooms.value));
   } catch (err) {
@@ -249,24 +233,21 @@ const fetchData = async () => {
   isLoading.value = false;
 };
 
-// 2. Ouvrir la modale pour créer un utilisateur
 const openCreateModal = () => {
   isEdit.value = false;
   userForm.value = { first_name: '', last_name: '', email: '', password: '', role: 'student', classroom_id: null };
   showUserModal.value = true;
 };
 
-// 3. Ouvrir la modale pour modifier un utilisateur
 const editUser = (user) => {
   isEdit.value = true;
   editingUserId.value = user.id;
-  userForm.value = { ...user }; // On copie les données de l'utilisateur dans le formulaire
+  userForm.value = { ...user };
   showUserModal.value = true;
 };
 
 const closeUserModal = () => showUserModal.value = false;
 
-// 4. Enregistrer (Créer ou Modifier)
 const saveUser = async () => {
   isSaving.value = true;
   try {
@@ -293,7 +274,6 @@ const saveUser = async () => {
   }
 };
 
-// 5. Bannir ou Débloquer un utilisateur
 const toggleBan = async (user) => {
   const isCurrentlyBanned = user.status === 'banned';
   const action = isCurrentlyBanned ? 'débloquer' : 'bannir';
@@ -310,7 +290,6 @@ const handleLogout = () => {
   router.push('/login');
 };
 
-// --- CYCLE DE VIE ---
 onMounted(fetchData);
 </script>
 
