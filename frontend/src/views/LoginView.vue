@@ -112,7 +112,6 @@ const handleLogin = async () => {
         localStorage.setItem('auth_token', response.data.access_token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
         
-        // Redirection intelligente selon le rôle
         const role = response.data.user.role;
         if (role === 'formateur') {
             router.push('/teacher/dashboard');
