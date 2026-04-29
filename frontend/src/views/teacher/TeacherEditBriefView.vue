@@ -294,7 +294,7 @@ const handleSave = async () => {
   try {
     if (isNew.value) {
       const resp = await BriefService.create(payload);
-      savedBrief = resp.data || resp; // Support both structures
+      savedBrief = resp.data || resp;
     } else {
       const resp = await BriefService.update(route.params.id, payload);
       savedBrief = resp.data || resp;
