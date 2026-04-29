@@ -5,7 +5,7 @@
     <main class="main">
       <div class="content">
 
-        <!-- ===== TOPBAR ===== -->
+        
         <header class="topbar animate-in">
           <div class="topbar-left">
             <h1 class="topbar-title">Classes & Espaces</h1>
@@ -19,7 +19,7 @@
           </div>
         </header>
 
-        <!-- ===== CLASSROOMS GRID ===== -->
+        
         <div v-if="isLoading" style="text-align: center; padding: 20px;">Chargement en cours...</div>
         <div v-else class="class-grid animate-in" style="animation-delay: 0.1s">
           <div v-for="(cls, idx) in classrooms" :key="cls.id" class="class-card">
@@ -75,7 +75,7 @@
       </div>
     </main>
     
-    <!-- Modals -->
+    
     <Transition name="fade">
       <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
         <div class="modal-content">
@@ -155,23 +155,19 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import SidebarAdmin from '../../components/SidebarAdmin.vue';
-// Nous importons nos services centralisés pour plus de clarté
+
 import { BriefService } from '../../services/ApiService'; 
 import api from '../../services/api'; 
-
-// --- VARIABLES D'ÉTAT (REFS) ---
-// Ces variables permettent de stocker les données et de mettre à jour l'interface automatiquement
 const router = useRouter();
 const currentUser = ref(JSON.parse(localStorage.getItem('user')) || {});
-const classrooms = ref([]); // Liste des classes
-const isLoading = ref(true); // État de chargement
+const classrooms = ref([]);
 
-// Modals (fenêtres surgissantes)
+
+const isLoading = ref(true); 
 const showModal = ref(false); 
 const showAssignModal = ref(false);
 const showAssignStudentsModal = ref(false);
 
-// Formulaires
 const newClassName = ref('');
 const selectedClassroom = ref(null);
 const selectedFormateurId = ref('');
@@ -180,10 +176,8 @@ const allStudents = ref([]);
 const selectedStudentIds = ref([]);
 const studentSearch = ref('');
 
-// --- LOGIQUE CALCULÉE (COMPUTED) ---
-// Ces fonctions se recalculent toutes seules quand les données changent
 const filteredStudents = computed(() => {
-  // Filtrer d'abord pour ne garder que ceux qui n'ont pas de classe
+
   let list = allStudents.value.filter(st => !st.classroom_id);
   
   if (!studentSearch.value) return list;
@@ -196,11 +190,7 @@ const filteredStudents = computed(() => {
   );
 });
 
-// --- ACTIONS (MÉTHODES) ---
-
-// 1. Récupérer les données depuis le serveur
 const fetchData = async () => {
-  // Cache
   const cachedCls = localStorage.getItem('admin_classrooms_cache');
   const cachedForm = localStorage.getItem('admin_formateurs_cache');
   const cachedSt = localStorage.getItem('admin_all_students_cache');
@@ -225,7 +215,6 @@ const fetchData = async () => {
     formateurs.value = formRes.data.data;
     allStudents.value = studentsRes.data.data;
 
-    // Update Cache
     localStorage.setItem('admin_classrooms_cache', JSON.stringify(classrooms.value));
     localStorage.setItem('admin_formateurs_cache', JSON.stringify(formateurs.value));
     localStorage.setItem('admin_all_students_cache', JSON.stringify(allStudents.value));
@@ -236,7 +225,6 @@ const fetchData = async () => {
   isLoading.value = false;
 };
 
-// 2. Créer une nouvelle classe
 const createClassroom = async () => {
   if (!newClassName.value) return;
   await api.post('/classrooms/create', { name: newClassName.value });
@@ -245,14 +233,13 @@ const createClassroom = async () => {
   fetchData();
 };
 
-// 3. Supprimer une classe
+
 const deleteClassroom = async (id) => {
   if (!confirm('Voulez-vous supprimer cette classe ?')) return;
   await api.delete(`/classrooms/${id}`);
   fetchData();
 };
 
-// 4. Gestion des assignations
 const openAssignModal = (cls) => {
   selectedClassroom.value = cls;
   selectedFormateurId.value = cls.formateur_id || '';
@@ -268,7 +255,6 @@ const doAssign = async () => {
   fetchData();
 };
 
-// 5. Gestion des étudiants
 const openAddStudentsModal = (cls) => {
   selectedClassroom.value = cls;
   selectedStudentIds.value = [];
@@ -301,8 +287,6 @@ const handleLogout = () => {
 
 const getAvatar = (name) => `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'U')}&background=21262d&color=a371f7&bold=true`;
 
-// --- CYCLE DE VIE ---
-// Cette fonction s'exécute quand le composant est affiché à l'écran
 onMounted(fetchData);
 </script>
 
