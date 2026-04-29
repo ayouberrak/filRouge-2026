@@ -226,7 +226,6 @@ const quizzes = ref([]);
 const loading = ref(true);
 const isStarting = ref(null);
 
-// Results State
 const selectedQuiz = ref(null);
 const submissions = ref([]);
 const selectedStudent = ref(null);
