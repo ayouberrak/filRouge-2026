@@ -7,7 +7,7 @@ use App\Modules\User\Infrastructure\Models\UserModel;
 use App\Modules\Classroom\Infrastructure\Models\ClassroomModel;
 use App\Modules\Brief\Infrastructure\Models\BriefModel;
 use App\Modules\Livrable\Infrastructure\Models\LivrableModel;
-use App\Modules\Livrable\Infrastructure\Models\ReponseLivrableModel;
+// use App\Modules\Livrable\Infrastructure\Models\ReponseLivrableModel;
 use App\Modules\Absence\Infrastructure\Models\AbsenceModel;
 
 use Illuminate\Support\Facades\Hash;
@@ -92,12 +92,14 @@ class MockDataSeeder extends Seeder
 
             // Some validated
             if ($student->id % 2 === 0) {
+/*
                 ReponseLivrableModel::create([
                     'livrable_id' => $livrable->id,
                     'formateur_id' => $formateur->id,
                     'status' => 'VALIDATED',
                     'message' => 'Excellent travail, les patterns DDD sont bien respectés.'
                 ]);
+*/
                 $livrable->update(['status' => 'VALIDATED']);
             }
         }
