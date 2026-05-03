@@ -104,6 +104,11 @@ class QuizRepository implements QuizRepositoryInterface
         return $model ? $this->toResponseEntity($model) : null;
     }
 
+    public function deleteQuestionsBySessionId(int $sessionId): void
+    {
+        QuestionModel::where('quiz_session_id', $sessionId)->delete();
+    }
+
     private function toSessionEntity(QuizSessionModel $model): QuizSessionEntity
     {
         $questions = $model->questions->map(fn($q) => new QuestionEntity(

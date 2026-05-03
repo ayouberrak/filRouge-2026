@@ -3,34 +3,35 @@
 namespace App\Modules\Quiz\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Classroom\Infrastructure\Models\ClassroomModel;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use App\Modules\Quiz\Application\DTO\CreateQuizSessionDTO;
+use App\Modules\Quiz\Application\DTO\UpdateQuizSessionDTO;
+use App\Modules\Quiz\Application\DTO\SubmitQuizResponseDTO;
 use App\Modules\Quiz\Application\UseCases\CreateQuizSessionUseCase;
+use App\Modules\Quiz\Application\UseCases\UpdateQuizSessionUseCase;
 use App\Modules\Quiz\Application\UseCases\StartQuizSessionUseCase;
 use App\Modules\Quiz\Application\UseCases\SubmitQuizResponseUseCase;
 use App\Modules\Quiz\Application\UseCases\GetEvaluatedResponsesUseCase;
-use App\Modules\Quiz\Application\DTO\CreateQuizSessionDTO;
-use App\Modules\Quiz\Application\DTO\SubmitQuizResponseDTO;
 use App\Modules\Quiz\Http\Requests\CreateQuizSessionRequest;
 use App\Modules\Quiz\Http\Requests\SubmitQuizResponseRequest;
 use App\Modules\Quiz\Infrastructure\Models\QuizSessionModel;
 use App\Modules\Quiz\Infrastructure\Models\QuestionModel;
+use App\Modules\Quiz\Infrastructure\Models\StudentResponseModel;
 use App\Modules\User\Infrastructure\Models\UserModel;
-use Carbon\Carbon;
 
 class QuizController
 {
     public function __construct(
         private CreateQuizSessionUseCase $createQuizSessionUseCase,
+        private UpdateQuizSessionUseCase $updateQuizSessionUseCase,
         private StartQuizSessionUseCase $startQuizSessionUseCase,
         private SubmitQuizResponseUseCase $submitQuizResponseUseCase,
         private GetEvaluatedResponsesUseCase $getEvaluatedResponsesUseCase
     ) {}
 
-    /**
-     * Create a new quiz session (Formateur)
-     */
     public function createSession(CreateQuizSessionRequest $request): JsonResponse
     {
         $validated = $request->validated();
@@ -58,9 +59,6 @@ class QuizController
             ], 201);
     }
 
-    /**
-     * Start a quiz session (Formateur)
-     */
     public function startSession(Request $request, int $sessionId): JsonResponse
     {
         $session = $this->startQuizSessionUseCase->execute($sessionId);
@@ -74,9 +72,61 @@ class QuizController
             ], 200);
     }
 
-    /**
-     * Submit a student response to a quiz question
-     */
+    public function showSession(int $sessionId): JsonResponse
+    {
+        $session = QuizSessionModel::with(['questions', 'classroom'])->findOrFail($sessionId);
+        
+        return response()->json([
+            'data' => [
+                'id' => $session->id,
+                'title' => $session->title,
+                'description' => $session->description,
+                'classroom_id' => $session->classroom_id,
+                'timer_minutes' => $session->timer_minutes,
+                'passing_score' => $session->passing_score,
+                'status' => $session->status,
+                'questions' => $session->questions->map(function($q) {
+                    $contextData = is_string($q->context_data) ? json_decode($q->context_data, true) : $q->context_data;
+                    return [
+                        'id' => $q->id,
+                        'content' => $q->content,
+                        'type' => $q->type,
+                        'correct_answer' => $q->correct_answer,
+                        'context_data' => $contextData,
+                    ];
+                })
+            ]
+        ]);
+    }
+
+    public function updateSession(CreateQuizSessionRequest $request, int $sessionId): JsonResponse
+    {
+            $validated = $request->validated();
+            
+            $dto = new UpdateQuizSessionDTO(
+                $sessionId,
+                $validated['title'],
+                $validated['description'] ?? null,
+                $validated['classroom_id'],
+                $validated['timer_minutes'],
+                $validated['passing_score'],
+                $validated['questions']
+            );
+
+            $session = $this->updateQuizSessionUseCase->execute($dto);
+
+            return response()->json([
+                'message' => 'Quiz session updated successfully',
+                'data' => [
+                    'id' => $session->getId(),
+                    'title' => $session->getTitle(),
+                    'status' => $session->getStatus()->getValue(),
+                    'questions' => array_map(fn($q) => $q->toArray(), $session->getQuestions())
+                ]
+            ]);
+    }
+
+
     public function submitResponse(SubmitQuizResponseRequest $request): JsonResponse
     {
             $validated = $request->validated();
@@ -108,9 +158,6 @@ class QuizController
             ], 200);
     }
 
-    /**
-     * Get all questions for a specific quiz session
-     */
     public function getQuestions(int $sessionId): JsonResponse
     {
         $session = QuizSessionModel::findOrFail($sessionId);
@@ -121,7 +168,7 @@ class QuizController
         }
 
         $user = Auth::user();
-        $hasParticipated = \App\Modules\Quiz\Infrastructure\Models\StudentResponseModel::where('student_id', $user->id)
+        $hasParticipated = StudentResponseModel::where('student_id', $user->id)
             ->whereHas('question', function($q) use ($sessionId) {
                 $q->where('quiz_session_id', $sessionId);
             })
@@ -152,14 +199,11 @@ class QuizController
             ]);
     }
 
-    /**
-     * Get all quizzes for the current formateur (his own + those for his classrooms)
-     */
     public function getMyQuizzes(): JsonResponse
     {
         $user = Auth::user();
         
-        $managedClassroomIds = \App\Modules\Classroom\Infrastructure\Models\ClassroomModel::where('formateur_id', $user->id)
+        $managedClassroomIds = ClassroomModel::where('formateur_id', $user->id)
             ->pluck('id')
             ->toArray();
 
@@ -185,16 +229,13 @@ class QuizController
         ]);
     }
 
-    /**
-     * Get quizzes assigned to the current student's classroom
-     */
     public function getAssignedQuizzes(): JsonResponse
     {
         $user = Auth::user();
         $classroomId = $user->classroom_id ?? null;
 
         if (!$classroomId) {
-            $classroom = \App\Modules\Classroom\Infrastructure\Models\ClassroomModel::whereHas('students', function($q) use ($user) {
+            $classroom = ClassroomModel::whereHas('students', function($q) use ($user) {
                 $q->where('users.id', $user->id);
             })->first();
             $classroomId = $classroom?->id;
@@ -212,7 +253,7 @@ class QuizController
 
             return response()->json([
                 'data' => $quizzes->map(function($q) use ($user) {
-                    $hasParticipated = \App\Modules\Quiz\Infrastructure\Models\StudentResponseModel::where('student_id', $user->id)
+                    $hasParticipated = StudentResponseModel::where('student_id', $user->id)
                         ->whereHas('question', function($query) use ($q) {
                             $query->where('quiz_session_id', $q->id);
                         })
@@ -234,12 +275,9 @@ class QuizController
             ]);
     }
 
-    /**
-     * Get details of responses for a specific student in a session (Formateur only)
-     */
     public function getStudentResponses(int $sessionId, int $studentId): JsonResponse
     {
-        $responses = \App\Modules\Quiz\Infrastructure\Models\StudentResponseModel::where('student_id', $studentId)
+        $responses = StudentResponseModel::where('student_id', $studentId)
             ->whereHas('question', function($q) use ($sessionId) {
                 $q->where('quiz_session_id', $sessionId);
             })
@@ -261,15 +299,11 @@ class QuizController
             ]);
     }
 
-    /**
-     * Get all students who participated in a quiz session
-     */
     public function getSessionSubmissions(int $sessionId): JsonResponse
     {
         $session = QuizSessionModel::findOrFail($sessionId);
             
-        // Get unique student IDs who have at least one response for this session
-        $studentIds = \App\Modules\Quiz\Infrastructure\Models\StudentResponseModel::whereHas('question', function($q) use ($sessionId) {
+        $studentIds = StudentResponseModel::whereHas('question', function($q) use ($sessionId) {
             $q->where('quiz_session_id', $sessionId);
         })
             ->distinct()
@@ -279,8 +313,7 @@ class QuizController
 
         return response()->json([
             'data' => $students->map(function($student) use ($sessionId) {
-                // Calculate total score for this student in this session
-                $responses = \App\Modules\Quiz\Infrastructure\Models\StudentResponseModel::where('student_id', $student->id)
+                $responses = StudentResponseModel::where('student_id', $student->id)
                     ->whereHas('question', function($q) use ($sessionId) {
                         $q->where('quiz_session_id', $sessionId);
                     })
@@ -290,7 +323,6 @@ class QuizController
                 $answeredCount = $responses->count();
                 $correctCount = $responses->where('is_correct', true)->count();
                     
-                // Simple score calculation (percentage of correct answers)
                 $score = $totalQuestions > 0 ? round(($correctCount / $totalQuestions) * 100) : 0;
 
                 return [
@@ -307,9 +339,6 @@ class QuizController
         ]);
     }
 
-    /**
-     * Auto-sync session status based on timer
-     */
     private function syncSessionStatus(QuizSessionModel $session): QuizSessionModel
     {
         return $session;

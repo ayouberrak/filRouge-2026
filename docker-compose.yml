@@ -1,0 +1,82 @@
+services:
+  # Base de données MySQL
+  db:
+    image: mysql:8.0
+    container_name: filrouge-db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: filrouge
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_PASSWORD: root
+      MYSQL_USER: user
+    networks:
+      - filrouge-network
+
+  # Backend PHP (Laravel)
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: filrouge-app
+    restart: unless-stopped
+    tty: true
+    working_dir: /var/www/backend
+    volumes:
+      - ./backend:/var/www/backend
+    networks:
+      - filrouge-network
+    depends_on:
+      - db
+
+  # Serveur Web Nginx
+  web:
+    image: nginx:alpine
+    container_name: filrouge-web
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "8000:80"
+    volumes:
+      - ./backend:/var/www/backend
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+    networks:
+      - filrouge-network
+    depends_on:
+      - app
+
+  # Frontend (Vite)
+  frontend:
+    image: node:20-alpine
+    container_name: filrouge-frontend
+    restart: unless-stopped
+    working_dir: /var/www/frontend
+    volumes:
+      - ./frontend:/var/www/frontend
+    ports:
+      - "5173:5173"
+    command: sh -c "npm install && npm run dev -- --host"
+    networks:
+      - filrouge-network
+
+  # phpMyAdmin
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: filrouge-phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: root
+    networks:
+      - filrouge-network
+    depends_on:
+      - db
+
+networks:
+  filrouge-network:
+    driver: bridge

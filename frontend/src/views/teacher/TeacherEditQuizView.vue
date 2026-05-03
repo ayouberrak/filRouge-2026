@@ -173,6 +173,7 @@ const form = ref({
 });
 
 onMounted(async () => {
+  // Load Classrooms
   try {
     const response = await api.get('/admin/classrooms');
     classrooms.value = response.data.data || [];
@@ -182,6 +183,40 @@ onMounted(async () => {
       classrooms.value = response.data.data || response.data || [];
     } catch (err) {
       console.error("Erreur chargement classes:", err);
+    }
+  }
+
+  // Load Quiz if editing
+  if (isEdit.value) {
+    try {
+      const res = await QuizService.getSessionById(route.params.id);
+      const quiz = res.data;
+      form.value = {
+        title: quiz.title,
+        description: quiz.description,
+        classroom_id: quiz.classroom_id,
+        timer_minutes: quiz.timer_minutes,
+        passing_score: quiz.passing_score,
+        questions: quiz.questions.map(q => {
+          const options = q.context_data?.options || ['', '', '', ''];
+          let correctIdx = 0;
+          if (q.type === 'multiple_choice') {
+            correctIdx = options.indexOf(q.correct_answer);
+            if (correctIdx === -1) correctIdx = 0;
+          }
+          return {
+            id: q.id,
+            type: q.type,
+            content: q.content,
+            options: options,
+            correct: correctIdx,
+            scenario: q.context_data?.scenario || ''
+          };
+        })
+      };
+    } catch (err) {
+      console.error("Erreur chargement quiz:", err);
+      alert("Impossible de charger les données du quiz.");
     }
   }
 });
@@ -224,7 +259,11 @@ const saveQuiz = async () => {
       }))
     };
 
-    await QuizService.createSession(payload);
+    if (isEdit.value) {
+      await QuizService.updateSession(route.params.id, payload);
+    } else {
+      await QuizService.createSession(payload);
+    }
     router.push('/teacher/quizzes');
   } catch (err) {
     console.error("Erreur sauvegarde:", err);

@@ -106,13 +106,10 @@ const handleSubmit = async () => {
   padding: 2rem; background: #020617; overflow: hidden; position: relative; font-family: 'Inter', sans-serif;
 }
 
-.bg-glow { position: absolute; width: 500px; height: 500px; border-radius: 50%; filter: blur(120px); z-index: 0; opacity: 0.4; }
-.bg-glow-1 { background: #312e81; top: -100px; right: -100px; }
-.bg-glow-2 { background: #1e1b4b; bottom: -100px; left: -100px; }
+.bg-glow { display: none; }
 
 .login-card {
-  width: 100%; max-width: 440px; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 3rem; position: relative; z-index: 10;
+  border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 3rem; position: relative; z-index: 10;
 }
 
 .login-header { text-align: center; margin-bottom: 2.5rem; }

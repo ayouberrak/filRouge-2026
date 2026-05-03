@@ -88,7 +88,7 @@
                 </div>
                 <textarea
                   v-model="openEndedText"
-                  class="nadi-textarea"
+                  class="form-textarea"
                   placeholder="Argumentez ici votre solution technique..."
                   :disabled="isSubmitting"
                   rows="8"
@@ -103,7 +103,7 @@
             <!-- Footer Action -->
             <div class="question-footer">
               <button
-                class="btn-nadi-primary btn-next-large"
+                class="btn-primary btn-next-large"
                 :class="{ 'btn-finish-mode': isLastQuestion }"
                 :disabled="(currentQuestion?.type === 'open_ended' ? !openEndedText.trim() : selectedOpt === null) || isSubmitting"
                 @click="handleNext"
@@ -140,7 +140,7 @@
               <span class="score-unit">Points YC</span>
             </div>
 
-            <button @click="finishQuiz" class="btn-nadi-secondary">
+            <button @click="finishQuiz" class="btn-secondary">
               Quitter le flux d'évaluation
             </button>
 
@@ -371,26 +371,26 @@ onUnmounted(() => {
 .open-textarea-label { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 800; color: #8b949e; text-transform: uppercase; letter-spacing: 0.1em; }
 .open-textarea-label svg { width: 16px; height: 16px; color: #56d364; stroke-width: 2.5; }
 
-.nadi-textarea {
+.form-textarea {
   background: #010409; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
   padding: 20px; color: #fff; font-size: 15px; font-family: 'Inter', sans-serif; line-height: 1.7; width: 100%; resize: vertical; outline: none; transition: all 0.2s; box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
 }
-.nadi-textarea:focus { border-color: #56d364; box-shadow: 0 0 0 4px rgba(86,211,100,0.15), inset 0 2px 5px rgba(0,0,0,0.2); }
-.nadi-textarea::placeholder { color: #484f58; font-weight: 500; font-style: italic;}
+.form-textarea:focus { border-color: #56d364; box-shadow: 0 0 0 4px rgba(86,211,100,0.15), inset 0 2px 5px rgba(0,0,0,0.2); }
+.form-textarea::placeholder { color: #484f58; font-weight: 500; font-style: italic;}
 
 .open-textarea-hint { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #56d364; font-weight: 600;}
 .open-textarea-hint svg { width: 14px; height: 14px; }
 
 /* ─── Actions ───────────────────────────────────────────────────────────────── */
 .question-footer { padding-top: 32px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: flex-end;}
-.btn-nadi-primary {
+.btn-primary {
   display: flex; align-items: center; justify-content: center; gap: 12px; padding: 16px 32px;
   background: #238636; color: white; border: 1px solid #2ea043; border-radius: 12px;
   font-size: 15px; font-weight: 700; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 15px rgba(35,134,54,0.2);
 }
-.btn-nadi-primary:hover:not(:disabled) { background: #2ea043; border-color: #3fb950; box-shadow: 0 8px 25px rgba(35,134,54,0.3); transform: translateY(-2px); }
-.btn-nadi-primary:disabled { opacity: 0.5; background: rgba(255,255,255,0.05); border-color: transparent; color: #8b949e; cursor: not-allowed; box-shadow: none; }
-.btn-nadi-primary svg { width: 18px; height: 18px; }
+.btn-primary:hover:not(:disabled) { background: #2ea043; border-color: #3fb950; box-shadow: 0 8px 25px rgba(35,134,54,0.3); transform: translateY(-2px); }
+.btn-primary:disabled { opacity: 0.5; background: rgba(255,255,255,0.05); border-color: transparent; color: #8b949e; cursor: not-allowed; box-shadow: none; }
+.btn-primary svg { width: 18px; height: 18px; }
 
 .btn-finish-mode { background: #d29922; border-color: #e3b341; box-shadow: 0 4px 15px rgba(210,153,34,0.2); color: #010409;}
 .btn-finish-mode:hover:not(:disabled) { background: #e3b341; border-color: #f8e3a1; box-shadow: 0 8px 25px rgba(210,153,34,0.3); }
@@ -413,10 +413,10 @@ onUnmounted(() => {
 
 .score-ring { display: none; } /* On cache l'ancien cercle de score pour ce loader */
 
-.btn-nadi-secondary {
+.btn-secondary {
   padding: 14px 32px; background: rgba(255,255,255,0.03); color: #c9d1d9; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.2s; margin-top: 10px;
 }
-.btn-nadi-secondary:hover { background: rgba(255,255,255,0.08); color: #fff; border-color: rgba(255,255,255,0.2); }
+.btn-secondary:hover { background: rgba(255,255,255,0.08); color: #fff; border-color: rgba(255,255,255,0.2); }
 
 /* ─── Animations ────────────────────────────────────────────────────────────── */
 @keyframes pulse-red  { 0%, 100% { opacity: 1; box-shadow: 0 0 10px rgba(248,81,73,0.3); } 50% { opacity: 0.6; box-shadow: 0 0 2px rgba(248,81,73,0.1); } }

@@ -92,7 +92,7 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M12 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/>
                 </svg>
-                Passage: {{ quiz.passing_score }}%
+                Requis : {{ quiz.passing_score }}%
               </div>
             </div>
 

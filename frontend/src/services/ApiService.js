@@ -102,6 +102,14 @@ export const QuizService = {
     const response = await api.post('/quizzes/sessions', payload);
     return response.data;
   },
+  async getSessionById(sessionId) {
+    const response = await api.get(`/quizzes/sessions/${sessionId}`);
+    return response.data;
+  },
+  async updateSession(sessionId, payload) {
+    const response = await api.put(`/quizzes/sessions/${sessionId}`, payload);
+    return response.data;
+  },
   async getQuestionsBySession(sessionId) {
     const response = await api.get(`/quizzes/sessions/${sessionId}/questions`);
     return response.data;

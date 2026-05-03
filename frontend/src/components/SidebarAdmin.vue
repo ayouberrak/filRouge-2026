@@ -67,12 +67,13 @@
           <p class="user-name">{{ user?.first_name || 'Admin' }}</p>
           <p class="user-role">Super Administrateur</p>
         </div>
-        <button class="logout-btn" @click="$emit('logout')" title="Se déconnecter">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-          </svg>
-        </button>
       </div>
+      
+      <button class="logout-btn" @click="$emit('logout')" title="Se déconnecter">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+      </button>
     </div>
 
   </aside>
@@ -262,18 +263,26 @@ const resourceItems = [
 }
 
 .sidebar-footer {
-  padding: 16px;
+  padding: 12px 10px;
   border-top: 1px solid #21262d;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .user-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px;
-  border-radius: 10px;
-  background: #161b22;
+  gap: 9px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  background: transparent;
+  transition: background 0.12s;
+  flex: 1;
+  min-width: 0;
 }
+.user-row:hover { background: #161b22; }
 
 .user-avatar {
   width: 32px;
@@ -296,12 +305,27 @@ const resourceItems = [
 }
 
 .logout-btn {
-  background: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: transparent;
   border: none;
   color: #8b949e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: color 0.2s;
+  flex-shrink: 0;
+  transition: all 0.2s;
 }
 
-.logout-btn:hover { color: #f85149; }
+.logout-btn:hover {
+  color: #f85149;
+  background: rgba(248, 81, 73, 0.1);
+}
+
+.logout-btn svg {
+  width: 16px;
+  height: 16px;
+}
 </style>

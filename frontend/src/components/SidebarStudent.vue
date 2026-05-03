@@ -362,10 +362,13 @@ const communityItems = [
 }
 .logout-btn svg { width: 14px; height: 14px; }
 
-footer {
+.sidebar-footer {
   padding: 12px 10px;
   border-top: 1px solid #21262d;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .user-row {
   display: flex;

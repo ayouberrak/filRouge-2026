@@ -55,12 +55,12 @@
           <p class="user-name">{{ user?.first_name || 'Formateur' }} {{ user?.last_name?.[0] || '' }}.</p>
           <p class="user-role">Coach · YouCode</p>
         </div>
-        <button class="logout-btn" @click="$emit('logout')" title="Se déconnecter">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-          </svg>
-        </button>
       </div>
+      <button class="logout-btn" @click="$emit('logout')" title="Se déconnecter">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+      </button>
     </div>
 
   </aside>
@@ -312,6 +312,9 @@ const pedagogyItems = [
   padding: 12px 10px;
   border-top: 1px solid #21262d;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .user-row {
   display: flex;

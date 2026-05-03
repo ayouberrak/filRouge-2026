@@ -108,8 +108,8 @@
                     </div>
                   </div>
                   <div class="brief-footer">
-                    <button class="btn-nadi-primary" @click="router.push('/student/briefs')">Continuer le travail</button>
-                    <button class="btn-nadi-secondary" @click="router.push('/student/submissions')">Déposer un livrable</button>
+                    <button class="btn-primary" @click="router.push('/student/briefs')">Continuer le travail</button>
+                    <button class="btn-secondary" @click="router.push('/student/submissions')">Déposer un livrable</button>
                   </div>
                 </div>
               </div>
@@ -204,7 +204,7 @@ const formattedDate = computed(() => {
 
 
 const handleLogout = () => {
-  localStorage.removeItem('token');
+  localStorage.removeItem('auth_token');
   localStorage.removeItem('user');
   router.push('/login');
 };
@@ -381,11 +381,11 @@ onMounted(fetchDashboardData);
 .meta-inline svg { width: 14px; height: 14px; }
 
 .brief-footer { display: flex; gap: 12px; }
-.btn-nadi-primary {
+.btn-primary {
   background: #238636; border: 1px solid #2ea043; color: white;
   padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
 }
-.btn-nadi-secondary {
+.btn-secondary {
   background: #21262d; border: 1px solid #30363d; color: #c9d1d9;
   padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
 }

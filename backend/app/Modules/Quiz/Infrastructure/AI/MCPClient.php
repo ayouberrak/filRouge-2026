@@ -25,9 +25,10 @@ class MCPClient
             Évalue le code de l'étudiant selon la consigne.
 
              IMPORTANT :
-            - Sois juste mais pas trop sévère
-            - Donne un score un peu généreux
-            - Encourage l’apprentissage
+            - Sois juste mais bienveillant
+            - Donne des points partiels si la notion de base est comprise
+            - Ne donne 0% que si la réponse est totalement hors sujet ou vide
+            - Encourage l’apprentissage avec un feedback constructif
 
             Réponds uniquement en JSON strict :
             {
@@ -55,6 +56,11 @@ class MCPClient
             }
 
             $text = $response->json()['choices'][0]['message']['content'] ?? '';
+
+            // // Extraire uniquement la partie JSON si l'IA a ajouté du texte autour
+            // if (preg_match('/\{.*\}/s', $text, $matches)) {
+            //     $text = $matches[0];
+            // }
 
             $result = json_decode($text, true);
 

@@ -114,7 +114,7 @@
                     v-model="form.link"
                     type="url"
                     placeholder="https://github.com/username/projet"
-                    class="nadi-input"
+                    class="form-input"
                     required
                   />
                 </div>
@@ -130,14 +130,14 @@
                     id="message"
                     v-model="form.message"
                     placeholder="Détaillez les choix d'architecture ou les difficultés rencontrées..."
-                    class="nadi-textarea"
+                    class="form-textarea"
                     rows="4"
                   ></textarea>
                 </div>
 
                 <button
                   type="submit"
-                  class="btn-nadi-primary submit-btn-long"
+                  class="btn-primary submit-btn-long"
                   :disabled="isSubmitting || !form.link"
                 >
                   <svg v-if="!isSubmitting" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -508,16 +508,6 @@ onMounted(async () => {
 }
 .form-group label svg { width: 14px; height: 14px; }
 
-.nadi-input, .nadi-textarea {
-  background: #010409; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
-  padding: 14px 18px; font-size: 14px; color: #fff; outline: none; font-family: 'Inter', sans-serif;
-  transition: all 0.2s; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
-}
-.nadi-textarea { resize: vertical; line-height: 1.6; }
-.nadi-input::placeholder, .nadi-textarea::placeholder { color: #484f58; font-weight: 500;}
-.nadi-input:focus, .nadi-textarea:focus {
-  border-color: #388bfd; box-shadow: 0 0 0 4px rgba(56, 139, 253, 0.15), inset 0 2px 4px rgba(0,0,0,0.2);
-}
 
 .submit-btn-long {
   margin-top: 10px; padding: 16px; font-size: 15px; border-radius: 12px;

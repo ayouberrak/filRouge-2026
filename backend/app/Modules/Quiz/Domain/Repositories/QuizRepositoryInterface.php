@@ -12,4 +12,5 @@ interface QuizRepositoryInterface
     public function saveResponse(ResponseEntity $response): ResponseEntity;
     public function findResponsesBySessionId(int $sessionId): array;
     public function findResponseByQuestionAndStudent(int $questionId, int $studentId): ?ResponseEntity;
+    public function deleteQuestionsBySessionId(int $sessionId): void;
 }

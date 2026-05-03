@@ -1,9 +1,6 @@
 <template>
   <div class="login-container">
-    <!-- Animated background circles -->
-    <div class="bg-glow bg-glow-1"></div>
-    <div class="bg-glow bg-glow-2"></div>
-    
+
     <div class="login-card animate-in">
       <div class="login-header">
         <div class="logo-area">
@@ -12,9 +9,9 @@
               <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
             </svg>
           </div>
-          <h1>Nadi Dashboard</h1>
+          <h1>Connexion</h1>
         </div>
-        <p>FilRouge 2026 · Excellence Académique</p>
+        <p>Accédez à votre espace FilRouge</p>
       </div>
 
       <form @submit.prevent="handleLogin" class="login-form">
@@ -81,7 +78,7 @@
       </form>
 
       <div class="login-footer">
-        <p>© 2026 YouCode FilRouge. Propulsé par Nadi OS.</p>
+        <p>© 2026 YouCode FilRouge</p>
       </div>
     </div>
   </div>
@@ -141,26 +138,6 @@ const handleLogin = async () => {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
-/* Background effects */
-.bg-glow {
-  position: absolute;
-  width: 500px;
-  height: 500px;
-  border-radius: 50%;
-  filter: blur(120px);
-  z-index: 0;
-  opacity: 0.4;
-}
-.bg-glow-1 {
-  background: #312e81;
-  top: -100px;
-  right: -100px;
-}
-.bg-glow-2 {
-  background: #1e1b4b;
-  bottom: -100px;
-  left: -100px;
-}
 
 .login-card {
   width: 100%;
@@ -168,9 +145,8 @@ const handleLogin = async () => {
   background: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px;
+  border-radius: 16px;
   padding: 3rem;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   position: relative;
   z-index: 10;
 }
