@@ -37,6 +37,3 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/filrouge-web:latest
   
-
-
-          
