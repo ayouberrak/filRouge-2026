@@ -36,3 +36,7 @@ jobs:
           file: docker/nginx/Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/filrouge-web:latest
+  
+
+
+          
