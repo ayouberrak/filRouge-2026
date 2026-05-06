@@ -5,9 +5,10 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Modules\User\Infrastructure\Models\UserModel;
 use App\Modules\Classroom\Infrastructure\Models\ClassroomModel;
+use App\Modules\Squad\Infrastructure\Models\SquadModel;
 use App\Modules\Brief\Infrastructure\Models\BriefModel;
+use App\Modules\Chat\Infrastructure\Models\ConversationModel;
 use App\Modules\Livrable\Infrastructure\Models\LivrableModel;
-// use App\Modules\Livrable\Infrastructure\Models\ReponseLivrableModel;
 use App\Modules\Absence\Infrastructure\Models\AbsenceModel;
 
 use Illuminate\Support\Facades\Hash;
@@ -47,7 +48,7 @@ class MockDataSeeder extends Seeder
         for ($i = 1; $i <= 5; $i++) {
             $students[] = UserModel::create([
                 'first_name' => 'Student',
-                'last_name' => $i,
+                'last_name' => (string)$i,
                 'email' => "student$i@yc.com",
                 'password' => Hash::make('password'),
                 'role' => 'student',
@@ -55,6 +56,42 @@ class MockDataSeeder extends Seeder
                 'classroom_id' => $classroom->id,
             ]);
         }
+
+        // 4.5 Create Squads
+        $squad1 = SquadModel::create([
+            'name' => 'Squad A - Alpha',
+            'classroom_id' => $classroom->id
+        ]);
+
+        $squad2 = SquadModel::create([
+            'name' => 'Squad B - Beta',
+            'classroom_id' => $classroom->id
+        ]);
+
+        // Create Chat Conversations
+        ConversationModel::create([
+            'type' => 'classroom',
+            'related_id' => $classroom->id,
+            'name' => $classroom->name
+        ]);
+
+        ConversationModel::create([
+            'type' => 'squad',
+            'related_id' => $squad1->id,
+            'name' => $squad1->name
+        ]);
+
+        ConversationModel::create([
+            'type' => 'squad',
+            'related_id' => $squad2->id,
+            'name' => $squad2->name
+        ]);
+
+        // Assign students to squads
+        $students[0]->update(['squad_id' => $squad1->id]);
+        $students[1]->update(['squad_id' => $squad1->id]);
+        $students[2]->update(['squad_id' => $squad2->id]);
+        $students[3]->update(['squad_id' => $squad2->id]);
 
         // 5. Create Briefs
         $brief1 = BriefModel::create([
@@ -65,9 +102,9 @@ class MockDataSeeder extends Seeder
             'date_end' => now()->addDays(7),
             'modality' => 'INDIVIDUAL',
             'status' => 'IN_PROGRESS',
-            'formateur_id' => $formateur->id
+            'formateur_id' => $formateur->id,
+            'classroom_id' => $classroom->id
         ]);
-        $brief1->classrooms()->attach($classroom->id);
 
         $brief2 = BriefModel::create([
             'title' => 'Laravel Microservices',
@@ -75,11 +112,14 @@ class MockDataSeeder extends Seeder
             'context' => 'Le passage au micro-services est une étape cruciale pour les applications à haute disponibilité. Ce projet vous met dans la peau d\'un architecte Backend chargé de scinder un monolithe existant en services indépendants communiquant via des APIs REST et des files d\'attente. Un défi technique de haut vol !',
             'date_start' => now()->subDays(10),
             'date_end' => now()->subDays(3),
-            'modality' => 'GROUP', // SQUAD was not in enum ['INDIVIDUAL', 'GROUP']
+            'modality' => 'GROUP',
             'status' => 'COMPLETED',
-            'formateur_id' => $formateur->id
+            'formateur_id' => $formateur->id,
+            'classroom_id' => $classroom->id
         ]);
-        $brief2->classrooms()->attach($classroom->id);
+
+        // Assign brief2 to squads
+        $brief2->squads()->attach([$squad1->id, $squad2->id]);
 
         // 6. Create Livrables
         foreach ($students as $student) {
@@ -92,14 +132,14 @@ class MockDataSeeder extends Seeder
 
             // Some validated
             if ($student->id % 2 === 0) {
-/*
-                ReponseLivrableModel::create([
-                    'livrable_id' => $livrable->id,
-                    'formateur_id' => $formateur->id,
-                    'status' => 'VALIDATED',
-                    'message' => 'Excellent travail, les patterns DDD sont bien respectés.'
-                ]);
-*/
+                /*
+                                ReponseLivrableModel::create([
+                                    'livrable_id' => $livrable->id,
+                                    'formateur_id' => $formateur->id,
+                                    'status' => 'VALIDATED',
+                                    'message' => 'Excellent travail, les patterns DDD sont bien respectés.'
+                                ]);
+                */
                 $livrable->update(['status' => 'VALIDATED']);
             }
         }

@@ -434,23 +434,29 @@ const openEditor = (act) => {
 
 const saveActivity = async () => {
   isSaving.value = true;
-  const payload = {
-    ...form.value,
-    classroom_id: classroomId.value,
-    formateur_id: user.value.id || 1,
-    student_ids: []
-  };
+  try {
+    const payload = {
+      ...form.value,
+      classroom_id: classroomId.value,
+      formateur_id: user.value.id || 1,
+      student_ids: []
+    };
 
-  const res = await ActivityService.create(payload);
-  const newAct = res.data?.data || res.data;
+    const res = await ActivityService.create(payload);
+    const newAct = res.data?.data || res.data;
 
-  if (newAct.type === 'quiz' || newAct.activity_type === 'quiz') {
-    await ActivityService.assignToClassroom(newAct.id, classroomId.value);
+    if (newAct.type === 'quiz' || newAct.activity_type === 'quiz') {
+      await ActivityService.assignToClassroom(newAct.id, classroomId.value);
+    }
+
+    await fetchData();
+    showEditor.value = false;
+  } catch (err) {
+    console.error("Erreur Save Activity:", err);
+    alert("Une erreur est survenue lors de l'enregistrement de l'activité.");
+  } finally {
+    isSaving.value = false;
   }
-
-  await fetchData();
-  showEditor.value = false;
-  isSaving.value = false;
 };
 
 const openAssignModal = (act) => {
@@ -485,7 +491,23 @@ const confirmAssignment = async () => {
 
 const handleLogout = () => router.push('/login');
 
-onMounted(fetchData);
+onMounted(async () => {
+  // Load from cache first for immediate UI
+  const currentId = user.value.classroom_id || 1;
+  const cachedActs = localStorage.getItem(`teacher_activities_cache_${currentId}`);
+  const cachedStus = localStorage.getItem(`teacher_classroom_students_cache_${currentId}`);
+  
+  if (cachedActs) {
+    activities.value = JSON.parse(cachedActs);
+    isLoading.value = false;
+  }
+  if (cachedStus) {
+    classroomStudents.value = JSON.parse(cachedStus);
+  }
+
+  // Then refresh from network
+  await fetchData();
+});
 </script>
 
 <style scoped>

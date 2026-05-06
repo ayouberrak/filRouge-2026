@@ -118,6 +118,10 @@ export const QuizService = {
     const response = await api.post(`/quizzes/sessions/${sessionId}/start`);
     return response.data;
   },
+  async finishSession(sessionId) {
+    const response = await api.post(`/quizzes/sessions/${sessionId}/finish`);
+    return response.data;
+  },
   async getSessionSubmissions(sessionId) {
     const response = await api.get(`/quizzes/sessions/${sessionId}/submissions`);
     return response.data;

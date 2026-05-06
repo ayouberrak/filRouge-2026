@@ -103,6 +103,14 @@
                       Lancer
                     </template>
                   </button>
+
+                  <button v-if="quiz.status === 'ACTIVE'" @click="handleFinish(quiz)" class="action-btn action-btn--finish" :disabled="isFinishing === quiz.id">
+                    <span v-if="isFinishing === quiz.id" class="mini-spinner"></span>
+                    <template v-else>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>
+                      Clôturer
+                    </template>
+                  </button>
                   
                   <button v-if="quiz.status !== 'PENDING'" @click="viewResults(quiz)" class="action-btn action-btn--results">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
@@ -225,6 +233,7 @@ const user = ref(JSON.parse(localStorage.getItem('user')) || { first_name: 'Coac
 const quizzes = ref([]);
 const loading = ref(true);
 const isStarting = ref(null);
+const isFinishing = ref(null);
 
 const selectedQuiz = ref(null);
 const submissions = ref([]);
@@ -240,15 +249,16 @@ const formatDate = (dateStr) => {
   return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
-const fetchQuizzes = async () => {
-  loading.value = true;
+const fetchQuizzes = async (silent = false) => {
+  if (!silent) loading.value = true;
   try {
     const response = await QuizService.getMyQuizzes();
     quizzes.value = response.data || [];
+    localStorage.setItem('teacher_quizzes_cache', JSON.stringify(quizzes.value));
   } catch (err) {
     console.error("Erreur chargement quiz:", err);
   } finally {
-    loading.value = false;
+    if (!silent) loading.value = false;
   }
 };
 
@@ -263,6 +273,20 @@ const handleStart = async (quiz) => {
     alert("Impossible de lancer le quiz.");
   } finally {
     isStarting.value = null;
+  }
+};
+
+const handleFinish = async (quiz) => {
+  if (!confirm(`Voulez-vous clôturer "${quiz.title}" ? Plus aucun étudiant ne pourra y répondre.`)) return;
+  isFinishing.value = quiz.id;
+  try {
+    await QuizService.finishSession(quiz.id);
+    await fetchQuizzes(true);
+  } catch (err) {
+    console.error("Erreur clôture:", err);
+    alert("Impossible de clôturer le quiz.");
+  } finally {
+    isFinishing.value = null;
   }
 };
 
@@ -304,7 +328,16 @@ const handleLogout = () => {
   router.push('/login');
 };
 
-onMounted(fetchQuizzes);
+onMounted(async () => {
+  const cached = localStorage.getItem('teacher_quizzes_cache');
+  if (cached) {
+    quizzes.value = JSON.parse(cached);
+    loading.value = false;
+    await fetchQuizzes(true); // Silent refresh
+  } else {
+    await fetchQuizzes();
+  }
+});
 </script>
 
 <style scoped>
@@ -377,6 +410,9 @@ onMounted(fetchQuizzes);
 
 .action-btn--launch { background: linear-gradient(135deg, #6e40c9, #8b5cf6); color: white; box-shadow: 0 4px 12px rgba(110,64,201,0.2); }
 .action-btn--launch:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(110,64,201,0.3); }
+
+.action-btn--finish { background: rgba(248,81,73,0.1); color: #f85149; border: 1px solid rgba(248,81,73,0.2); }
+.action-btn--finish:hover { background: rgba(248,81,73,0.2); border-color: #f85149; transform: translateY(-2px); }
 
 .action-btn--results { background: rgba(56,139,253,0.1); color: #58a6ff; border: 1px solid rgba(56,139,253,0.2); }
 .action-btn--results:hover { background: rgba(56,139,253,0.2); border-color: #58a6ff; transform: translateY(-2px); }

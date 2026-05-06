@@ -18,9 +18,11 @@ class BriefEntity
     private BriefStatus $status;
     private array $tags;
     private int $formateurId;
+    private ?int $classroomId;
+    private array $squadIds;
     private bool $hasQuiz;
 
-    public function __construct(?int $id, string $title, ?string $imageUrl, string $description, ?string $context, BriefDatePeriod $period, BriefModality $modality, BriefStatus $status, array $tags = [], int $formateurId, bool $hasQuiz = false) {
+    public function __construct(?int $id, string $title, ?string $imageUrl, string $description, ?string $context, BriefDatePeriod $period, BriefModality $modality, BriefStatus $status, array $tags = [], int $formateurId, ?int $classroomId = null, array $squadIds = [], bool $hasQuiz = false) {
         $this->id = $id;
         $this->title = $title;
         $this->imageUrl = $imageUrl;
@@ -31,6 +33,8 @@ class BriefEntity
         $this->status = $status;
         $this->tags = $tags;
         $this->formateurId = $formateurId;
+        $this->classroomId = $classroomId;
+        $this->squadIds = $squadIds;
         $this->hasQuiz = $hasQuiz;
     }
 
@@ -65,6 +69,15 @@ class BriefEntity
     public function getFormateurId(): int {
          return $this->formateurId; 
     }
+    public function getClassroomId(): ?int {
+         return $this->classroomId; 
+    }
+    public function getSquadIds(): array { 
+         return $this->squadIds; 
+    }
+    public function setSquadIds(array $squadIds): void { 
+         $this->squadIds = $squadIds; 
+    }
     public function hasQuiz(): bool {
          return $this->hasQuiz; 
     }
@@ -83,6 +96,8 @@ class BriefEntity
             'status' => $this->status->getValue(),
             'tags' => $this->tags,
             'formateur_id' => $this->formateurId,
+            'classroom_id' => $this->classroomId,
+            'squad_ids' => $this->squadIds,
             'has_quiz' => $this->hasQuiz
         ];
     }

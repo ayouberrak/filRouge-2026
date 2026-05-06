@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->text('description');
-            $table->string('type'); // veille, workshop, live_coding, quiz
+            $table->string('activity_type'); // veille, workshop, live_coding, quiz
             
             $table->dateTime('scheduled_at')->nullable();
             $table->string('duration')->nullable(); // For display e.g. "30 min"

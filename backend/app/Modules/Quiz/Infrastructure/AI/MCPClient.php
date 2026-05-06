@@ -57,10 +57,10 @@ class MCPClient
 
             $text = $response->json()['choices'][0]['message']['content'] ?? '';
 
-            // // Extraire uniquement la partie JSON si l'IA a ajouté du texte autour
-            // if (preg_match('/\{.*\}/s', $text, $matches)) {
-            //     $text = $matches[0];
-            // }
+            // Extraire uniquement la partie JSON si l'IA a ajouté du texte autour
+            if (preg_match('/\{.*\}/s', $text, $matches)) {
+                $text = $matches[0];
+            }
 
             $result = json_decode($text, true);
 

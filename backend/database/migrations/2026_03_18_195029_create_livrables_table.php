@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('status')->default('PENDING'); // PENDING, VALIDATED, REJECTED
             $table->text('message')->nullable();
             $table->text('formateur_message')->nullable();
+            $table->foreignId('formateur_id')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('validated_at')->nullable();
             $table->timestamps();
         });

@@ -28,6 +28,8 @@ class CreateBrief
             new BriefStatus($dto->status),
             $dto->tags ?? [],
             $dto->formateur_id ?? auth()->id(),
+            $dto->classroom_id,
+            $dto->squad_ids ?? [],
             false
         );
 

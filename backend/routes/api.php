@@ -127,6 +127,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/sessions/{sessionId}', [QuizController::class, 'showSession']);
             Route::put('/sessions/{sessionId}', [QuizController::class, 'updateSession']);
             Route::post('/sessions/{sessionId}/start', [QuizController::class, 'startSession']);
+            Route::post('/sessions/{sessionId}/finish', [QuizController::class, 'finishSession']);
             Route::get('/sessions/{sessionId}/submissions', [QuizController::class, 'getSessionSubmissions']);
             Route::get('/sessions/{sessionId}/students/{studentId}/responses', [QuizController::class, 'getStudentResponses']);
             Route::get('/debug-ping', function () {

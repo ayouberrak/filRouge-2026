@@ -24,6 +24,7 @@ return new class extends Migration
             $table->json('tags')->nullable();
             $table->string('file')->nullable();
             $table->foreignId('formateur_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('classroom_id')->nullable()->constrained('classrooms')->onDelete('cascade');
             $table->timestamps();
         });
     }

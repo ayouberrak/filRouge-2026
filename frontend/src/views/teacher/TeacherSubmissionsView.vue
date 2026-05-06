@@ -374,15 +374,21 @@ const saveReview = async (verdict) => {
   const backendVerdict = verdict === 'VALIDE' ? 'VALIDATED' : 'REJECTED';
 
   isSaving.value = true;
-  await SubmissionService.review(selectedStudent.value.submission.id, {
-    status: backendVerdict,
-    message: feedback.value,
-    formateur_id: user.value.id
-  });
-  
-  handleSelectBrief(selectedBriefId.value);
-  feedback.value = '';
-  isSaving.value = false;
+  try {
+    await SubmissionService.review(selectedStudent.value.submission.id, {
+      status: backendVerdict,
+      message: feedback.value,
+      formateur_id: user.value.id
+    });
+    
+    await handleSelectBrief(selectedBriefId.value);
+    feedback.value = '';
+  } catch (err) {
+    console.error("Erreur Review:", err);
+    alert("Une erreur est survenue lors de la sauvegarde.");
+  } finally {
+    isSaving.value = false;
+  }
 };
 
 const handleLogout = () => router.push('/login');

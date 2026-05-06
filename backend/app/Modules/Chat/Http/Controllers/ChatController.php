@@ -61,9 +61,50 @@ class ChatController
     public function search(Request $request): JsonResponse
     {
         $query = $request->query('q', '');
+        $user = $request->user();
 
-        $users = $this->searchUsers->execute($query, $request->user()->id);
-        return response()->json($users);
+        $users = $this->searchUsers->execute($query, $user->id);
+        
+        $results = [];
+        foreach ($users as $u) {
+            $results[] = [
+                'id' => $u->id,
+                'name' => $u->first_name . ' ' . $u->last_name,
+                'role' => $u->role,
+                'type' => 'individual'
+            ];
+        }
+
+        // Si formateur, on ajoute ses classes et squads
+        if ($user->role === 'formateur') {
+            $classrooms = \App\Modules\Classroom\Infrastructure\Models\ClassroomModel::where('formateur_id', $user->id)
+                ->where('name', 'LIKE', "%{$query}%")
+                ->get();
+            
+            foreach ($classrooms as $class) {
+                $results[] = [
+                    'id' => $class->id, // Here ID refers to the related_id in conversation
+                    'name' => $class->name,
+                    'role' => 'Classe',
+                    'type' => 'classroom'
+                ];
+
+                $squads = \App\Modules\Squad\Infrastructure\Models\SquadModel::where('classroom_id', $class->id)
+                    ->where('name', 'LIKE', "%{$query}%")
+                    ->get();
+                
+                foreach ($squads as $squad) {
+                    $results[] = [
+                        'id' => $squad->id,
+                        'name' => $squad->name,
+                        'role' => 'Squad',
+                        'type' => 'squad'
+                    ];
+                }
+            }
+        }
+
+        return response()->json($results);
     }
 
     public function start(Request $request): JsonResponse

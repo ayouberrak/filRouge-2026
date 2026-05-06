@@ -34,43 +34,54 @@ class BriefController
     public function index(Request $request): JsonResponse
     {
         $user = auth()->user();
-
         $explorer = $request->query('all') === 'true' || $request->query('all') === '1';
 
         if ($user && $user->role === 'student' && !$explorer) {
-            $briefs = $this->repository->findByClassroomId($user->classroom_id, $user->squad_id);
+            $briefEntities = $this->repository->findByClassroomId($user->classroom_id, $user->squad_id);
         } else if ($user && $user->role === 'formateur' && !$explorer) {
-            $briefs = $this->repository->findByFormateurId($user->id);
+            $briefEntities = $this->repository->findByFormateurId($user->id);
         } else {
-            $briefs = $this->getAllBriefs->execute();
+            $briefEntities = $this->getAllBriefs->execute();
         }
 
+        $briefIds = array_map(fn($b) => $b->getId(), $briefEntities);
+
+        // 2. Chargement groupé des modèles avec relations pour éviter le N+1
+        $models = BriefModel::with(['classroom', 'squads', 'formateur'])
+            ->withCount('quizSessions')
+            ->whereIn('id', $briefIds)
+            ->get()
+            ->keyBy('id');
+
         $data = [];
+        foreach ($briefEntities as $entity) {
+            $model = $models->get($entity->getId());
+            if (!$model) continue;
 
-        foreach ($briefs as $brief) {
-
-            $model = BriefModel::with(['classrooms:id,name', 'squads:id,name'])
-                                ->find($brief->getId());
-            $item = $brief->toArray();
-
+            $item = $entity->toArray();
+            
             $item['classrooms'] = [];
-            $item['squads'] = [];
-
-            if ($model) {
-                $item['has_quiz'] = $model->quizSessions()->exists();
-                foreach ($model->classrooms as $classroom) {
-                    $item['classrooms'][] = [
-                        'id' => $classroom->id,
-                        'name' => $classroom->name
-                    ];
-                }
-                foreach ($model->squads as $squad) {
-                    $item['squads'][] = [
-                        'id' => $squad->id,
-                        'name' => $squad->name
-                    ];
-                }
+            if ($model->classroom) {
+                $item['classrooms'][] = [
+                    'id' => $model->classroom->id,
+                    'name' => $model->classroom->name
+                ];
             }
+
+            $item['squads'] = [];
+            foreach ($model->squads as $squad) {
+                $item['squads'][] = [
+                    'id' => $squad->id,
+                    'name' => $squad->name
+                ];
+            }
+
+            if ($model->formateur) {
+                $item['formateur_name'] = $model->formateur->first_name . ' ' . $model->formateur->last_name;
+            }
+
+            $item['has_quiz'] = $model->quiz_sessions_count > 0;
+            
             $data[] = $item;
         }
 
@@ -84,18 +95,10 @@ class BriefController
     {
         $user = auth()->user();
 
-        $briefModel = BriefModel::with('formateur', 'classrooms')->find($id);
+        $briefModel = BriefModel::with(['formateur', 'classroom'])->find($id);
 
         if ($user && $user->role === 'student') {
-
-            $autorise = false;
-
-            foreach ($briefModel->classrooms as $classroom) {
-                if ($classroom->id == $user->classroom_id) {
-                    $autorise = true;
-                    break;
-                }
-            }
+            $autorise = ($briefModel->classroom_id == $user->classroom_id);
         }
 
         $data = $briefModel->toArray();

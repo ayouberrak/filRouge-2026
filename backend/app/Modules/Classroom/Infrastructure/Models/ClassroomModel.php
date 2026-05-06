@@ -37,6 +37,6 @@ class ClassroomModel extends Model
 
     public function briefs()
     {
-        return $this->belongsToMany(BriefModel::class, 'brief_classroom');
+        return $this->hasMany(BriefModel::class, 'classroom_id');
     }
 }

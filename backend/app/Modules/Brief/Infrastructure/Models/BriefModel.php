@@ -26,7 +26,8 @@ class BriefModel extends Model
         'status',
         'tags',
         'file',
-        'formateur_id'
+        'formateur_id',
+        'classroom_id'
     ];
 
     protected $casts = [
@@ -40,9 +41,9 @@ class BriefModel extends Model
         return $this->belongsTo(UserModel::class, 'formateur_id');
     }
 
-    public function classrooms()
+    public function classroom()
     {
-        return $this->belongsToMany(ClassroomModel::class, 'brief_classroom', 'brief_id', 'classroom_id');
+        return $this->belongsTo(ClassroomModel::class, 'classroom_id');
     }
 
     public function squads()

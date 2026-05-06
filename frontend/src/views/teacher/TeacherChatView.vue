@@ -165,15 +165,17 @@
               <input v-model="userSearchQuery" placeholder="Rechercher un étudiant, formateur..." class="modal-search-input" />
             </div>
             <div class="user-results custom-scrollbar">
-              <div v-for="u in userResults" :key="u.id" class="user-result-card" @click="startPrivateChat(u)">
-                <div class="user-avatar-mini">{{ u.first_name.charAt(0) }}</div>
+              <div v-for="res in userResults" :key="res.type + '-' + res.id" class="user-result-card" @click="startChatWithResult(res)">
+                <div class="user-avatar-mini" :class="res.type">
+                  {{ res.name.charAt(0).toUpperCase() }}
+                </div>
                 <div class="user-info">
-                  <span class="user-name">{{ u.first_name }} {{ u.last_name }}</span>
-                  <span class="user-role">{{ u.role }}</span>
+                  <span class="user-name">{{ res.name }}</span>
+                  <span class="user-role">{{ res.role }}</span>
                 </div>
                 <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5l7 7-7 7"/></svg>
               </div>
-              <div v-if="userResults.length === 0 && userSearchQuery" class="user-empty">Aucun utilisateur trouvé</div>
+              <div v-if="userResults.length === 0 && userSearchQuery" class="user-empty">Aucun résultat trouvé</div>
             </div>
           </div>
         </div>
@@ -313,12 +315,16 @@ const handleSendMessage = async () => {
   sending.value = false;
 };
 
-const startPrivateChat = async (u) => {
+const startChatWithResult = async (result) => {
   try {
     showNewChatModal.value = false;
     userSearchQuery.value = '';
 
-    const res = await ChatService.startConversation(u.id);
+    const res = await ChatService.startConversation(
+      result.id, 
+      result.type, 
+      result.type !== 'individual' ? result.name : null
+    );
     const newConv = res.data;
     
     selectedCategory.value = 'all';
@@ -565,6 +571,9 @@ onUnmounted(() => {
 .user-result-card { display: flex; align-items: center; gap: 14px; padding: 12px; border-radius: 16px; cursor: pointer; transition: all 0.2s; }
 .user-result-card:hover { background: rgba(255, 255, 255, 0.05); }
 .user-avatar-mini { width: 40px; height: 40px; border-radius: 12px; background: #334155; display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; }
+.user-avatar-mini.individual { background: linear-gradient(135deg, #388bfd, #1d4ed8); }
+.user-avatar-mini.classroom  { background: linear-gradient(135deg, #10b981, #059669); }
+.user-avatar-mini.squad      { background: linear-gradient(135deg, #f59e0b, #d97706); }
 .user-info { flex: 1; display: flex; flex-direction: column; }
 .user-name { font-weight: 700; color: white; font-size: 14px; }
 .user-role { font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700; }

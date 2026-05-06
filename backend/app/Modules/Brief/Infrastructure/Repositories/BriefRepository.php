@@ -24,6 +24,7 @@ class BriefRepository implements BriefRepositoryInterface
             'status' => $brief->getStatus()->getValue(),
             'tags' => $brief->getTags(),
             'formateur_id' => $brief->getFormateurId(),
+            'classroom_id' => $brief->getClassroomId(),
         ];
 
         if ($brief->getId()) {
@@ -33,7 +34,11 @@ class BriefRepository implements BriefRepositoryInterface
             $model = BriefModel::create($data);
         }
 
-        return $this->toEntity($model);
+        if (!empty($brief->getSquadIds())) {
+            $model->squads()->sync($brief->getSquadIds());
+        }
+
+        return $this->toEntity($model->load('squads'));
     }
 
     public function findById(int $id): ?BriefEntity
@@ -44,32 +49,25 @@ class BriefRepository implements BriefRepositoryInterface
 
     public function findByClassroomId(int $classroomId, ?int $squadId = null): array
     {
-        $models = BriefModel::withCount('quizSessions')
-            ->where(function($query) use ($classroomId, $squadId) {
-                $query->whereHas('classrooms', function($q) use ($classroomId) {
-                    $q->where('classroom_id', $classroomId);
-                });
+        $query = BriefModel::withCount('quizSessions')
+            ->where('classroom_id', $classroomId);
                 
-                if ($squadId) {
-                    $query->orWhereHas('squads', function($q) use ($squadId) {
-                        $q->where('squad_id', $squadId);
-                    });
-                }
-            })->get();
+        if ($squadId) {
+            $query->orWhereHas('squads', function($q) use ($squadId) {
+                $q->where('squad_id', $squadId);
+            });
+        }
             
+        $models = $query->with('squads')->get();
         return $models->map(fn(BriefModel $model) => $this->toEntity($model))->toArray();
     }
     public function findByClassroomIds(array $classroomIds): array
     {
         $models = BriefModel::withCount('quizSessions')
-            ->where(function($query) use ($classroomIds) {
-                $query->whereHas('classrooms', function($q) use ($classroomIds) {
-                    $q->whereIn('classroom_id', $classroomIds);
-                })
-                ->orWhereHas('squads', function($q) use ($classroomIds) {
-                    $q->whereIn('classroom_id', $classroomIds);
-                });
-            })->get();
+            ->whereIn('classroom_id', $classroomIds)
+            ->orWhereHas('squads', function($q) use ($classroomIds) {
+                $q->whereIn('classroom_id', $classroomIds);
+            })->with('squads')->get();
             
         return $models->map(fn(BriefModel $model) => $this->toEntity($model))->toArray();
     }
@@ -96,10 +94,9 @@ class BriefRepository implements BriefRepositoryInterface
     public function assignClassrooms(int $briefId, array $classroomIds): void
     {
         $model = BriefModel::find($briefId);
-        if ($model) {
-            $model->classrooms()->sync($classroomIds);
-
+        if ($model && !empty($classroomIds)) {
             $model->update([
+                'classroom_id' => $classroomIds[0], // Only one classroom in one-to-many
                 'status' => 'PUBLISHED'
             ]);
         }
@@ -110,7 +107,6 @@ class BriefRepository implements BriefRepositoryInterface
         $model = BriefModel::find($briefId);
         if ($model) {
             $model->squads()->sync($squadIds);
-
             $model->update([
                 'status' => 'PUBLISHED'
             ]);
@@ -131,6 +127,8 @@ class BriefRepository implements BriefRepositoryInterface
             new BriefStatus($model->status),
             $model->tags ?? [],
             $model->formateur_id,
+            $model->classroom_id,
+            $model->squads->pluck('id')->toArray(),
             $model->quiz_sessions_count > 0
         );
     }

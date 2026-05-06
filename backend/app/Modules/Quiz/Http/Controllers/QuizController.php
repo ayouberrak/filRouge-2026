@@ -72,6 +72,21 @@ class QuizController
             ], 200);
     }
 
+    public function finishSession(Request $request, int $sessionId): JsonResponse
+    {
+        $session = QuizSessionModel::findOrFail($sessionId);
+        $session->status = 'COMPLETED';
+        $session->save();
+
+        return response()->json([
+            'message' => 'Quiz session closed successfully',
+            'data' => [
+                'id' => $session->id,
+                'status' => $session->status,
+            ]
+        ]);
+    }
+
     public function showSession(int $sessionId): JsonResponse
     {
         $session = QuizSessionModel::with(['questions', 'classroom'])->findOrFail($sessionId);
@@ -321,9 +336,8 @@ class QuizController
 
                 $totalQuestions = QuestionModel::where('quiz_session_id', $sessionId)->count();
                 $answeredCount = $responses->count();
-                $correctCount = $responses->where('is_correct', true)->count();
-                    
-                $score = $totalQuestions > 0 ? round(($correctCount / $totalQuestions) * 100) : 0;
+                $sumScores = $responses->sum('score');
+                $score = $totalQuestions > 0 ? round($sumScores / $totalQuestions) : 0;
 
                 return [
                     'id' => $student->id,

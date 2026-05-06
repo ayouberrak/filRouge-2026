@@ -38,10 +38,11 @@ return new class extends Migration
         Schema::create('student_responses', function (Blueprint $table) {
             $table->id();
             $table->foreignId('student_id')->constrained('users')->cascadeOnDelete();
-            $table->foreignId('quiz_session_id')->constrained('quiz_sessions')->cascadeOnDelete();
             $table->foreignId('question_id')->constrained('questions')->cascadeOnDelete();
-            $table->foreignId('option_id')->nullable(); // Reference to index or ID in context_data
-            $table->integer('points_earned')->default(0);
+            $table->text('response_text')->nullable();
+            $table->decimal('score', 5, 2)->default(0);
+            $table->boolean('is_correct')->default(false);
+            $table->text('ai_feedback')->nullable();
             $table->timestamps();
         });
     }

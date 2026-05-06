@@ -17,7 +17,7 @@ class ListBriefSubmissions
     public function execute(int $briefId): array
     {
         $brief = BriefModel::with([
-            'classrooms.students.squad', 
+            'classroom.students.squad', 
             'squads.members.squad'
         ])->find($briefId);
         
@@ -25,13 +25,9 @@ class ListBriefSubmissions
             return [];
         }
 
-        $classroomStudents = $brief->classrooms->flatMap(function($classroom) {
-            return $classroom->students;
-        });
+        $classroomStudents = $brief->classroom ? $brief->classroom->students : collect();
+        $squadStudents = $brief->squads->flatMap->members;
 
-        $squadStudents = $brief->squads->flatMap(function($squad) {
-            return $squad->members;
-        });
         $students = $classroomStudents->merge($squadStudents)->unique('id');
         
         $livrables = $this->livrableRepository->findByBriefId($briefId);

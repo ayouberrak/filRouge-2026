@@ -15,7 +15,9 @@ class BriefDTO
         public string $status,
         public ?array $tags = [],
         public ?string $file = null,
-        public ?int $formateur_id = null
+        public ?int $formateur_id = null,
+        public ?int $classroom_id = null,
+        public ?array $squad_ids = []
     ) {}
 
     public function toArray(): array
@@ -31,7 +33,9 @@ class BriefDTO
             'status' => $this->status,
             'tags' => $this->tags,
             'file' => $this->file,
-            'formateur_id' => $this->formateur_id
+            'formateur_id' => $this->formateur_id,
+            'classroom_id' => $this->classroom_id,
+            'squad_ids' => $this->squad_ids
         ];
     }
 }
